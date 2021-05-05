@@ -1,0 +1,16 @@
+sudo: false
+
+env:
+  - GO111MODULE=on
+
+language: go
+
+go:
+  - 1.16
+
+script:
+  - ./test.sh
+  - ./artifact.sh
+
+services:
+  - docker
