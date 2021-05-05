@@ -10,6 +10,7 @@ go:
 
 script:
   - ./test.sh
+  - ./artifact.sh
 
 services:
   - docker
