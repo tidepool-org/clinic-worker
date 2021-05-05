@@ -100,14 +100,14 @@ func (p *PatientCDCConsumer) applyProfileUpdate(event PatientCDCEvent) error {
 		return err
 	}
 
-	event.UpdateDescription.ApplyUpdatesToExistingProfile(profile)
+	event.ApplyUpdatesToExistingProfile(profile)
 
 	p.logger.Infow("updating patient profile", "offset", event.Offset)
 	err := p.seagull.UpdateCollection(userId, "profile", p.shoreline.TokenProvide(), profile)
 	if err != nil {
 		p.logger.Warnw("unable to update patient profile", "offset", event.Offset, zap.Error(err))
 	}
-	
+
 	return err
 }
 
