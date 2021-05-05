@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/tidepool-org/clinic-worker/consumer"
+	"github.com/tidepool-org/clinic-worker/worker"
 )
 
 func main() {
-	consumer.New().Run()
+	worker.New().Run()
 }

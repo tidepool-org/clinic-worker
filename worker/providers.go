@@ -1,4 +1,4 @@
-package consumer
+package worker
 
 import (
 	"context"
@@ -16,7 +16,6 @@ import (
 type DependenciesConfig struct {
 	ShorelineHost  string `envconfig:"TIDEPOOL_SHORELINE_CLIENT_ADDRESS" default:"http://shoreline:9107"`
 	SeagullHost    string `envconfig:"TIDEPOOL_SEAGULL_CLIENT_ADDRESS" default:"http://seagull:9120"`
-	HydrophoneHost string `enbconfig:"TIDEPOOL_CONFIRMATION_CLIENT_ADDRESS" default:"http://confirm:9157"`
 	ServerSecret   string `envconfig:"TIDEPOOL_SERVER_SECRET"`
 }
 

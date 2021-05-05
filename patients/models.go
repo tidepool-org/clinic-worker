@@ -1,4 +1,4 @@
-package consumer
+package patients
 
 const OperationTypeInsert = "insert"
 const OperationTypeReplace = "replace"
