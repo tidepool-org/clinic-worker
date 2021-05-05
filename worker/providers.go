@@ -43,7 +43,7 @@ func shorelineProvider(config DependenciesConfig, httpClient *http.Client, lifec
 	client := shoreline.NewShorelineClientBuilder().
 		WithHostGetter(disc.NewStaticHostGetterFromString(config.ShorelineHost)).
 		WithHttpClient(httpClient).
-		WithName("clinics").
+		WithName("clinic-worker").
 		WithSecret(config.ServerSecret).
 		WithTokenRefreshInterval(time.Hour).
 		Build()

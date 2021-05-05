@@ -109,6 +109,8 @@ github.com/tidepool-org/go-common v0.8.3-0.20210504121336-1b1efe56dd13 h1:r3UiHM
 github.com/tidepool-org/go-common v0.8.3-0.20210504121336-1b1efe56dd13/go.mod h1:0S1OUe8aQH8bKLyeemNKW4WOPkCXxK5FqN9OXu1as7E=
 github.com/tidepool-org/go-common v0.8.3-0.20210504155425-16b2e26d4d03 h1:MfMod3T5nDJnasEstvpJVBup0jWqFvIC7u+l/2uh6Xg=
 github.com/tidepool-org/go-common v0.8.3-0.20210504155425-16b2e26d4d03/go.mod h1:0S1OUe8aQH8bKLyeemNKW4WOPkCXxK5FqN9OXu1as7E=
+github.com/tidepool-org/go-common v0.8.3-0.20210505171159-1054908092a2 h1:k1UkubR0kTna9CLPw+C40updvLKJ6he1cIMFUkTE6+E=
+github.com/tidepool-org/go-common v0.8.3-0.20210505171159-1054908092a2/go.mod h1:0S1OUe8aQH8bKLyeemNKW4WOPkCXxK5FqN9OXu1as7E=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c h1:u40Z8hqBAAQyv+vATcGgV0YCnDjqSL7/q/JyPhhJSPk=
 github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c/go.mod h1:lB8K/P019DLNhemzwFU4jHLhdvlE6uDZjXFejJXr49I=
