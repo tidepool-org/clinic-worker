@@ -8,6 +8,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
+	"strconv"
 )
 
 type PatientCDCConsumer struct {
@@ -44,11 +45,20 @@ func (p *PatientCDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) erro
 		return nil
 	}
 	event := PatientCDCEvent{}
-	if err := json.Unmarshal(cm.Value, &event); err != nil {
+	if err := p.unmarshalEvent(cm.Value, &event); err != nil {
 		return err
 	}
 
 	return p.handleCDCEvent(event)
+}
+
+func (p *PatientCDCConsumer) unmarshalEvent(value []byte, event *PatientCDCEvent) error {
+	message := string(value)
+	message, err := strconv.Unquote(message)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(message), event)
 }
 
 func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
