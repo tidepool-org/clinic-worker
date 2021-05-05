@@ -73,8 +73,7 @@ func (p *PatientCDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) erro
 }
 
 func (p *PatientCDCConsumer) unmarshalEvent(value []byte, event *PatientCDCEvent) error {
-	message := string(value)
-	message, err := strconv.Unquote(message)
+	message, err := strconv.Unquote(string(value))
 	if err != nil {
 		return err
 	}
@@ -108,23 +107,20 @@ func (p *PatientCDCConsumer) applyProfileUpdate(event PatientCDCEvent) error {
 	}
 
 	event.ApplyUpdatesToExistingProfile(profile)
-	if len(profile) == 0 {
-		p.logger.Infow("skipping profile update, because profile is empty")
-		return nil
-	}
-
-	payload, _ := json.Marshal(profile)
-	p.logger.Infow("updating patient profile", "offset", event.Offset, "payload", payload)
 	err := p.seagull.UpdateCollection(userId, "profile", p.shoreline.TokenProvide(), profile)
 	if err != nil {
-		p.logger.Warnw("unable to update patient profile", "offset", event.Offset, zap.Error(err))
+		p.logger.Errorw("unable to update patient profile",
+			"offset", event.Offset,
+			"profile", profile,
+			zap.Error(err),
+		)
 	}
 
 	return err
 }
 
 func (p *PatientCDCConsumer) applyInviteUpdate(event PatientCDCEvent) error {
-	p.logger.Debugw("applying invite update")
+	p.logger.Debugw("applying invite update", "offset", event.Offset)
 	if event.FullDocument.UserId == nil {
 		return errors.New("expected patient id to be defined")
 	}
