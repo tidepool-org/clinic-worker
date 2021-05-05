@@ -95,7 +95,7 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 }
 
 func (p *PatientCDCConsumer) applyProfileUpdate(event PatientCDCEvent) error {
-	p.logger.Debugw("applying profile update")
+	p.logger.Debugw("applying profile update", "event", event)
 	if event.FullDocument.UserId == nil {
 		return errors.New("expected patient id to be defined")
 	}
