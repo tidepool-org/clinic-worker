@@ -4,6 +4,7 @@ const OperationTypeCreate = "create"
 const OperationTypeUpdate = "update"
 
 type PatientCDCEvent struct {
+	Offset            int64             `json:"-"`
 	FullDocument      Patient           `json:"fullDocument"`
 	OperationType     string            `json:"operationType"`
 	UpdateDescription UpdateDescription `json:"updateDescription"`

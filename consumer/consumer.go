@@ -8,19 +8,22 @@ import (
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"strconv"
 )
 
 type PatientCDCConsumer struct {
-	shoreline      shoreline.Client
-	seagull        clients.Seagull
+	shoreline shoreline.Client
+	seagull   clients.Seagull
+	logger    *zap.SugaredLogger
 }
 
 type Params struct {
 	fx.In
 
-	Shoreline      shoreline.Client
-	Seagull        clients.Seagull
+	Logger    *zap.SugaredLogger
+	Shoreline shoreline.Client
+	Seagull   clients.Seagull
 }
 
 func CreateConsumer(p Params) events.ConsumerFactory {
@@ -31,7 +34,8 @@ func CreateConsumer(p Params) events.ConsumerFactory {
 
 func NewPatientCDCConsumer(p Params) (events.MessageConsumer, error) {
 	return &PatientCDCConsumer{
-		seagull: p.Seagull,
+		logger:    p.Logger,
+		seagull:   p.Seagull,
 		shoreline: p.Shoreline,
 	}, nil
 }
@@ -44,12 +48,20 @@ func (p *PatientCDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) erro
 	if cm == nil {
 		return nil
 	}
+
+	p.logger.Debugw("handling kafka message", "offset", cm.Offset)
+
 	event := PatientCDCEvent{}
 	if err := p.unmarshalEvent(cm.Value, &event); err != nil {
+		p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
 		return err
 	}
 
-	return p.handleCDCEvent(event)
+	if err := p.handleCDCEvent(event); err != nil {
+		p.logger.Errorw("unable to cdc event", "offset", cm.Offset, zap.Error(err))
+		return err
+	}
+	return nil
 }
 
 func (p *PatientCDCConsumer) unmarshalEvent(value []byte, event *PatientCDCEvent) error {
@@ -63,6 +75,7 @@ func (p *PatientCDCConsumer) unmarshalEvent(value []byte, event *PatientCDCEvent
 
 func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 	if !event.ShouldApplyUpdates() {
+		p.logger.Debugw("skipping handling of event", "offset", event.Offset)
 		return nil
 	}
 
@@ -78,16 +91,24 @@ func (p *PatientCDCConsumer) applyProfileUpdate(event PatientCDCEvent) error {
 		return errors.New("expected patient id to be defined")
 	}
 
+	p.logger.Debugw("applying profile update", )
+
 	userId := *event.FullDocument.UserId
 	profile := make(map[string]interface{}, 0)
 	if err := p.seagull.GetCollection(userId, "profile", p.shoreline.TokenProvide(), &profile); err != nil {
+		p.logger.Errorw("unable to fetch user profile", "offset", event.Offset, zap.Error(err))
 		return err
 	}
 
 	event.UpdateDescription.ApplyUpdatesToExistingProfile(profile)
 
-	return p.seagull.UpdateCollection(userId, "profile", p.shoreline.TokenProvide(), profile)
-
+	p.logger.Infow("updating patient profile", "offset", event.Offset)
+	err := p.seagull.UpdateCollection(userId, "profile", p.shoreline.TokenProvide(), profile)
+	if err != nil {
+		p.logger.Warnw("unable to update patient profile", "offset", event.Offset, zap.Error(err))
+	}
+	
+	return err
 }
 
 func (p *PatientCDCConsumer) applyInviteUpdate(event PatientCDCEvent) error {

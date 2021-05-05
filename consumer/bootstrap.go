@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"log"
 )
 
@@ -30,6 +31,12 @@ func start(cg *events.FaultTolerantConsumerGroup, lifecycle fx.Lifecycle, shutdo
 func New() *fx.App {
 	return fx.New(
 		fx.Provide(
+			func() (*zap.Logger, error) {
+				config := zap.NewProductionConfig()
+				config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+				return config.Build()
+			},
+			func(logger *zap.Logger) *zap.SugaredLogger { return logger.Sugar() },
 			healthCheckServer,
 			configProvider,
 			httpClientProvider,
