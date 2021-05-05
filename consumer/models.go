@@ -44,11 +44,11 @@ type Patient struct {
 }
 
 func (p Patient) IsCustodial() bool {
-	return p.Permissions != nil && p.Permissions.Custodial != nil
+	return p.Permissions != nil && p.Permissions.Custodian != nil
 }
 
 type Permissions struct {
-	Custodial *Permission `json:"custodial"`
+	Custodian *Permission `json:"custodian"`
 }
 
 type Permission map[string]interface{}
