@@ -9,7 +9,7 @@ import (
 
 func healthCheckServer() *http.Server {
 	server := &http.Server{Addr: ":8080"}
-	http.HandleFunc("/ready", func (w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/status", func (w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
