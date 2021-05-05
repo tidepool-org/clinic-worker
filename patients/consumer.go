@@ -108,8 +108,11 @@ func (p *PatientCDCConsumer) applyProfileUpdate(event PatientCDCEvent) error {
 	}
 
 	event.ApplyUpdatesToExistingProfile(profile)
-	payload, _ := json.Marshal(profile)
-	p.logger.Infow("updating patient profile", "offset", event.Offset, "profile", string(payload))
+	if len(profile) == 0 {
+		p.logger.Infow("skipping profile update, because profile is empty")
+	}
+
+	p.logger.Infow("updating patient profile", "offset", event.Offset)
 	err := p.seagull.UpdateCollection(userId, "profile", p.shoreline.TokenProvide(), profile)
 	if err != nil {
 		p.logger.Warnw("unable to update patient profile", "offset", event.Offset, zap.Error(err))

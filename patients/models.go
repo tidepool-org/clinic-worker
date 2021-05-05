@@ -64,14 +64,7 @@ func (u UpdateDescription) applyUpdatesToExistingProfile(profile map[string]inte
 }
 
 func ApplyPatientChangesToProfile(patient Patient, profile map[string]interface{}) {
-	var patientProfile map[string]interface{}
-	switch profile["patient"].(type) {
-	case map[string]interface{}:
-		patientProfile = profile["patient"].(map[string]interface{})
-	default:
-		patientProfile = make(map[string]interface{}, 0)
-	}
-
+	patientProfile := EnsurePatientProfileExists(profile)
 	if patient.FullName != nil {
 		profile["fullName"] = *patient.FullName
 	}
@@ -88,13 +81,19 @@ func ApplyPatientChangesToProfile(patient Patient, profile map[string]interface{
 		profile["email"] = *patient.Email
 		patientProfile["emails"] = []string{*patient.Email}
 	}
+
+	if len(patientProfile) == 0 {
+		delete(profile, "patient")
+	}
 }
 
 func RemoveFieldsFromProfile(removedFields []string, profile map[string]interface{}) {
+	EnsurePatientProfileExists(profile)
 	removedFieldsMap := make(map[string]bool, 0)
 	for _, field := range removedFields {
 		removedFieldsMap[field] = true
 	}
+
 	if _, ok := removedFieldsMap["fullName"]; ok {
 		delete(profile, "fullName")
 	}
@@ -110,6 +109,20 @@ func RemoveFieldsFromProfile(removedFields []string, profile map[string]interfac
 	if _, ok := removedFieldsMap["email"]; ok {
 		delete(profile, "email")
 		delete(profile["patient"].(map[string]interface{}), "emails")
+	}
+	if len(profile["patient"].(map[string]interface{})) == 0 {
+		delete(profile, "patient")
+	}
+}
+
+func EnsurePatientProfileExists(profile map[string]interface{}) map[string]interface{} {
+	switch profile["patient"].(type) {
+	case map[string]interface{}:
+		return profile["patient"].(map[string]interface{})
+	default:
+		patientProfile := make(map[string]interface{}, 0)
+		profile["patient"] = patientProfile
+		return patientProfile
 	}
 }
 
