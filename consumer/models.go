@@ -43,8 +43,8 @@ type Permissions struct {
 type Permission map[string]interface{}
 
 type UpdateDescription struct {
-	UpdatedFields UpdatedFields     `json:"updatedFields"`
-	RemovedFields map[string]string `json:"removedFields"`
+	UpdatedFields UpdatedFields `json:"updatedFields"`
+	RemovedFields []string      `json:"removedFields"`
 }
 
 func (u UpdateDescription) ApplyUpdatesToExistingProfile(profile map[string]interface{}) {
@@ -56,31 +56,36 @@ func (u UpdateDescription) ApplyUpdatesToExistingProfile(profile map[string]inte
 		patient = make(map[string]interface{}, 0)
 	}
 
+	removedFields := make(map[string]bool, 0)
+	for _, field := range u.RemovedFields {
+		removedFields[field] = true
+	}
+
 	if u.UpdatedFields.FullName != nil {
 		profile["fullName"] = *u.UpdatedFields.FullName
 	}
-	if _, ok := u.RemovedFields["fullName"]; ok {
+	if _, ok := removedFields["fullName"]; ok {
 		delete(profile, "fullName")
 	}
 
 	if u.UpdatedFields.BirthDate != nil {
 		patient["birthday"] = *u.UpdatedFields.BirthDate
 	}
-	if _, ok := u.RemovedFields["birthDate"]; ok {
+	if _, ok := removedFields["birthDate"]; ok {
 		delete(patient, "birthday")
 	}
 
 	if u.UpdatedFields.Mrn != nil {
 		patient["mrn"] = *u.UpdatedFields.Mrn
 	}
-	if _, ok := u.RemovedFields["mrn"]; ok {
+	if _, ok := removedFields["mrn"]; ok {
 		delete(patient, "mrn")
 	}
 
 	if u.UpdatedFields.TargetDevices != nil {
 		patient["targetDevices"] = *u.UpdatedFields.TargetDevices
 	}
-	if _, ok := u.RemovedFields["targetDevices"]; ok {
+	if _, ok := removedFields["targetDevices"]; ok {
 		delete(patient, "targetDevices")
 	}
 
@@ -88,7 +93,7 @@ func (u UpdateDescription) ApplyUpdatesToExistingProfile(profile map[string]inte
 		profile["email"] = *u.UpdatedFields.Email
 		patient["emails"] = []string{*u.UpdatedFields.Email}
 	}
-	if _, ok := u.RemovedFields["email"]; ok {
+	if _, ok := removedFields["email"]; ok {
 		delete(profile, "email")
 		delete(patient, "emails")
 	}
