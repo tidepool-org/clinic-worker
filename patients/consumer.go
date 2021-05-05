@@ -33,7 +33,11 @@ type Params struct {
 
 func CreateConsumer(p Params) events.ConsumerFactory {
 	return func() (events.MessageConsumer, error) {
-		return NewPatientCDCConsumer(p)
+		delegate, err := NewPatientCDCConsumer(p)
+		if err != nil {
+			return nil, err
+		}
+		return NewRetryingConsumer(delegate), nil
 	}
 }
 
@@ -55,8 +59,11 @@ func (p *PatientCDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) erro
 		return nil
 	}
 
-	p.logger.Debugw("handling kafka message", "offset", cm.Offset)
+	return p.HandleKafkaMessage(cm)
+}
 
+func (p *PatientCDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
+	p.logger.Debugw("handling kafka message", "offset", cm.Offset)
 	event := PatientCDCEvent{
 		Offset: cm.Offset,
 	}
@@ -86,6 +93,7 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		return nil
 	}
 
+	p.logger.Infow("processing event", "event", event)
 	if err := p.applyProfileUpdate(event); err != nil {
 		return err
 	}
@@ -94,11 +102,6 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 }
 
 func (p *PatientCDCConsumer) applyProfileUpdate(event PatientCDCEvent) error {
-	p.logger.Debugw("applying profile update", "event", event)
-	if event.FullDocument.UserId == nil {
-		return errors.New("expected patient id to be defined")
-	}
-
 	userId := *event.FullDocument.UserId
 	profile := make(map[string]interface{}, 0)
 	if err := p.seagull.GetCollection(userId, "profile", p.shoreline.TokenProvide(), &profile); err != nil {
@@ -107,6 +110,8 @@ func (p *PatientCDCConsumer) applyProfileUpdate(event PatientCDCEvent) error {
 	}
 
 	event.ApplyUpdatesToExistingProfile(profile)
+	p.logger.Debugw("applying profile update", "profile", profile)
+
 	err := p.seagull.UpdateCollection(userId, "profile", p.shoreline.TokenProvide(), profile)
 	if err != nil {
 		p.logger.Errorw("unable to update patient profile",

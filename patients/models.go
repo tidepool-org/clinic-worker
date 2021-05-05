@@ -15,6 +15,9 @@ func (p PatientCDCEvent) ShouldApplyUpdates() bool {
 	if p.OperationType != OperationTypeInsert && p.OperationType != OperationTypeUpdate && p.OperationType != OperationTypeReplace {
 		return false
 	}
+	if p.FullDocument.UserId == nil {
+		return false
+	}
 	return p.FullDocument.IsCustodial()
 }
 
