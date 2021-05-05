@@ -38,7 +38,8 @@ func (s *service) UpsertSignUpInvite(userId string) error {
 		return fmt.Errorf("unable to upsert confirmation: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	// Hydrophone returns 403 when there's an existing invite
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusForbidden {
 		return errors.Newf("unexpected status code %v when upserting confirmation", resp.StatusCode)
 	}
 	return nil
