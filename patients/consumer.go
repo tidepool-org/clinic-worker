@@ -59,7 +59,7 @@ func (p *PatientCDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) erro
 		return nil
 	}
 
-	return p.HandleKafkaMessage(cm)
+	return p.handleMessage(cm)
 }
 
 func (p *PatientCDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
