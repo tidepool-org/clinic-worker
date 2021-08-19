@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/Shopify/sarama"
+	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/confirmation"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
@@ -37,7 +38,7 @@ func CreateConsumer(p Params) events.ConsumerFactory {
 		if err != nil {
 			return nil, err
 		}
-		return NewRetryingConsumer(delegate), nil
+		return cdc.NewRetryingConsumer(delegate), nil
 	}
 }
 

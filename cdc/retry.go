@@ -1,4 +1,4 @@
-package patients
+package cdc
 
 import (
 	"github.com/Shopify/sarama"
