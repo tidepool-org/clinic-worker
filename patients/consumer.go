@@ -14,6 +14,15 @@ import (
 	"strconv"
 )
 
+const (
+	patientsTopic = "clinic.patients"
+)
+
+var Module = fx.Provide(fx.Annotated{
+	Group:  "consumers",
+	Target: CreateConsumerGroup,
+})
+
 type PatientCDCConsumer struct {
 	logger *zap.SugaredLogger
 
@@ -30,6 +39,18 @@ type Params struct {
 	Hydrophone confirmation.Service
 	Shoreline  shoreline.Client
 	Seagull    clients.Seagull
+}
+
+
+func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
+	config, err := cdc.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	config.KafkaTopic = patientsTopic
+
+	return events.NewFaultTolerantConsumerGroup(config, CreateConsumer(p))
 }
 
 func CreateConsumer(p Params) events.ConsumerFactory {

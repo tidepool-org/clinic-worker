@@ -4,7 +4,13 @@ import (
 	"fmt"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/errors"
+	"go.uber.org/fx"
 	"net/http"
+)
+
+var Module = fx.Provide(
+	ConfigProvider,
+	NewService,
 )
 
 type Service interface {

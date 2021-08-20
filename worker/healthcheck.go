@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func healthCheckServer() *http.Server {
+func healthCheckServerProvider() *http.Server {
 	server := &http.Server{Addr: ":8080"}
 	http.HandleFunc("/status", func (w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

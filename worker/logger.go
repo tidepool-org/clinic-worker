@@ -2,12 +2,12 @@ package worker
 
 import "go.uber.org/zap"
 
-func newLogger() (*zap.Logger, error) {
+func loggerProvider() (*zap.SugaredLogger, error) {
 	config := zap.NewProductionConfig()
 	config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
-	return config.Build()
-}
-
-func getSuggaredLogger(logger *zap.Logger) *zap.SugaredLogger {
-	return logger.Sugar()
+	logger, err := config.Build()
+	if err != nil {
+		return nil, err
+	}
+	return logger.Sugar(), nil
 }
