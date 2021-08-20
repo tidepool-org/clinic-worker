@@ -45,6 +45,9 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 		return err
 	}
 
+	// The owner of the account is not a patient of a clinic
+	delete(permissions, userId)
+
 	m.logger.Infof("Migrating %v patients from legacy clinician user %v to %v", len(permissions), userId, clinicId)
 
 	sem := semaphore.NewWeighted(threadiness)
