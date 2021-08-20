@@ -15,10 +15,13 @@ const (
 	migrationsTopic = "clinic.migrations"
 )
 
-var Module = fx.Provide(fx.Annotated{
-	Group:  "consumers",
-	Target: CreateConsumerGroup,
-})
+var Module = fx.Provide(
+	NewMigrator,
+	fx.Annotated{
+		Group:  "consumers",
+		Target: CreateConsumerGroup,
+	},
+)
 
 type MigrationCDCConsumer struct {
 	logger *zap.SugaredLogger

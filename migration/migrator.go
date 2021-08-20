@@ -30,6 +30,14 @@ type migrator struct {
 
 var _ Migrator = &migrator{}
 
+func NewMigrator(logger *zap.SugaredLogger, gatekeeper clients.Gatekeeper, clinics clinics.ClientWithResponsesInterface) (Migrator, error) {
+	return &migrator{
+		logger:     logger,
+		gatekeeper: gatekeeper,
+		clinics:    clinics,
+	}, nil
+}
+
 func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string) error {
 	m.logger.Infof("Starting migration of patients of legacy clinician user %v to clinic %v", userId, clinicId)
 	permissions, err := m.gatekeeper.UsersInGroup(userId)
