@@ -1,5 +1,7 @@
 package migration
 
+import "github.com/tidepool-org/clinic-worker/cdc"
+
 const OperationTypeInsert = "insert"
 
 type MigrationCDCEvent struct {
@@ -9,7 +11,7 @@ type MigrationCDCEvent struct {
 }
 
 type Migration struct {
-	Offset   int64  `json:"-"`
-	UserId   string `json:"userId"`
-	ClinicId string `json:"clinicId"`
+	Offset   int64        `json:"-"`
+	UserId   string       `json:"userId"`
+	ClinicId cdc.ObjectId `json:"clinicId"`
 }

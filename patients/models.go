@@ -28,20 +28,16 @@ func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interf
 	}
 }
 
-type ObjectId struct {
-	Value string `json:"$oid"`
-}
-
 type Patient struct {
-	Id            *ObjectId    `json:"_id"`
-	ClinicId      *ObjectId    `json:"clinicId"`
-	UserId        *string      `json:"userId"`
-	BirthDate     *string      `json:"birthDate"`
-	Email         *string      `json:"email"`
-	FullName      *string      `json:"fullName"`
-	Mrn           *string      `json:"mrn"`
-	TargetDevices *[]string    `json:"targetDevices"`
-	Permissions   *Permissions `json:"permissions"`
+	Id            *cdc.ObjectId `json:"_id"`
+	ClinicId      *cdc.ObjectId `json:"clinicId"`
+	UserId        *string       `json:"userId"`
+	BirthDate     *string       `json:"birthDate"`
+	Email         *string       `json:"email"`
+	FullName      *string       `json:"fullName"`
+	Mrn           *string       `json:"mrn"`
+	TargetDevices *[]string     `json:"targetDevices"`
+	Permissions   *Permissions  `json:"permissions"`
 }
 
 func (p Patient) IsCustodial() bool {
