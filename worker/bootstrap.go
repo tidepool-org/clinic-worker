@@ -1,52 +1,46 @@
 package worker
 
 import (
-	"context"
+	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/confirmation"
+	"github.com/tidepool-org/clinic-worker/migration"
 	"github.com/tidepool-org/clinic-worker/patients"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
-	"log"
+)
+
+var Dependencies = fx.Provide(
+	loggerProvider,
+	healthCheckServerProvider,
+	configProvider,
+	httpClientProvider,
+	seagullProvider,
+	shorelineProvider,
+	gatekeeperProvider,
 )
 
 func New() *fx.App {
 	return fx.New(
-		fx.Provide(
-			newLogger,
-			getSuggaredLogger,
-			healthCheckServer,
-			configProvider,
-			httpClientProvider,
-			seagullProvider,
-			shorelineProvider,
-			confirmation.ConfigProvider,
-			confirmation.NewService,
-			patients.CreateConsumer,
-			eventsConfigProvider,
-			events.NewFaultTolerantConsumerGroup,
-		),
+		confirmation.Module,
+		patients.Module,
+		migration.Module,
 		fx.Invoke(
-			startConsumer,
+			startConsumers,
 			startHealthCheckServer,
 		),
 	)
 }
 
-func startConsumer(cg *events.FaultTolerantConsumerGroup, lifecycle fx.Lifecycle, shutdowner fx.Shutdowner) {
-	lifecycle.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			go func() {
-				if err := cg.Start(); err != nil {
-					log.Printf("error from consumer: %v", err)
-					if err := shutdowner.Shutdown(); err != nil {
-						log.Printf("error shutting down: %v", err)
-					}
-				}
-			}()
-			return nil
-		},
-		OnStop: func(ctx context.Context) error {
-			return cg.Stop()
-		},
-	})
+type Components struct {
+	fx.In
+
+	Consumers  []events.EventConsumer `group:"consumers"`
+	Lifecycle  fx.Lifecycle
+	Shutdowner fx.Shutdowner
+}
+
+func startConsumers(components Components) {
+	for _, consumer := range components.Consumers {
+		cdc.AttachConsumerGroupHooks(consumer, components.Lifecycle, components.Shutdowner)
+	}
 }

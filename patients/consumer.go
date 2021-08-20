@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/Shopify/sarama"
+	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/confirmation"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
@@ -12,6 +13,15 @@ import (
 	"go.uber.org/zap"
 	"strconv"
 )
+
+const (
+	patientsTopic = "clinic.patients"
+)
+
+var Module = fx.Provide(fx.Annotated{
+	Group:  "consumers",
+	Target: CreateConsumerGroup,
+})
 
 type PatientCDCConsumer struct {
 	logger *zap.SugaredLogger
@@ -31,13 +41,25 @@ type Params struct {
 	Seagull    clients.Seagull
 }
 
+
+func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
+	config, err := cdc.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	config.KafkaTopic = patientsTopic
+
+	return events.NewFaultTolerantConsumerGroup(config, CreateConsumer(p))
+}
+
 func CreateConsumer(p Params) events.ConsumerFactory {
 	return func() (events.MessageConsumer, error) {
 		delegate, err := NewPatientCDCConsumer(p)
 		if err != nil {
 			return nil, err
 		}
-		return NewRetryingConsumer(delegate), nil
+		return cdc.NewRetryingConsumer(delegate), nil
 	}
 }
 

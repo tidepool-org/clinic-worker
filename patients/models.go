@@ -1,8 +1,6 @@
 package patients
 
-const OperationTypeInsert = "insert"
-const OperationTypeReplace = "replace"
-const OperationTypeUpdate = "update"
+import "github.com/tidepool-org/clinic-worker/cdc"
 
 type PatientCDCEvent struct {
 	Offset            int64             `json:"-"`
@@ -12,7 +10,7 @@ type PatientCDCEvent struct {
 }
 
 func (p PatientCDCEvent) ShouldApplyUpdates() bool {
-	if p.OperationType != OperationTypeInsert && p.OperationType != OperationTypeUpdate && p.OperationType != OperationTypeReplace {
+	if p.OperationType != cdc.OperationTypeInsert && p.OperationType != cdc.OperationTypeUpdate && p.OperationType != cdc.OperationTypeReplace {
 		return false
 	}
 	if p.FullDocument.UserId == nil {
@@ -23,9 +21,9 @@ func (p PatientCDCEvent) ShouldApplyUpdates() bool {
 
 func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interface{}) {
 	switch p.OperationType {
-	case OperationTypeInsert, OperationTypeReplace:
+	case cdc.OperationTypeInsert, cdc.OperationTypeReplace:
 		ApplyPatientChangesToProfile(p.FullDocument, profile)
-	case OperationTypeUpdate:
+	case cdc.OperationTypeUpdate:
 		p.UpdateDescription.applyUpdatesToExistingProfile(profile)
 	}
 }
