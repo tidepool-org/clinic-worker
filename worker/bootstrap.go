@@ -9,7 +9,7 @@ import (
 	"go.uber.org/fx"
 )
 
-var Dependencies = fx.Provide(
+var dependencies = fx.Provide(
 	loggerProvider,
 	healthCheckServerProvider,
 	configProvider,
@@ -21,6 +21,7 @@ var Dependencies = fx.Provide(
 
 func New() *fx.App {
 	return fx.New(
+		dependencies,
 		confirmation.Module,
 		patients.Module,
 		migration.Module,
