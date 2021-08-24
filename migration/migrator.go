@@ -40,7 +40,7 @@ func NewMigrator(logger *zap.SugaredLogger, gatekeeper clients.Gatekeeper, clini
 
 func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string) error {
 	m.logger.Infof("Starting migration of patients of legacy clinician user %v to clinic %v", userId, clinicId)
-	permissions, err := m.gatekeeper.UsersInGroup(userId)
+	permissions, err := m.gatekeeper.GroupsForUser(userId)
 	if err != nil {
 		return err
 	}
