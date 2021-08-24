@@ -62,7 +62,6 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 			break
 		}
 
-
 		// we can't pass arguments to errgroup goroutines
 		// we need to explicitly redefine the variables,
 		// because we're launching the goroutines in a loop
@@ -121,10 +120,10 @@ func mapPermissions(permissions clients.Permissions) *clinics.PatientPermissions
 	if _, ok := permissions["custodian"]; ok {
 		mapped.Custodian = &permission
 	}
-	if _, ok := permissions["view"]; ok {
+	if _, ok := permissions["note"]; ok {
 		mapped.Note = &permission
 	}
-	if _, ok := permissions["note"]; ok {
+	if _, ok := permissions["view"]; ok {
 		mapped.View = &permission
 	}
 	if _, ok := permissions["upload"]; ok {
