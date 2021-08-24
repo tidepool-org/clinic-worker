@@ -62,6 +62,12 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 			break
 		}
 
+
+		// we can't pass arguments to errgroup goroutines
+		// we need to explicitly redefine the variables,
+		// because we're launching the goroutines in a loop
+		perms := perms
+		patientId := patientId
 		eg.Go(func() error {
 			defer sem.Release(1)
 			mCtx, _ := context.WithTimeout(ctx, patientMigrationTimeout)
@@ -83,6 +89,7 @@ func (m *migrator) migratePatient(ctx context.Context, userId, clinicId, patient
 }
 
 func (m *migrator) createPatient(ctx context.Context, clinicId, patientId string, permissions clients.Permissions) error {
+	m.logger.Infof("Migrating patient %v to clinic %v", patientId, clinicId)
 	body := clinics.CreatePatientFromUserJSONRequestBody{
 		Permissions: mapPermissions(permissions),
 	}
@@ -103,6 +110,7 @@ func (m *migrator) createPatient(ctx context.Context, clinicId, patientId string
 }
 
 func (m *migrator) removeSharingConnection(userId, patientId string) error {
+	m.logger.Infof("Removing sharing connection between legacy clinician %v and patient %v", userId, patientId)
 	_, err := m.gatekeeper.SetPermissions(userId, patientId, make(clients.Permissions))
 	return err
 }
