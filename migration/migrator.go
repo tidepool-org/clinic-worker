@@ -17,6 +17,7 @@ import (
 const (
 	threadiness             = 4
 	patientMigrationTimeout = 10 * time.Second
+	postMigrationRole       = "migrated_clinic"
 )
 
 type Migrator interface {
@@ -35,7 +36,7 @@ var _ Migrator = &migrator{}
 func NewMigrator(logger *zap.SugaredLogger, gatekeeper clients.Gatekeeper, shoreline shoreline.Client, clinics clinics.ClientWithResponsesInterface) (Migrator, error) {
 	return &migrator{
 		logger:     logger,
-		shoreline:  shoreline,	
+		shoreline:  shoreline,
 		gatekeeper: gatekeeper,
 		clinics:    clinics,
 	}, nil
@@ -86,7 +87,7 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 }
 
 func (m *migrator) removeLegacyClinicianRole(userId string) error {
-	roles := make([]string, 0)
+	roles := []string{postMigrationRole}
 	update := shoreline.UserUpdate{
 		Roles: &roles,
 	}
@@ -126,7 +127,7 @@ func (m *migrator) createPatient(ctx context.Context, clinicId, patientId string
 
 func (m *migrator) removeSharingConnection(userId, patientId string) error {
 	m.logger.Infof("Removing sharing connection between legacy clinician %v and patient %v", userId, patientId)
-	_, err := m.gatekeeper.SetPermissions(userId, patientId, make(clients.Permissions))
+	_, err := m.gatekeeper.SetPermissions(userId, patientId, nil)
 	return err
 }
 
