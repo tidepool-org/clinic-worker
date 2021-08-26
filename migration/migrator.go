@@ -5,6 +5,7 @@ import (
 	"fmt"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
@@ -25,14 +26,16 @@ type Migrator interface {
 type migrator struct {
 	logger     *zap.SugaredLogger
 	gatekeeper clients.Gatekeeper
+	shoreline  shoreline.Client
 	clinics    clinics.ClientWithResponsesInterface
 }
 
 var _ Migrator = &migrator{}
 
-func NewMigrator(logger *zap.SugaredLogger, gatekeeper clients.Gatekeeper, clinics clinics.ClientWithResponsesInterface) (Migrator, error) {
+func NewMigrator(logger *zap.SugaredLogger, gatekeeper clients.Gatekeeper, shoreline shoreline.Client, clinics clinics.ClientWithResponsesInterface) (Migrator, error) {
 	return &migrator{
 		logger:     logger,
+		shoreline:  shoreline,	
 		gatekeeper: gatekeeper,
 		clinics:    clinics,
 	}, nil
@@ -48,11 +51,16 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 	// The owner of the account is not a patient of a clinic
 	delete(permissions, userId)
 
-	m.logger.Infof("Migrating %v patients from legacy clinician user %v to %v", len(permissions), userId, clinicId)
+	// Make sure the clinician cannot use legacy version of uploader
+	m.logger.Infof("Removing legacy clinician role of user %v", userId)
+	if err := m.removeLegacyClinicianRole(userId); err != nil {
+		return err
+	}
 
 	sem := semaphore.NewWeighted(threadiness)
 	eg, c := errgroup.WithContext(ctx)
 
+	m.logger.Infof("Migrating %v patients from legacy clinician user %v to %v", len(permissions), userId, clinicId)
 	for patientId, perms := range permissions {
 		if c.Err() != nil {
 			break
@@ -75,6 +83,14 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 	}
 
 	return eg.Wait()
+}
+
+func (m *migrator) removeLegacyClinicianRole(userId string) error {
+	roles := make([]string, 0)
+	update := shoreline.UserUpdate{
+		Roles: &roles,
+	}
+	return m.shoreline.UpdateUser(userId, update, m.shoreline.TokenProvide())
 }
 
 func (m *migrator) migratePatient(ctx context.Context, userId, clinicId, patientId string, permissions clients.Permissions) error {
