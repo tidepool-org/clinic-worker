@@ -106,7 +106,9 @@ func (m *migrator) migratePatient(ctx context.Context, userId, clinicId, patient
 
 func (m *migrator) createPatient(ctx context.Context, clinicId, patientId string, permissions clients.Permissions) error {
 	m.logger.Infof("Migrating patient %v to clinic %v", patientId, clinicId)
+	isMigrated := true
 	body := clinics.CreatePatientFromUserJSONRequestBody{
+		IsMigrated : &isMigrated,
 		Permissions: mapPermissions(permissions),
 	}
 	response, err := m.clinics.CreatePatientFromUserWithResponse(
