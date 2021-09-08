@@ -145,6 +145,10 @@ github.com/tidepool-org/go-common v0.8.3-0.20210505171159-1054908092a2 h1:k1Ukub
 github.com/tidepool-org/go-common v0.8.3-0.20210505171159-1054908092a2/go.mod h1:0S1OUe8aQH8bKLyeemNKW4WOPkCXxK5FqN9OXu1as7E=
 github.com/tidepool-org/go-common v0.8.3-0.20210823165606-d8be3dea294c h1:jc9cPoOg6MMuJRnFp0hFBFwCiRG8xihDCwyKs+man9A=
 github.com/tidepool-org/go-common v0.8.3-0.20210823165606-d8be3dea294c/go.mod h1:0S1OUe8aQH8bKLyeemNKW4WOPkCXxK5FqN9OXu1as7E=
+github.com/tidepool-org/go-common v0.8.3-0.20210908123313-20a2fe2022dc h1:786CQqzrv/llPnflOUItB/57tMXK2u/WnzyJ3NFEP9o=
+github.com/tidepool-org/go-common v0.8.3-0.20210908123313-20a2fe2022dc/go.mod h1:0S1OUe8aQH8bKLyeemNKW4WOPkCXxK5FqN9OXu1as7E=
+github.com/tidepool-org/go-common v0.8.3-0.20210908125010-0fc14431f585 h1:xw3gV8GzAXGx6LeWigDPLjkP2LAevi2ilctOdDEIYBg=
+github.com/tidepool-org/go-common v0.8.3-0.20210908125010-0fc14431f585/go.mod h1:0S1OUe8aQH8bKLyeemNKW4WOPkCXxK5FqN9OXu1as7E=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasttemplate v1.0.1/go.mod h1:UQGH1tvbgY+Nz5t2n7tXsz52dQxojPUpymEIMZ47gx8=
 github.com/valyala/fasttemplate v1.2.1/go.mod h1:KHLXt3tVN2HBp8eijSv/kGJopbvo7S+qRAEEKiv+SiQ=
