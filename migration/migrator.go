@@ -58,6 +58,12 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 		return err
 	}
 
+	// Make sure the clinician cannot create legacy custodial accounts in uploader
+	m.logger.Infof("Deleting active user sessions of user %v", userId)
+	if err := m.shoreline.DeleteUserSessions(userId, m.shoreline.TokenProvide()); err != nil {
+		return err
+	}
+
 	sem := semaphore.NewWeighted(threadiness)
 	eg, c := errgroup.WithContext(ctx)
 
