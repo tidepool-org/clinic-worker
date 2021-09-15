@@ -107,7 +107,7 @@ func (p *MigrationCDCConsumer) handleCDCEvent(event MigrationCDCEvent) error {
 		return nil
 	}
 
-	p.logger.Infow("processing event", "event", event)
+	p.logger.Infow("processing event", "event", "offset", event.Offset, event)
 	userId := event.FullDocument.UserId
 	clinicId := event.FullDocument.ClinicId.Value
 	return p.migrator.MigratePatients(context.Background(), userId, clinicId)

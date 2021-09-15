@@ -64,7 +64,7 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 	m.logger.Infof("Starting migration of patients of legacy clinician user %v to clinic %v", userId, clinicId)
 	migration, err := m.createMigration(ctx, userId, clinicId)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// Make sure the clinician cannot use legacy version of uploader
@@ -104,7 +104,11 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 		})
 	}
 
-	return eg.Wait()
+	err = eg.Wait()
+	if err == nil {
+		m.logger.Infof("Legacy clinician user %v was successfully migrated to clinic %v", userId, clinicId)
+	}
+	return err
 }
 
 func (m *migrator) createMigration(ctx context.Context, userId, clinicId string) (*Migration, error) {
