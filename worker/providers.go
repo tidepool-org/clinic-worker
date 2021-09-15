@@ -8,6 +8,7 @@ import (
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/disc"
 	"github.com/tidepool-org/go-common/clients/shoreline"
+	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
 	"net/http"
 	"time"
@@ -78,4 +79,14 @@ func clinicProvider(config DependenciesConfig, shoreline shoreline.Client) (clin
 		return nil
 	})
 	return clinics.NewClientWithResponses(config.ClinicsHost, opts)
+}
+
+func mailerProvider() (*clients.MailerClient, error) {
+	config := &events.CloudEventsConfig{}
+	if err := envconfig.Process("", config); err != nil {
+		return nil, err
+	}
+
+	config.KafkaTopic = clients.MailerTopic
+	return clients.NewMailerClient(config)
 }
