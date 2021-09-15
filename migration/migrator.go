@@ -188,8 +188,12 @@ func (m *migrator) createPatient(ctx context.Context, migration *Migration, pati
 			// the user is already a patient of the clinic
 			var patientResponse *clinics.GetPatientResponse
 			patientResponse, err = m.clinics.GetPatientWithResponse(ctx, clinics.ClinicId(clinicId), clinics.PatientId(patientId))
-			if err == nil && patientResponse.StatusCode() == http.StatusOK {
+			if err != nil{
+				err = fmt.Errorf("error fetching patient: %v", err)
+			} else if patientResponse.StatusCode() == http.StatusOK {
 				patient = patientResponse.JSON200
+			} else {
+				err = fmt.Errorf("unexpected status code when fetching patient %v", response.StatusCode())
 			}
 		} else {
 			err = fmt.Errorf("unexpected status code %v", response.StatusCode())
