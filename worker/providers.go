@@ -88,6 +88,7 @@ func mailerProvider() (*clients.MailerClient, error) {
 	}
 
 	config.KafkaTopic = clients.MailerTopic
+	config.EventSource = config.KafkaConsumerGroup
 	// We are using a sync producer which requires setting the variables below
 	config.SaramaConfig.Producer.Return.Errors = true
 	config.SaramaConfig.Producer.Return.Successes = true

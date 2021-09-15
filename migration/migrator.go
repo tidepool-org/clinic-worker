@@ -154,10 +154,10 @@ func (m *migrator) migratePatient(ctx context.Context, migration *Migration, pat
 	if err != nil {
 		return err
 	}
-	if err = m.removeSharingConnection(migration.legacyClinicianUserId, patientId); err != nil {
+	if err = m.sendMigrationEmail(ctx, migration, patient); err != nil {
 		return err
 	}
-	if err = m.sendMigrationEmail(ctx, migration, patient); err != nil {
+	if err = m.removeSharingConnection(migration.legacyClinicianUserId, patientId); err != nil {
 		return err
 	}
 	return nil
