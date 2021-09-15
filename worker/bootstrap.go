@@ -18,6 +18,7 @@ var dependencies = fx.Provide(
 	shorelineProvider,
 	gatekeeperProvider,
 	clinicProvider,
+	mailerProvider,
 )
 
 func New() *fx.App {
