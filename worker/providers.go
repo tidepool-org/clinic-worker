@@ -82,11 +82,15 @@ func clinicProvider(config DependenciesConfig, shoreline shoreline.Client) (clin
 }
 
 func mailerProvider() (*clients.MailerClient, error) {
-	config := &events.CloudEventsConfig{}
-	if err := envconfig.Process("", config); err != nil {
+	config := events.NewConfig()
+	if err := config.LoadFromEnv(); err != nil {
 		return nil, err
 	}
 
 	config.KafkaTopic = clients.MailerTopic
+	// We are using a sync producer which requires setting the variables below
+	config.SaramaConfig.Producer.Return.Errors = true
+	config.SaramaConfig.Producer.Return.Successes = true
+
 	return clients.NewMailerClient(config)
 }
