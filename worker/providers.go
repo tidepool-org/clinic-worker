@@ -11,6 +11,7 @@ import (
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -87,6 +88,10 @@ func mailerProvider() (*clients.MailerClient, error) {
 		return nil, err
 	}
 
+	// Hack - CDC uses '.' as separator, topics managed by use '-'
+	if strings.HasSuffix(config.KafkaTopicPrefix, ".") {
+		config.KafkaTopicPrefix = strings.TrimSuffix(config.KafkaTopicPrefix, ".") + "-"
+	}
 	config.KafkaTopic = clients.MailerTopic
 	config.EventSource = config.KafkaConsumerGroup
 	// We are using a sync producer which requires setting the variables below

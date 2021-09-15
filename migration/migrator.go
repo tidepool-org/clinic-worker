@@ -186,7 +186,8 @@ func (m *migrator) createPatient(ctx context.Context, migration *Migration, pati
 			patient = response.JSON200
 		} else if response.StatusCode() == http.StatusConflict {
 			// the user is already a patient of the clinic
-			patientResponse, err := m.clinics.GetPatientWithResponse(ctx, clinics.ClinicId(clinicId), clinics.PatientId(patientId))
+			var patientResponse *clinics.GetPatientResponse
+			patientResponse, err = m.clinics.GetPatientWithResponse(ctx, clinics.ClinicId(clinicId), clinics.PatientId(patientId))
 			if err == nil && patientResponse.StatusCode() == http.StatusOK {
 				patient = patientResponse.JSON200
 			}
