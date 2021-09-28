@@ -41,7 +41,6 @@ type Params struct {
 	Seagull    clients.Seagull
 }
 
-
 func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
 	config, err := cdc.GetConfig()
 	if err != nil {

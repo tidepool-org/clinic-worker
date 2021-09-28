@@ -21,6 +21,8 @@ const (
 	patientMigrationTimeout  = 10 * time.Second
 	postMigrationRole        = "migrated_clinic"
 	patientMigrationTemplate = "migrate_patient"
+	migrationStatusRunning   = "running"
+	migrationStatusCompleted = "completed"
 )
 
 type Migrator interface {
@@ -67,6 +69,11 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 		return err
 	}
 
+	m.logger.Infof("Updating migration status of user %v to running", userId)
+	if err := m.updateMigrationsStatus(ctx, migration, migrationStatusRunning); err != nil {
+		return err
+	}
+
 	// Make sure the clinician cannot use legacy version of uploader
 	m.logger.Infof("Removing legacy clinician role of user %v", userId)
 	if err := m.removeLegacyClinicianRole(userId); err != nil {
@@ -104,11 +111,18 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 		})
 	}
 
-	err = eg.Wait()
-	if err == nil {
-		m.logger.Infof("Legacy clinician user %v was successfully migrated to clinic %v", userId, clinicId)
+	if err := eg.Wait(); err != nil {
+		return err
+	} else {
+		m.logger.Infof("Patients of clinician user %v were successfully migrated to clinic %v", userId, clinicId)
 	}
-	return err
+
+	m.logger.Infof("Updating migration status of user %v to completed", userId)
+	if err := m.updateMigrationsStatus(ctx, migration, migrationStatusCompleted); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (m *migrator) createMigration(ctx context.Context, userId, clinicId string) (*Migration, error) {
@@ -139,6 +153,20 @@ func (m *migrator) createMigration(ctx context.Context, userId, clinicId string)
 		clinic:                 response.JSON200,
 		legacyPatients:         patients,
 	}, nil
+}
+
+func (m *migrator) updateMigrationsStatus(ctx context.Context, migration *Migration, status string) error {
+	body := clinics.UpdateMigrationJSONRequestBody{
+		Status: clinics.MigrationStatus(status),
+	}
+	resp, err := m.clinics.UpdateMigrationWithResponse(ctx, migration.clinic.Id, clinics.UserId(migration.legacyClinicianUserId), body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("unexpected response code when updating migration status: %v", resp.StatusCode())
+	}
+	return nil
 }
 
 func (m *migrator) removeLegacyClinicianRole(userId string) error {
@@ -188,7 +216,7 @@ func (m *migrator) createPatient(ctx context.Context, migration *Migration, pati
 			// the user is already a patient of the clinic
 			var patientResponse *clinics.GetPatientResponse
 			patientResponse, err = m.clinics.GetPatientWithResponse(ctx, clinics.ClinicId(clinicId), clinics.PatientId(patientId))
-			if err != nil{
+			if err != nil {
 				err = fmt.Errorf("error fetching patient: %v", err)
 			} else if patientResponse.StatusCode() == http.StatusOK {
 				patient = patientResponse.JSON200

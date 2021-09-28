@@ -8,7 +8,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
-	github.com/tidepool-org/clinic/client v0.0.0-20210827102256-95ed68f7bed7
+	github.com/tidepool-org/clinic/client v0.0.0-20210928135732-b1b1f051a97d
 	github.com/tidepool-org/go-common v0.8.3-0.20210915091246-ec43196f50dd
 	go.uber.org/fx v1.13.1
 	go.uber.org/multierr v1.6.0 // indirect

@@ -1,6 +1,5 @@
 package patients
 
-
 func ApplyPatientChangesToProfile(patient Patient, profile map[string]interface{}) {
 	patientProfile := EnsurePatientProfileExists(profile)
 	if patient.FullName != nil {
@@ -56,4 +55,3 @@ func EnsurePatientProfileExists(profile map[string]interface{}) map[string]inter
 		return patientProfile
 	}
 }
-

@@ -7,4 +7,3 @@ func GetConfig() (*events.CloudEventsConfig, error) {
 	err := config.LoadFromEnv()
 	return config, err
 }
-
