@@ -21,8 +21,8 @@ const (
 	patientMigrationTimeout  = 10 * time.Second
 	postMigrationRole        = "migrated_clinic"
 	patientMigrationTemplate = "migrate_patient"
-	migrationStatusRunning   = "running"
-	migrationStatusCompleted = "completed"
+	migrationStatusRunning   = "RUNNING"
+	migrationStatusCompleted = "COMPLETED"
 )
 
 type Migrator interface {
