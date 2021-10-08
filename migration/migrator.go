@@ -17,12 +17,13 @@ import (
 )
 
 const (
-	threadiness              = 4
-	patientMigrationTimeout  = 10 * time.Second
-	postMigrationRole        = "migrated_clinic"
-	patientMigrationTemplate = "migrate_patient"
-	migrationStatusRunning   = "RUNNING"
-	migrationStatusCompleted = "COMPLETED"
+	threadiness                      = 4
+	patientMigrationTimeout          = 10 * time.Second
+	postMigrationRole                = "migrated_clinic"
+	patientMigrationTemplate         = "migrate_patient"
+	clinicMigrationCompletedTemplate = "clinic_migration_complete"
+	migrationStatusRunning           = "RUNNING"
+	migrationStatusCompleted         = "COMPLETED"
 )
 
 type Migrator interface {
@@ -119,6 +120,11 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 
 	m.logger.Infof("Updating migration status of user %v to completed", userId)
 	if err := m.updateMigrationsStatus(ctx, migration, migrationStatusCompleted); err != nil {
+		return err
+	}
+	
+	if err := m.sendMigrationCompletedEmail(ctx, migration); err != nil {
+		m.logger.Errorf("error sending migration completed email for clinic %v: %w", clinicId, err)
 		return err
 	}
 
@@ -254,6 +260,25 @@ func (m *migrator) sendMigrationEmail(ctx context.Context, migrationContext *Mig
 		Variables: map[string]string{
 			"LegacyClinicianName": migrationContext.legacyClinicianProfile.Name,
 			"ClinicName":          migrationContext.clinic.Name,
+		},
+	}
+
+	return m.mailer.SendEmailTemplate(ctx, email)
+}
+
+func (m *migrator) sendMigrationCompletedEmail(ctx context.Context, migrationContext *Migration) error {
+	m.logger.Debugf("Fetching legacy clinician user %v", migrationContext.legacyClinicianUserId)
+	user, err := m.shoreline.GetUser(migrationContext.legacyClinicianUserId, m.shoreline.TokenProvide())
+	if err != nil {
+		return err
+	}
+
+	m.logger.Infof("Sending migration completed email to user %s",  migrationContext.legacyClinicianUserId)
+	email := events.SendEmailTemplateEvent{
+		Recipient: user.Username,
+		Template:  clinicMigrationCompletedTemplate,
+		Variables: map[string]string{
+			"ClinicName": migrationContext.clinic.Name,
 		},
 	}
 
