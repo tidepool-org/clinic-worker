@@ -82,13 +82,14 @@ func clinicProvider(config DependenciesConfig, shoreline shoreline.Client) (clin
 	return clinics.NewClientWithResponses(config.ClinicsHost, opts)
 }
 
-func mailerProvider() (*clients.MailerClient, error) {
+func mailerProvider() (clients.MailerClient, error) {
 	config := events.NewConfig()
 	if err := config.LoadFromEnv(); err != nil {
 		return nil, err
 	}
 
-	// Hack - CDC uses '.' as separator, topics managed by use '-'
+	// Hack - Replaces '.' suffix with '-', because mongo CDC uses '.' as separator,
+	// and the topics managed by us (like the mailer topic) use '-'
 	if strings.HasSuffix(config.KafkaTopicPrefix, ".") {
 		config.KafkaTopicPrefix = strings.TrimSuffix(config.KafkaTopicPrefix, ".") + "-"
 	}

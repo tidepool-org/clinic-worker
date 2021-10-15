@@ -9,7 +9,7 @@ require (
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/tidepool-org/clinic/client v0.0.0-20210928135732-b1b1f051a97d
-	github.com/tidepool-org/go-common v0.8.3-0.20210915091246-ec43196f50dd
+	github.com/tidepool-org/go-common v0.8.3-0.20211014160932-4757171e3914
 	go.uber.org/fx v1.13.1
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0
