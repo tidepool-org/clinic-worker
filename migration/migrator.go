@@ -34,7 +34,7 @@ type migrator struct {
 	clinics    clinics.ClientWithResponsesInterface
 	gatekeeper clients.Gatekeeper
 	logger     *zap.SugaredLogger
-	mailer     *clients.MailerClient
+	mailer     clients.MailerClient
 	seagull    clients.Seagull
 	shoreline  shoreline.Client
 }
@@ -47,7 +47,7 @@ type MigratorParams struct {
 	Clinics    clinics.ClientWithResponsesInterface
 	Gatekeeper clients.Gatekeeper
 	Logger     *zap.SugaredLogger
-	Mailer     *clients.MailerClient
+	Mailer     clients.MailerClient
 	Seagull    clients.Seagull
 	Shoreline  shoreline.Client
 }
