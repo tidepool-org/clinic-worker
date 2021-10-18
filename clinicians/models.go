@@ -5,12 +5,13 @@ import "github.com/tidepool-org/clinic-worker/cdc"
 type PatientCDCEvent struct {
 	Offset            int64             `json:"-"`
 	OperationType     string            `json:"operationType"`
-	FullDocument      Clinician         `json:"fullDocument"`
+	FullDocument      *Clinician         `json:"fullDocument"`
 	UpdateDescription UpdateDescription `json:"updateDescription"`
 }
 
 func (p PatientCDCEvent) ShouldApplyUpdates() bool {
-	return p.OperationType == cdc.OperationTypeUpdate
+	return p.OperationType == cdc.OperationTypeUpdate && p.FullDocument != nil &&
+		p.FullDocument.ClinicId != nil && p.FullDocument.UserId != ""
 }
 
 type Clinician struct {
