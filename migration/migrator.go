@@ -227,7 +227,7 @@ func (m *migrator) createPatient(ctx context.Context, migration *Migration, pati
 			} else if patientResponse.StatusCode() == http.StatusOK {
 				patient = patientResponse.JSON200
 			} else {
-				err = fmt.Errorf("unexpected status code when fetching patient %v", response.StatusCode())
+				err = fmt.Errorf("unexpected status code when fetching patient %v", patientResponse.StatusCode())
 			}
 		} else {
 			err = fmt.Errorf("unexpected status code %v", response.StatusCode())
