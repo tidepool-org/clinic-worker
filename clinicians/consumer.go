@@ -9,6 +9,7 @@ import (
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
+	"github.com/tidepool-org/go-common/clients/status"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -210,7 +211,7 @@ func (p *ClinicianCDCConsumer) getClinicianName(ctx context.Context, clinicId, c
 			return *response.JSON200.Name, nil
 		}
 	} else if response.StatusCode() != http.StatusNotFound {
-		return defaultClinicianName, fmt.Errorf("unexpected status code %v", response.StatusCode())
+		return defaultClinicianName, fmt.Errorf("unexpected status code when fetching clinician %v", response.StatusCode())
 	}
 
 	return defaultClinicianName, nil
@@ -223,22 +224,22 @@ func (p *ClinicianCDCConsumer) getClinicName(ctx context.Context, clinicId strin
 		return "", err
 	}
 
-	if response.StatusCode() == http.StatusOK {
-		return response.JSON200.Name, nil
+	if response.StatusCode() != http.StatusOK {
+		return "", fmt.Errorf("unexpected status code when fetching clinic %v", response.StatusCode())
 	}
 
-	return "", nil
+	return response.JSON200.Name, nil
 }
 
 func (p *ClinicianCDCConsumer) getUserEmail(userId string) (string, error) {
 	p.logger.Debugw("Fetching user by id", "userId", userId)
 	user, err := p.shoreline.GetUser(userId, p.shoreline.TokenProvide())
 	if err != nil {
-		return "", err
-	}
-	if user == nil {
-		// User was not found, we can't send an email
-		return "", nil
+		if e, ok := err.(*status.StatusError); ok && e.Code == http.StatusNotFound {
+			// User was probably deleted, nothing we can do
+			return "", nil
+		}
+		return "", fmt.Errorf("unexpected error when fetching user: %w", err)
 	}
 	return user.Username, nil
 }
