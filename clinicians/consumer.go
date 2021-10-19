@@ -189,7 +189,7 @@ func (p *ClinicianCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			Template:  "clinician_permissions_updated",
 			Variables: map[string]string{
 				"ClinicName":    <-clinicNameChan,
-				"ClinicianName": <-clinicNameChan,
+				"ClinicianName": <-updatedByUserNameChan,
 			},
 		}
 
