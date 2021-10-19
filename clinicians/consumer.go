@@ -40,9 +40,10 @@ type ClinicianCDCConsumer struct {
 type Params struct {
 	fx.In
 
-	Clinics clinics.ClientWithResponsesInterface
-	Logger  *zap.SugaredLogger
-	Mailer  clients.MailerClient
+	Clinics   clinics.ClientWithResponsesInterface
+	Logger    *zap.SugaredLogger
+	Mailer    clients.MailerClient
+	Shoreline shoreline.Client
 }
 
 func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
@@ -68,9 +69,10 @@ func CreateConsumer(p Params) events.ConsumerFactory {
 
 func NewClinicianCDCConsumer(p Params) (events.MessageConsumer, error) {
 	return &ClinicianCDCConsumer{
-		clinics: p.Clinics,
-		logger:  p.Logger,
-		mailer:  p.Mailer,
+		clinics:   p.Clinics,
+		logger:    p.Logger,
+		mailer:    p.Mailer,
+		shoreline: p.Shoreline,
 	}, nil
 }
 
