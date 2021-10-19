@@ -132,9 +132,9 @@ func (p *ClinicianCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		updatedByUserId := update.UpdatedBy
 
 		eg, egCtx := errgroup.WithContext(ctx)
-		recipientChan := make(chan string, 0)
-		clinicNameChan := make(chan string, 0)
-		updatedByUserNameChan := make(chan string, 0)
+		recipientChan := make(chan string, 1)
+		clinicNameChan := make(chan string, 1)
+		updatedByUserNameChan := make(chan string, 1)
 
 		eg.Go(func() error {
 			defer close(recipientChan)
