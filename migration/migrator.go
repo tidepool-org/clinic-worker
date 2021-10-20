@@ -122,7 +122,7 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 	if err := m.updateMigrationsStatus(ctx, migration, migrationStatusCompleted); err != nil {
 		return err
 	}
-	
+
 	if err := m.sendMigrationCompletedEmail(ctx, migration); err != nil {
 		m.logger.Errorf("error sending migration completed email for clinic %v: %w", clinicId, err)
 		return err
@@ -273,7 +273,7 @@ func (m *migrator) sendMigrationCompletedEmail(ctx context.Context, migrationCon
 		return err
 	}
 
-	m.logger.Infof("Sending migration completed email to user %s",  migrationContext.legacyClinicianUserId)
+	m.logger.Infof("Sending migration completed email to user %s", migrationContext.legacyClinicianUserId)
 	email := events.SendEmailTemplateEvent{
 		Recipient: user.Username,
 		Template:  clinicMigrationCompletedTemplate,
