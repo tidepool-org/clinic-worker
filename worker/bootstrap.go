@@ -3,6 +3,7 @@ package worker
 import (
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/clinicians"
+	"github.com/tidepool-org/clinic-worker/clinics"
 	"github.com/tidepool-org/clinic-worker/confirmation"
 	"github.com/tidepool-org/clinic-worker/migration"
 	"github.com/tidepool-org/clinic-worker/patients"
@@ -27,6 +28,7 @@ func New() *fx.App {
 		dependencies,
 		confirmation.Module,
 		patients.Module,
+		clinics.Module,
 		clinicians.Module,
 		migration.Module,
 		fx.Invoke(

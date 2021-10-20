@@ -5,7 +5,7 @@ import "github.com/tidepool-org/clinic-worker/cdc"
 type PatientCDCEvent struct {
 	Offset            int64             `json:"-"`
 	OperationType     string            `json:"operationType"`
-	FullDocument      *Clinician         `json:"fullDocument"`
+	FullDocument      *Clinician        `json:"fullDocument"`
 	UpdateDescription UpdateDescription `json:"updateDescription"`
 }
 
