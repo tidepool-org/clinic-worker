@@ -7,8 +7,10 @@ import (
 	"github.com/tidepool-org/clinic-worker/confirmation"
 	"github.com/tidepool-org/clinic-worker/migration"
 	"github.com/tidepool-org/clinic-worker/patients"
+	"github.com/tidepool-org/clinic-worker/users"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
+	"net/http"
 )
 
 var dependencies = fx.Provide(
@@ -23,27 +25,31 @@ var dependencies = fx.Provide(
 	mailerProvider,
 )
 
+var Modules = []fx.Option{
+	dependencies,
+	confirmation.Module,
+	patients.Module,
+	clinics.Module,
+	clinicians.Module,
+	migration.Module,
+	users.Module,
+}
+
 func New() *fx.App {
-	return fx.New(
-		dependencies,
-		confirmation.Module,
-		patients.Module,
-		clinics.Module,
-		clinicians.Module,
-		migration.Module,
-		fx.Invoke(
-			startConsumers,
-			startHealthCheckServer,
-		),
+	invokes := fx.Invoke(
+		startConsumers,
+		startHealthCheckServer,
 	)
+	return fx.New(append(Modules, invokes)...)
 }
 
 type Components struct {
 	fx.In
 
-	Consumers  []events.EventConsumer `group:"consumers"`
-	Lifecycle  fx.Lifecycle
-	Shutdowner fx.Shutdowner
+	Consumers         []events.EventConsumer `group:"consumers"`
+	HealthCheckServer *http.Server
+	Lifecycle         fx.Lifecycle
+	Shutdowner        fx.Shutdowner
 }
 
 func startConsumers(components Components) {
