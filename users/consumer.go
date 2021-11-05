@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	UserEventsTopic = "user_events"
+	UserEventsTopic = "user-events"
 )
 
 var Module = fx.Provide(fx.Annotated{
