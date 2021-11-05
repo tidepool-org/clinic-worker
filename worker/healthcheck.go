@@ -8,27 +8,30 @@ import (
 )
 
 func healthCheckServerProvider() *http.Server {
-	server := &http.Server{Addr: ":8080"}
-	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	return server
+	return &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
 }
 
-func startHealthCheckServer(server *http.Server, lifecycle fx.Lifecycle, shutdowner fx.Shutdowner) {
-	lifecycle.Append(fx.Hook{
+func startHealthCheckServer(components Components) {
+	components.Lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
-				if err := server.ListenAndServe(); err != nil {
+				if err := components.HealthCheckServer.ListenAndServe(); err != nil {
 					log.Printf("http listen and serve error: %v", err)
-					_ = shutdowner.Shutdown()
+					_ = components.Shutdowner.Shutdown()
 				}
 			}()
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			return server.Shutdown(ctx)
+			return components.HealthCheckServer.Shutdown(ctx)
 		},
 	})
 }
