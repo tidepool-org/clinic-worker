@@ -5,6 +5,7 @@ import (
 	ev "github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"strings"
 )
 
 const (
@@ -22,6 +23,12 @@ func NewEventConsumer(clinicService clinics.ClientWithResponsesInterface, logger
 		return nil, err
 	}
 	config.KafkaTopic = UserEventsTopic
+
+	// Hack - Replaces '.' suffix with '-', because mongo CDC uses '.' as separator,
+	// and the topics managed by us (like the users topic) use '-'
+	if strings.HasSuffix(config.KafkaTopicPrefix, ".") {
+		config.KafkaTopicPrefix = strings.TrimSuffix(config.KafkaTopicPrefix, ".") + "-"
+	}
 
 	return ev.NewFaultTolerantConsumerGroup(config, func() (ev.MessageConsumer, error) {
 		handler, err := NewUserDataDeletionHandler(clinicService, logger)
