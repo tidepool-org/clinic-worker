@@ -204,8 +204,10 @@ func (m *migrator) createPatient(ctx context.Context, migration *Migration, pati
 	var err error
 
 	isMigrated := true
+	legacyClinicianId := clinics.TidepoolUserId(migration.legacyClinicianUserId)
 	body := clinics.CreatePatientFromUserJSONRequestBody{
 		IsMigrated:  &isMigrated,
+		LegacyClinicianId: &legacyClinicianId,
 		Permissions: mapPermissions(permissions),
 	}
 	response, err := m.clinics.CreatePatientFromUserWithResponse(
