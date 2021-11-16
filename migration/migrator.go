@@ -188,6 +188,13 @@ func (m *migrator) migratePatient(ctx context.Context, migration *Migration, pat
 	if err != nil {
 		return err
 	}
+	if patient == nil {
+		m.logger.Infow(
+			"Patient couldn't be migrated, because the user doesn't exist anymore",
+			"clinicId", string(migration.clinic.Id), "userId", patientId,
+		)
+		return nil
+	}
 	if err = m.sendMigrationEmail(ctx, migration, patient); err != nil {
 		return err
 	}
@@ -231,6 +238,8 @@ func (m *migrator) createPatient(ctx context.Context, migration *Migration, pati
 			} else {
 				err = fmt.Errorf("unexpected status code when fetching patient %v", patientResponse.StatusCode())
 			}
+		} else if response.StatusCode() == http.StatusNotFound {
+			return nil, nil
 		} else {
 			err = fmt.Errorf("unexpected status code %v", response.StatusCode())
 		}
