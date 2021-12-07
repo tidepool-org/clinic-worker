@@ -151,8 +151,12 @@ func (p *PatientCDCConsumer) applyInviteUpdate(event PatientCDCEvent) error {
 		return errors.New("expected patient id to be defined")
 	}
 
-	userId := *event.FullDocument.UserId
-	if err := p.hydrophone.UpsertSignUpInvite(userId); err != nil {
+	invite := confirmation.SignUpInvite{
+		UserId:    *event.FullDocument.UserId,
+		ClinicId:  event.FullDocument.ClinicId.Value,
+		InvitedBy: event.FullDocument.InvitedBy,
+	}
+	if err := p.hydrophone.UpsertSignUpInvite(invite); err != nil {
 		p.logger.Warnw("unable to upsert sign up invite", "offset", event.Offset, zap.Error(err))
 		return err
 	}
