@@ -1,6 +1,8 @@
 package confirmation
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/errors"
@@ -13,8 +15,14 @@ var Module = fx.Provide(
 	NewService,
 )
 
+type SignUpInvite struct {
+	UserId    string  `json:"-"`
+	ClinicId  string  `json:"clinicId"`
+	InvitedBy *string `json:"invitedBy"`
+}
+
 type Service interface {
-	UpsertSignUpInvite(userId string) error
+	UpsertSignUpInvite(invite SignUpInvite) error
 }
 
 func NewService(config Config, shorelineClient shoreline.Client, httpClient *http.Client) (Service, error) {
@@ -31,9 +39,13 @@ type service struct {
 	shorelineClient shoreline.Client
 }
 
-func (s *service) UpsertSignUpInvite(userId string) error {
-	url := fmt.Sprintf("%s/confirm/send/signup/%s", s.host, userId)
-	req, err := http.NewRequest("POST", url, nil)
+func (s *service) UpsertSignUpInvite(invite SignUpInvite) error {
+	url := fmt.Sprintf("%s/confirm/send/signup/%s", s.host, invite.UserId)
+	buf := new(bytes.Buffer)
+	if err := json.NewEncoder(buf).Encode(invite); err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST", url, buf)
 	if err != nil {
 		return fmt.Errorf("unable to create request: %w", err)
 	}
@@ -44,7 +56,7 @@ func (s *service) UpsertSignUpInvite(userId string) error {
 		return fmt.Errorf("unable to upsert confirmation: %w", err)
 	}
 
-	// Hydrophone returns 403 when there's an existing invite
+	// Hydrophone returns 403 when there's an existing invite so that's an expected response
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusForbidden {
 		return errors.Newf("unexpected status code %v when upserting confirmation", resp.StatusCode)
 	}
