@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
+	"github.com/tidepool-org/clinic-worker/marketo"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
@@ -33,18 +34,20 @@ var Module = fx.Provide(fx.Annotated{
 type ClinicianCDCConsumer struct {
 	logger *zap.SugaredLogger
 
-	clinics   clinics.ClientWithResponsesInterface
-	mailer    clients.MailerClient
-	shoreline shoreline.Client
+	clinics       clinics.ClientWithResponsesInterface
+	mailer        clients.MailerClient
+	marketoClient marketo.Client
+	shoreline     shoreline.Client
 }
 
 type Params struct {
 	fx.In
 
-	Clinics   clinics.ClientWithResponsesInterface
-	Logger    *zap.SugaredLogger
-	Mailer    clients.MailerClient
-	Shoreline shoreline.Client
+	Clinics       clinics.ClientWithResponsesInterface
+	Logger        *zap.SugaredLogger
+	Mailer        clients.MailerClient
+	MarketoClient marketo.Client
+	Shoreline     shoreline.Client
 }
 
 func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
@@ -70,10 +73,11 @@ func CreateConsumer(p Params) events.ConsumerFactory {
 
 func NewClinicianCDCConsumer(p Params) (events.MessageConsumer, error) {
 	return &ClinicianCDCConsumer{
-		clinics:   p.Clinics,
-		logger:    p.Logger,
-		mailer:    p.Mailer,
-		shoreline: p.Shoreline,
+		clinics:       p.Clinics,
+		logger:        p.Logger,
+		mailer:        p.Mailer,
+		marketoClient: p.MarketoClient,
+		shoreline:     p.Shoreline,
 	}, nil
 }
 
@@ -122,10 +126,24 @@ func (p *ClinicianCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 
 	p.logger.Infow("processing event", "event", event)
 
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-	defer cancel()
+	if event.FullDocument.UserId != "" {
+		if err := p.refreshMarketoUserDetails(event.FullDocument.UserId); err != nil {
+			return err
+		}
+	}
 
+	if err := p.sendPermissionsUpdatedEmail(event); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *ClinicianCDCConsumer) sendPermissionsUpdatedEmail(event PatientCDCEvent) error {
 	if count := len(event.UpdateDescription.UpdatedFields.RolesUpdates); count > 0 {
+		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+		defer cancel()
+
 		clinicId := event.FullDocument.ClinicId.Value
 		clinicianId := event.FullDocument.UserId
 
@@ -242,4 +260,13 @@ func (p *ClinicianCDCConsumer) getUserEmail(userId string) (string, error) {
 		return "", fmt.Errorf("unexpected error when fetching user: %w", err)
 	}
 	return user.Username, nil
+}
+
+func (p *ClinicianCDCConsumer) refreshMarketoUserDetails(userId string) error {
+	p.logger.Debugw("Refreshing marketo user details", "userId", userId)
+	if err := p.marketoClient.RefreshUserDetails(userId); err != nil {
+		// Log the error and move on to avoid getting the process stuck
+		p.logger.Error("unable to refresh marketo user details: %w", "userId", userId, zap.Error(err))
+	}
+	return nil
 }

@@ -10,7 +10,8 @@ type PatientCDCEvent struct {
 }
 
 func (p PatientCDCEvent) ShouldApplyUpdates() bool {
-	return p.OperationType == cdc.OperationTypeUpdate && p.FullDocument != nil &&
+	return (p.OperationType == cdc.OperationTypeUpdate || p.OperationType == cdc.OperationTypeInsert || p.OperationType == cdc.OperationTypeReplace) &&
+		p.FullDocument != nil &&
 		p.FullDocument.ClinicId != nil && p.FullDocument.UserId != ""
 }
 
