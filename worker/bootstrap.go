@@ -5,6 +5,7 @@ import (
 	"github.com/tidepool-org/clinic-worker/clinicians"
 	"github.com/tidepool-org/clinic-worker/clinics"
 	"github.com/tidepool-org/clinic-worker/confirmation"
+	"github.com/tidepool-org/clinic-worker/marketo"
 	"github.com/tidepool-org/clinic-worker/migration"
 	"github.com/tidepool-org/clinic-worker/patients"
 	"github.com/tidepool-org/clinic-worker/users"
@@ -33,6 +34,7 @@ var Modules = []fx.Option{
 	clinicians.Module,
 	migration.Module,
 	users.Module,
+	marketo.Module,
 }
 
 func New() *fx.App {
