@@ -266,7 +266,7 @@ func (p *ClinicianCDCConsumer) refreshMarketoUserDetails(userId string) error {
 	p.logger.Debugw("Refreshing marketo user details", "userId", userId)
 	if err := p.marketoClient.RefreshUserDetails(userId); err != nil {
 		// Log the error and move on to avoid getting the process stuck
-		p.logger.Error("unable to refresh marketo user details: %w", "userId", userId, zap.Error(err))
+		p.logger.Errorw("unable to refresh marketo user details", "userId", userId, zap.Error(err))
 	}
 	return nil
 }

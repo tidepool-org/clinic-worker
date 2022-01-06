@@ -75,7 +75,7 @@ func (c *client) RefreshUserDetails(userId string) error {
 		if rErr != nil {
 			c.logger.Errorf("unable to decode request body %v", rErr)
 		}
-		err := fmt.Errorf("unepxected %v response from marketo service: %v", http.StatusOK, string(body))
+		err := fmt.Errorf("unepxected response from marketo service: %v %v", resp.StatusCode, string(body))
 		c.logger.Errorw(err.Error(), "userId", userId)
 
 		return err
