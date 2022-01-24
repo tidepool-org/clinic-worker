@@ -16,6 +16,7 @@ const (
 )
 
 var Module = fx.Provide(
+	NewRateLimiter,
 	NewMigrator,
 	fx.Annotated{
 		Group:  "consumers",

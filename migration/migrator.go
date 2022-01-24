@@ -31,12 +31,13 @@ type Migrator interface {
 }
 
 type migrator struct {
-	clinics    clinics.ClientWithResponsesInterface
-	gatekeeper clients.Gatekeeper
-	logger     *zap.SugaredLogger
-	mailer     clients.MailerClient
-	seagull    clients.Seagull
-	shoreline  shoreline.Client
+	clinics     clinics.ClientWithResponsesInterface
+	gatekeeper  clients.Gatekeeper
+	logger      *zap.SugaredLogger
+	rateLimiter *RateLimiter
+	mailer      clients.MailerClient
+	seagull     clients.Seagull
+	shoreline   shoreline.Client
 }
 
 var _ Migrator = &migrator{}
@@ -44,22 +45,24 @@ var _ Migrator = &migrator{}
 type MigratorParams struct {
 	fx.In
 
-	Clinics    clinics.ClientWithResponsesInterface
-	Gatekeeper clients.Gatekeeper
-	Logger     *zap.SugaredLogger
-	Mailer     clients.MailerClient
-	Seagull    clients.Seagull
-	Shoreline  shoreline.Client
+	Clinics     clinics.ClientWithResponsesInterface
+	Gatekeeper  clients.Gatekeeper
+	Logger      *zap.SugaredLogger
+	RateLimiter *RateLimiter
+	Mailer      clients.MailerClient
+	Seagull     clients.Seagull
+	Shoreline   shoreline.Client
 }
 
 func NewMigrator(p MigratorParams) (Migrator, error) {
 	return &migrator{
-		clinics:    p.Clinics,
-		gatekeeper: p.Gatekeeper,
-		logger:     p.Logger,
-		mailer:     p.Mailer,
-		seagull:    p.Seagull,
-		shoreline:  p.Shoreline,
+		clinics:     p.Clinics,
+		gatekeeper:  p.Gatekeeper,
+		logger:      p.Logger,
+		mailer:      p.Mailer,
+		rateLimiter: p.RateLimiter,
+		seagull:     p.Seagull,
+		shoreline:   p.Shoreline,
 	}, nil
 }
 
@@ -107,6 +110,10 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 		patientId := patientId
 		eg.Go(func() error {
 			defer sem.Release(1)
+
+			// blocks if the rate limit is exceeded
+			m.rateLimiter.WaitOrContinue()
+
 			mCtx, _ := context.WithTimeout(ctx, patientMigrationTimeout)
 			return m.migratePatient(mCtx, migration, patientId, perms)
 		})
@@ -213,9 +220,9 @@ func (m *migrator) createPatient(ctx context.Context, migration *Migration, pati
 	isMigrated := true
 	legacyClinicianId := clinics.TidepoolUserId(migration.legacyClinicianUserId)
 	body := clinics.CreatePatientFromUserJSONRequestBody{
-		IsMigrated:  &isMigrated,
+		IsMigrated:        &isMigrated,
 		LegacyClinicianId: &legacyClinicianId,
-		Permissions: mapPermissions(permissions),
+		Permissions:       mapPermissions(permissions),
 	}
 	response, err := m.clinics.CreatePatientFromUserWithResponse(
 		ctx,
