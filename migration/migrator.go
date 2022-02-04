@@ -94,30 +94,38 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 	eg, c := errgroup.WithContext(ctx)
 
 	m.logger.Infof("Migrating %v patients from legacy clinician user %v to %v", len(migration.legacyPatients), userId, clinicId)
-	for patientId, perms := range migration.legacyPatients {
-		if c.Err() != nil {
-			break
+	// the entire loop must be launched in an errgroup goroutine
+	// to make sure context cancellations are handled correctly
+	eg.Go(func() error {
+		for patientId, perms := range migration.legacyPatients {
+			if c.Err() != nil {
+				return err
+			}
+			if err := sem.Acquire(context.TODO(), 1); err != nil {
+				m.logger.Errorw("Failed to acquire semaphore", zap.Error(err))
+				return err
+			}
+
+			// we can't pass arguments to errgroup goroutines
+			// we need to explicitly redefine the variables,
+			// because we're launching the goroutines in a loop
+			perms := perms
+			patientId := patientId
+			eg.Go(func() error {
+				defer sem.Release(1)
+
+				// blocks if the rate limit is exceeded
+				m.rateLimiter.WaitOrContinue()
+
+				mCtx, cancel := context.WithTimeout(ctx, patientMigrationTimeout)
+				defer cancel() // free up resources if migrations finishes before the timeout is exceeded
+
+				return m.migratePatient(mCtx, migration, patientId, perms)
+			})
 		}
-		if err := sem.Acquire(context.TODO(), 1); err != nil {
-			m.logger.Errorw("Failed to acquire semaphore", zap.Error(err))
-			break
-		}
 
-		// we can't pass arguments to errgroup goroutines
-		// we need to explicitly redefine the variables,
-		// because we're launching the goroutines in a loop
-		perms := perms
-		patientId := patientId
-		eg.Go(func() error {
-			defer sem.Release(1)
-
-			// blocks if the rate limit is exceeded
-			m.rateLimiter.WaitOrContinue()
-
-			mCtx, _ := context.WithTimeout(ctx, patientMigrationTimeout)
-			return m.migratePatient(mCtx, migration, patientId, perms)
-		})
-	}
+		return nil
+	})
 
 	if err := eg.Wait(); err != nil {
 		return err
