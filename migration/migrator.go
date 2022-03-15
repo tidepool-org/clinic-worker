@@ -31,12 +31,13 @@ type Migrator interface {
 }
 
 type migrator struct {
-	clinics    clinics.ClientWithResponsesInterface
-	gatekeeper clients.Gatekeeper
-	logger     *zap.SugaredLogger
-	mailer     clients.MailerClient
-	seagull    clients.Seagull
-	shoreline  shoreline.Client
+	clinics     clinics.ClientWithResponsesInterface
+	gatekeeper  clients.Gatekeeper
+	logger      *zap.SugaredLogger
+	rateLimiter *RateLimiter
+	mailer      clients.MailerClient
+	seagull     clients.Seagull
+	shoreline   shoreline.Client
 }
 
 var _ Migrator = &migrator{}
@@ -44,22 +45,24 @@ var _ Migrator = &migrator{}
 type MigratorParams struct {
 	fx.In
 
-	Clinics    clinics.ClientWithResponsesInterface
-	Gatekeeper clients.Gatekeeper
-	Logger     *zap.SugaredLogger
-	Mailer     clients.MailerClient
-	Seagull    clients.Seagull
-	Shoreline  shoreline.Client
+	Clinics     clinics.ClientWithResponsesInterface
+	Gatekeeper  clients.Gatekeeper
+	Logger      *zap.SugaredLogger
+	RateLimiter *RateLimiter
+	Mailer      clients.MailerClient
+	Seagull     clients.Seagull
+	Shoreline   shoreline.Client
 }
 
 func NewMigrator(p MigratorParams) (Migrator, error) {
 	return &migrator{
-		clinics:    p.Clinics,
-		gatekeeper: p.Gatekeeper,
-		logger:     p.Logger,
-		mailer:     p.Mailer,
-		seagull:    p.Seagull,
-		shoreline:  p.Shoreline,
+		clinics:     p.Clinics,
+		gatekeeper:  p.Gatekeeper,
+		logger:      p.Logger,
+		mailer:      p.Mailer,
+		rateLimiter: p.RateLimiter,
+		seagull:     p.Seagull,
+		shoreline:   p.Shoreline,
 	}, nil
 }
 
@@ -91,26 +94,38 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 	eg, c := errgroup.WithContext(ctx)
 
 	m.logger.Infof("Migrating %v patients from legacy clinician user %v to %v", len(migration.legacyPatients), userId, clinicId)
-	for patientId, perms := range migration.legacyPatients {
-		if c.Err() != nil {
-			break
-		}
-		if err := sem.Acquire(context.TODO(), 1); err != nil {
-			m.logger.Errorw("Failed to acquire semaphore", zap.Error(err))
-			break
+	// the entire loop must be launched in an errgroup goroutine
+	// to make sure context cancellations are handled correctly
+	eg.Go(func() error {
+		for patientId, perms := range migration.legacyPatients {
+			if c.Err() != nil {
+				return err
+			}
+			if err := sem.Acquire(context.TODO(), 1); err != nil {
+				m.logger.Errorw("Failed to acquire semaphore", zap.Error(err))
+				return err
+			}
+
+			// we can't pass arguments to errgroup goroutines
+			// we need to explicitly redefine the variables,
+			// because we're launching the goroutines in a loop
+			perms := perms
+			patientId := patientId
+			eg.Go(func() error {
+				defer sem.Release(1)
+
+				// blocks if the rate limit is exceeded
+				m.rateLimiter.WaitOrContinue()
+
+				mCtx, cancel := context.WithTimeout(ctx, patientMigrationTimeout)
+				defer cancel() // free up resources if migrations finishes before the timeout is exceeded
+
+				return m.migratePatient(mCtx, migration, patientId, perms)
+			})
 		}
 
-		// we can't pass arguments to errgroup goroutines
-		// we need to explicitly redefine the variables,
-		// because we're launching the goroutines in a loop
-		perms := perms
-		patientId := patientId
-		eg.Go(func() error {
-			defer sem.Release(1)
-			mCtx, _ := context.WithTimeout(ctx, patientMigrationTimeout)
-			return m.migratePatient(mCtx, migration, patientId, perms)
-		})
-	}
+		return nil
+	})
 
 	if err := eg.Wait(); err != nil {
 		return err
@@ -213,9 +228,9 @@ func (m *migrator) createPatient(ctx context.Context, migration *Migration, pati
 	isMigrated := true
 	legacyClinicianId := clinics.TidepoolUserId(migration.legacyClinicianUserId)
 	body := clinics.CreatePatientFromUserJSONRequestBody{
-		IsMigrated:  &isMigrated,
+		IsMigrated:        &isMigrated,
 		LegacyClinicianId: &legacyClinicianId,
-		Permissions: mapPermissions(permissions),
+		Permissions:       mapPermissions(permissions),
 	}
 	response, err := m.clinics.CreatePatientFromUserWithResponse(
 		ctx,
