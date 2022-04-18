@@ -3,6 +3,7 @@ package users
 import (
 	"context"
 	"fmt"
+	"github.com/deepmap/oapi-codegen/pkg/types"
 	clinics "github.com/tidepool-org/clinic/client"
 	ev "github.com/tidepool-org/go-common/events"
 
@@ -15,7 +16,7 @@ const (
 	defaultTimeout = 30 * time.Second
 )
 
-type userDeletionEventsHandler struct {
+type userEventsHandler struct {
 	ev.NoopUserEventsHandler
 
 	clinics clinics.ClientWithResponsesInterface
@@ -23,13 +24,40 @@ type userDeletionEventsHandler struct {
 }
 
 func NewUserDataDeletionHandler(clinicService clinics.ClientWithResponsesInterface, logger *zap.SugaredLogger) (ev.EventHandler, error) {
-	return ev.NewUserEventsHandler(&userDeletionEventsHandler{
+	return ev.NewUserEventsHandler(&userEventsHandler{
 		clinics: clinicService,
 		logger:  logger,
 	}), nil
 }
 
-func (u *userDeletionEventsHandler) HandleDeleteUserEvent(payload ev.DeleteUserEvent) error {
+func (u *userEventsHandler) HandleUpdateUserEvent(payload ev.UpdateUserEvent) error {
+	userId := payload.Original.UserID
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	if payload.Original.Username != payload.Updated.Username {
+		u.logger.Infow("updating user email", "userId", userId)
+		email := types.Email(payload.Updated.Username)
+		update := clinics.UpdateClinicUserDetailsJSONRequestBody{
+			Email: &email,
+		}
+		resp, err := u.clinics.UpdateClinicUserDetailsWithResponse(ctx, clinics.UserId(userId), update)
+		if err != nil {
+			u.logger.Errorw("could not update clinician user details", "userId", userId, zap.Error(err))
+			return err
+		}
+		if resp.StatusCode() != http.StatusOK {
+			err := fmt.Errorf("unexpected response code %v", resp.StatusCode())
+			u.logger.Errorw("could not update clinic user details", "userId", userId, zap.Error(err))
+			return err
+		}
+	}
+
+	u.logger.Infow("successfully updated clinic user details", "userId", userId)
+	return nil
+}
+
+func (u *userEventsHandler) HandleDeleteUserEvent(payload ev.DeleteUserEvent) error {
 	userId := payload.UserID
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
