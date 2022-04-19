@@ -19,7 +19,7 @@ import (
 const (
 	threadiness                      = 4
 	patientMigrationTimeout          = 10 * time.Second
-	postMigrationRole                = "migrated_clinic"
+	postMigrationRole                = "clinician"
 	patientMigrationTemplate         = "migrate_patient"
 	clinicMigrationCompletedTemplate = "clinic_migration_complete"
 	migrationStatusRunning           = "RUNNING"
