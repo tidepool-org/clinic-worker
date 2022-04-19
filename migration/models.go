@@ -4,6 +4,7 @@ import (
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
+	"time"
 )
 
 type MigrationCDCEvent struct {
@@ -13,8 +14,9 @@ type MigrationCDCEvent struct {
 }
 
 type MigrationDocument struct {
-	UserId   string       `json:"userId"`
-	ClinicId cdc.ObjectId `json:"clinicId"`
+	UserId          string       `json:"userId"`
+	ClinicId        cdc.ObjectId `json:"clinicId"`
+	AttestationTime time.Time    `json:"attestationTime"`
 }
 
 type Migration struct {
@@ -22,6 +24,7 @@ type Migration struct {
 	legacyClinicianUserId  string
 	legacyClinicianProfile *LegacyClinicianProfile
 	legacyPatients         clients.UsersPermissions
+	attestationTime        time.Time
 }
 
 type LegacyClinicianProfile struct {

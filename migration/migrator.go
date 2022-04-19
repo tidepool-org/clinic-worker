@@ -27,7 +27,7 @@ const (
 )
 
 type Migrator interface {
-	MigratePatients(ctx context.Context, userId, clinicId string) error
+	MigratePatients(ctx context.Context, document MigrationDocument) error
 }
 
 type migrator struct {
@@ -66,9 +66,12 @@ func NewMigrator(p MigratorParams) (Migrator, error) {
 	}, nil
 }
 
-func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string) error {
+func (m *migrator) MigratePatients(ctx context.Context, document MigrationDocument) error {
+	userId := document.UserId
+	clinicId := document.ClinicId.Value
+
 	m.logger.Infof("Starting migration of patients of legacy clinician user %v to clinic %v", userId, clinicId)
-	migration, err := m.createMigration(ctx, userId, clinicId)
+	migration, err := m.createMigration(ctx, document)
 	if err != nil {
 		return err
 	}
@@ -146,7 +149,10 @@ func (m *migrator) MigratePatients(ctx context.Context, userId, clinicId string)
 	return nil
 }
 
-func (m *migrator) createMigration(ctx context.Context, userId, clinicId string) (*Migration, error) {
+func (m *migrator) createMigration(ctx context.Context, document MigrationDocument) (*Migration, error) {
+	userId := document.UserId
+	clinicId := document.ClinicId.Value
+
 	response, err := m.clinics.GetClinicWithResponse(ctx, clinics.ClinicId(clinicId))
 	if err != nil {
 		return nil, err
@@ -169,9 +175,10 @@ func (m *migrator) createMigration(ctx context.Context, userId, clinicId string)
 	}
 
 	return &Migration{
+		attestationTime:        document.AttestationTime,
+		clinic:                 response.JSON200,
 		legacyClinicianUserId:  userId,
 		legacyClinicianProfile: profile,
-		clinic:                 response.JSON200,
 		legacyPatients:         patients,
 	}, nil
 }
@@ -227,10 +234,17 @@ func (m *migrator) createPatient(ctx context.Context, migration *Migration, pati
 
 	isMigrated := true
 	legacyClinicianId := clinics.TidepoolUserId(migration.legacyClinicianUserId)
+
+	attestationTime := migration.attestationTime
+	if attestationTime.IsZero() {
+		attestationTime = time.Now()
+	}
+
 	body := clinics.CreatePatientFromUserJSONRequestBody{
 		IsMigrated:        &isMigrated,
 		LegacyClinicianId: &legacyClinicianId,
 		Permissions:       mapPermissions(permissions),
+		AttestationTime:   &attestationTime,
 	}
 	response, err := m.clinics.CreatePatientFromUserWithResponse(
 		ctx,
