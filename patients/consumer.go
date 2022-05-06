@@ -127,6 +127,7 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		return p.applyInviteUpdate(event)
 	} else if event.IsUploadReminderEvent() {
 		p.logger.Infow("processing upload reminder", "event", event)
+		return p.sendUploadReminder(*event.FullDocument.UserId)
 	}
 
 	p.logger.Debugw("skipping handling of event", "offset", event.Offset)
