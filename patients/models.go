@@ -2,7 +2,6 @@ package patients
 
 import (
 	"github.com/tidepool-org/clinic-worker/cdc"
-	"time"
 )
 
 type PatientCDCEvent struct {
@@ -19,7 +18,9 @@ func (p PatientCDCEvent) IsUploadReminderEvent() bool {
 	if p.FullDocument.UserId == nil {
 		return false
 	}
-	return !p.UpdateDescription.UpdatedFields.LastUploadReminderTime.IsZero()
+
+	lastUploadReminderTime := p.UpdateDescription.UpdatedFields.LastUploadReminderTime
+	return lastUploadReminderTime != nil && lastUploadReminderTime.Value > 0
 }
 
 func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
@@ -55,7 +56,7 @@ type Patient struct {
 	Permissions            *Permissions  `json:"permissions"`
 	IsMigrated             bool          `json:"isMigrated"`
 	InvitedBy              *string       `json:"invitedBy"`
-	LastUploadReminderTime time.Time     `json:"lastUploadReminderTime"`
+	LastUploadReminderTime *cdc.Date     `json:"lastUploadReminderTime"`
 }
 
 func (p Patient) IsCustodial() bool {
