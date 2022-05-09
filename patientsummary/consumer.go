@@ -110,7 +110,8 @@ func (p *CDCConsumer) handleCDCEvent(event CDCEvent) error {
 		return nil
 	}
 
-	p.logger.Infow("processing event", "event", event)
+	p.logger.Infow("processing summary event for user", "userid", event.FullDocument.UserId)
+	p.logger.Debugw("event being processed", "event", event)
 
 	return p.applyPatientSummaryUpdate(event)
 }
@@ -132,7 +133,7 @@ func (p *CDCConsumer) applyPatientSummaryUpdate(event CDCEvent) error {
 		return err
 	}
 
-	if response.StatusCode() != http.StatusOK {
+	if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNotFound) {
 		return fmt.Errorf("unexpected status code when updating patient summary %v", response.StatusCode())
 	}
 

@@ -153,7 +153,7 @@ func (p *PatientCDCConsumer) applyInviteUpdate(event PatientCDCEvent) error {
 
 	invite := confirmation.SignUpInvite{
 		UserId:    *event.FullDocument.UserId,
-		ClinicId:  *event.FullDocument.ClinicId,
+		ClinicId:  event.FullDocument.ClinicId.Value,
 		InvitedBy: event.FullDocument.InvitedBy,
 	}
 	if err := p.hydrophone.UpsertSignUpInvite(invite); err != nil {
