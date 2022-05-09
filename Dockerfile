@@ -1,5 +1,5 @@
 # Development
-FROM golang:1.16-alpine AS development
+FROM golang:1.17-alpine AS development
 WORKDIR /go/src/github.com/tidepool-org/clinic-worker
 RUN adduser -D tidepool && \
     chown -R tidepool /go/src/github.com/tidepool-org/clinic-worker

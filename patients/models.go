@@ -31,7 +31,7 @@ func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interf
 
 type Patient struct {
 	Id            *cdc.ObjectId `json:"_id"`
-	ClinicId      *cdc.ObjectId `json:"clinicId"`
+	ClinicId      *string       `json:"clinicId"`
 	UserId        *string       `json:"userId"`
 	BirthDate     *string       `json:"birthDate"`
 	Email         *string       `json:"email"`
