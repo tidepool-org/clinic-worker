@@ -3,7 +3,7 @@ module github.com/tidepool-org/clinic-worker
 go 1.17
 
 require (
-	github.com/Shopify/sarama v1.32.0
+	github.com/Shopify/sarama v1.28.0
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/cloudevents/sdk-go/v2 v2.2.0
 	github.com/deepmap/oapi-codegen v1.9.0
