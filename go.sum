@@ -218,6 +218,8 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/tidepool-org/clinic/client v0.0.0-20220505151555-d71047f826aa h1:nQwbWfmbXOZNAInbluZYmZ4aizBLa1mAeVcxW/0kUWE=
 github.com/tidepool-org/clinic/client v0.0.0-20220505151555-d71047f826aa/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
+github.com/tidepool-org/clinic/client v0.0.0-20220509165118-737b517f71eb h1:kkloqa2WIHEpAUSD0QAKH4moRlPpw6pJKYc8Hd4DcuE=
+github.com/tidepool-org/clinic/client v0.0.0-20220509165118-737b517f71eb/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/go-common v0.8.3-0.20211014160932-4757171e3914 h1:Dn/HkT1nxsSFbGOvBXSkOiDFqN/gLQJrj+sSspdVnJo=
 github.com/tidepool-org/go-common v0.8.3-0.20211014160932-4757171e3914/go.mod h1:0S1OUe8aQH8bKLyeemNKW4WOPkCXxK5FqN9OXu1as7E=
 github.com/ugorji/go v1.1.7/go.mod h1:kZn38zHttfInRq0xu/PH0az30d+z6vm202qpg1oXVMw=
