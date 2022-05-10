@@ -70,7 +70,7 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 		lastUpload = &lastUploadVal
 	}
 	if p.FullDocument.OutdatedSince != nil {
-		outdatedSinceVal := time.UnixMilli(p.FullDocument.LastData.Value)
+		outdatedSinceVal := time.UnixMilli(p.FullDocument.OutdatedSince.Value)
 		outdatedSince = &outdatedSinceVal
 	}
 
