@@ -47,22 +47,43 @@ type Summary struct {
 }
 
 func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody {
-	firstData := time.UnixMilli(p.FullDocument.FirstData.Value)
-	lastData := time.UnixMilli(p.FullDocument.LastData.Value)
-	lastUpdated := time.UnixMilli(p.FullDocument.LastUpdated.Value)
-	lastUpload := time.UnixMilli(p.FullDocument.LastUpload.Value)
-	outdatedSince := time.UnixMilli(p.FullDocument.LastData.Value)
+	var firstData *time.Time
+	var lastData *time.Time
+	var lastUpdated *time.Time
+	var lastUpload *time.Time
+	var outdatedSince *time.Time
+
+	if p.FullDocument.FirstData != nil {
+		firstDataVal := time.UnixMilli(p.FullDocument.FirstData.Value)
+		firstData = &firstDataVal
+	}
+	if p.FullDocument.LastData != nil {
+		lastDataVal := time.UnixMilli(p.FullDocument.LastData.Value)
+		lastData = &lastDataVal
+	}
+	if p.FullDocument.LastUpdated != nil {
+		lastUpdatedVal := time.UnixMilli(p.FullDocument.LastUpdated.Value)
+		lastUpdated = &lastUpdatedVal
+	}
+	if p.FullDocument.LastUpload != nil {
+		lastUploadVal := time.UnixMilli(p.FullDocument.LastUpload.Value)
+		lastUpload = &lastUploadVal
+	}
+	if p.FullDocument.OutdatedSince != nil {
+		outdatedSinceVal := time.UnixMilli(p.FullDocument.LastData.Value)
+		outdatedSince = &outdatedSinceVal
+	}
 
 	return clinics.UpdatePatientSummaryJSONRequestBody{
 		AverageGlucose:             p.FullDocument.AverageGlucose,
-		FirstData:                  &firstData,
+		FirstData:                  firstData,
 		GlucoseManagementIndicator: p.FullDocument.GlucoseMgmtIndicator,
 		HighGlucoseThreshold:       p.FullDocument.HighGlucoseThreshold,
-		LastData:                   &lastData,
-		LastUpdatedDate:            &lastUpdated,
-		LastUploadDate:             &lastUpload,
+		LastData:                   lastData,
+		LastUpdatedDate:            lastUpdated,
+		LastUploadDate:             lastUpload,
 		LowGlucoseThreshold:        p.FullDocument.LowGlucoseThreshold,
-		OutdatedSince:              &outdatedSince,
+		OutdatedSince:              outdatedSince,
 		PercentTimeCGMUse:          p.FullDocument.TimeCGMUse,
 		PercentTimeInHigh:          p.FullDocument.TimeAboveRange,
 		PercentTimeInLow:           p.FullDocument.TimeBelowRange,
