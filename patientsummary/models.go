@@ -132,36 +132,7 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 		outdatedSince = &outdatedSinceVal
 	}
 
-	periods := &clinics.PatientSummaryPeriods{N14d: &clinics.PatientSummaryPeriod{
-		AverageGlucose:             p.FullDocument.Periods["14d"].AverageGlucose,
-		GlucoseManagementIndicator: p.FullDocument.Periods["14d"].GlucoseManagementIndicator,
-
-		TimeCGMUseMinutes: p.FullDocument.Periods["14d"].TimeCGMUseMinutes,
-		TimeCGMUsePercent: p.FullDocument.Periods["14d"].TimeCGMUsePercent,
-		TimeCGMUseRecords: p.FullDocument.Periods["14d"].TimeCGMUseRecords,
-
-		TimeInHighMinutes: p.FullDocument.Periods["14d"].TimeInHighMinutes,
-		TimeInHighPercent: p.FullDocument.Periods["14d"].TimeInHighPercent,
-		TimeInHighRecords: p.FullDocument.Periods["14d"].TimeInHighRecords,
-
-		TimeInLowMinutes: p.FullDocument.Periods["14d"].TimeInLowMinutes,
-		TimeInLowPercent: p.FullDocument.Periods["14d"].TimeInLowPercent,
-		TimeInLowRecords: p.FullDocument.Periods["14d"].TimeInLowRecords,
-
-		TimeInTargetMinutes: p.FullDocument.Periods["14d"].TimeInTargetMinutes,
-		TimeInTargetPercent: p.FullDocument.Periods["14d"].TimeInTargetPercent,
-		TimeInTargetRecords: p.FullDocument.Periods["14d"].TimeInTargetRecords,
-
-		TimeInVeryHighMinutes: p.FullDocument.Periods["14d"].TimeInVeryHighMinutes,
-		TimeInVeryHighPercent: p.FullDocument.Periods["14d"].TimeInVeryHighPercent,
-		TimeInVeryHighRecords: p.FullDocument.Periods["14d"].TimeInVeryHighRecords,
-
-		TimeInVeryLowMinutes: p.FullDocument.Periods["14d"].TimeInVeryLowMinutes,
-		TimeInVeryLowPercent: p.FullDocument.Periods["14d"].TimeInVeryLowPercent,
-		TimeInVeryLowRecords: p.FullDocument.Periods["14d"].TimeInVeryLowRecords,
-	}}
-
-	return clinics.UpdatePatientSummaryJSONRequestBody{
+	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{
 		FirstData:                firstData,
 		LastData:                 lastData,
 		LastUpdatedDate:          lastUpdated,
@@ -172,7 +143,44 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 		VeryLowGlucoseThreshold:  p.FullDocument.VeryLowGlucoseThreshold,
 		HighGlucoseThreshold:     p.FullDocument.HighGlucoseThreshold,
 		VeryHighGlucoseThreshold: p.FullDocument.VeryHighGlucoseThreshold,
-		Periods:                  periods,
 	}
 
+	var periodExists = false
+	var period14dExists = false
+	if p.FullDocument.Periods != nil {
+		periodExists = true
+		_, period14dExists = p.FullDocument.Periods["14d"]
+	}
+
+	if periodExists && period14dExists {
+		patientUpdate.Periods = &clinics.PatientSummaryPeriods{N14d: &clinics.PatientSummaryPeriod{
+			AverageGlucose:             p.FullDocument.Periods["14d"].AverageGlucose,
+			GlucoseManagementIndicator: p.FullDocument.Periods["14d"].GlucoseManagementIndicator,
+
+			TimeCGMUseMinutes: p.FullDocument.Periods["14d"].TimeCGMUseMinutes,
+			TimeCGMUsePercent: p.FullDocument.Periods["14d"].TimeCGMUsePercent,
+			TimeCGMUseRecords: p.FullDocument.Periods["14d"].TimeCGMUseRecords,
+
+			TimeInHighMinutes: p.FullDocument.Periods["14d"].TimeInHighMinutes,
+			TimeInHighPercent: p.FullDocument.Periods["14d"].TimeInHighPercent,
+			TimeInHighRecords: p.FullDocument.Periods["14d"].TimeInHighRecords,
+
+			TimeInLowMinutes: p.FullDocument.Periods["14d"].TimeInLowMinutes,
+			TimeInLowPercent: p.FullDocument.Periods["14d"].TimeInLowPercent,
+			TimeInLowRecords: p.FullDocument.Periods["14d"].TimeInLowRecords,
+
+			TimeInTargetMinutes: p.FullDocument.Periods["14d"].TimeInTargetMinutes,
+			TimeInTargetPercent: p.FullDocument.Periods["14d"].TimeInTargetPercent,
+			TimeInTargetRecords: p.FullDocument.Periods["14d"].TimeInTargetRecords,
+
+			TimeInVeryHighMinutes: p.FullDocument.Periods["14d"].TimeInVeryHighMinutes,
+			TimeInVeryHighPercent: p.FullDocument.Periods["14d"].TimeInVeryHighPercent,
+			TimeInVeryHighRecords: p.FullDocument.Periods["14d"].TimeInVeryHighRecords,
+
+			TimeInVeryLowMinutes: p.FullDocument.Periods["14d"].TimeInVeryLowMinutes,
+			TimeInVeryLowPercent: p.FullDocument.Periods["14d"].TimeInVeryLowPercent,
+			TimeInVeryLowRecords: p.FullDocument.Periods["14d"].TimeInVeryLowRecords,
+		}}
+	}
+	return patientUpdate
 }
