@@ -89,11 +89,11 @@ type Summary struct {
 	Periods    map[string]*Period `json:"periods"`
 
 	// date tracking
-	LastUpdated   *cdc.Date `json:"lastUpdated"`
-	FirstData     *cdc.Date `json:"firstData"`
-	LastData      *cdc.Date `json:"lastData"`
-	LastUpload    *cdc.Date `json:"lastUpload"`
-	OutdatedSince *cdc.Date `json:"outdatedSince"`
+	LastUpdatedDate *cdc.Date `json:"lastUpdatedDate"`
+	FirstData       *cdc.Date `json:"firstData"`
+	LastData        *cdc.Date `json:"lastData"`
+	LastUploadDate  *cdc.Date `json:"lastUploadDate"`
+	OutdatedSince   *cdc.Date `json:"outdatedSince"`
 
 	TotalDays *int `json:"totalDays"`
 
@@ -107,8 +107,8 @@ type Summary struct {
 func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody {
 	var firstData *time.Time
 	var lastData *time.Time
-	var lastUpdated *time.Time
-	var lastUpload *time.Time
+	var lastUpdatedDate *time.Time
+	var lastUploadDate *time.Time
 	var outdatedSince *time.Time
 
 	if p.FullDocument.FirstData != nil {
@@ -119,13 +119,13 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 		lastDataVal := time.UnixMilli(p.FullDocument.LastData.Value)
 		lastData = &lastDataVal
 	}
-	if p.FullDocument.LastUpdated != nil {
-		lastUpdatedVal := time.UnixMilli(p.FullDocument.LastUpdated.Value)
-		lastUpdated = &lastUpdatedVal
+	if p.FullDocument.LastUpdatedDate != nil {
+		lastUpdatedDateVal := time.UnixMilli(p.FullDocument.LastUpdatedDate.Value)
+		lastUpdatedDate = &lastUpdatedDateVal
 	}
-	if p.FullDocument.LastUpload != nil {
-		lastUploadVal := time.UnixMilli(p.FullDocument.LastUpload.Value)
-		lastUpload = &lastUploadVal
+	if p.FullDocument.LastUploadDate != nil {
+		lastUploadDateVal := time.UnixMilli(p.FullDocument.LastUploadDate.Value)
+		lastUploadDate = &lastUploadDateVal
 	}
 	if p.FullDocument.OutdatedSince != nil {
 		outdatedSinceVal := time.UnixMilli(p.FullDocument.OutdatedSince.Value)
@@ -135,8 +135,8 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{
 		FirstData:                firstData,
 		LastData:                 lastData,
-		LastUpdatedDate:          lastUpdated,
-		LastUploadDate:           lastUpload,
+		LastUpdatedDate:          lastUpdatedDate,
+		LastUploadDate:           lastUploadDate,
 		OutdatedSince:            outdatedSince,
 		TotalDays:                p.FullDocument.TotalDays,
 		LowGlucoseThreshold:      p.FullDocument.LowGlucoseThreshold,
