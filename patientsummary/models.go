@@ -28,7 +28,7 @@ func (p CDCEvent) ShouldApplyUpdates() bool {
 
 type Stats struct {
 	DeviceID string    `json:"deviceId"`
-	Date     time.Time `json:"date"`
+	Date     *cdc.Date `json:"date"`
 
 	TargetMinutes int `json:"targetMinutes"`
 	TargetRecords int `json:"targetRecords"`
@@ -48,7 +48,7 @@ type Stats struct {
 	TotalGlucose    float64   `json:"totalGlucose"`
 	TotalCGMMinutes int       `json:"totalCGMMinutes"`
 	TotalCGMRecords int       `json:"totalCGMRecords"`
-	LastRecordTime  time.Time `json:"lastRecordTime"`
+	LastRecordTime  *cdc.Date `json:"lastRecordTime"`
 }
 
 type Period struct {
