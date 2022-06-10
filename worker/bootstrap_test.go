@@ -61,8 +61,8 @@ var _ = Describe("Boostrap", func() {
 		})
 
 		It("instantiates workers", func() {
-			// clinic, clinicians, migration, patients, users
-			expectedCount := 5
+			// clinic, clinicians, migration, patients, patientsummary, users
+			expectedCount := 6
 			Expect(components.Consumers).To(HaveLen(expectedCount))
 		})
 	})
