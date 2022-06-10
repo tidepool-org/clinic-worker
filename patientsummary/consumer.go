@@ -110,7 +110,7 @@ func (p *CDCConsumer) handleCDCEvent(event CDCEvent) error {
 		return nil
 	}
 
-	p.logger.Infow("processing summary event for user", "userid", event.FullDocument.UserId)
+	p.logger.Infow("processing summary event for user", "userid", event.FullDocument.UserID)
 	p.logger.Debugw("event being processed", "event", event)
 
 	return p.applyPatientSummaryUpdate(event)
@@ -118,11 +118,11 @@ func (p *CDCConsumer) handleCDCEvent(event CDCEvent) error {
 
 func (p *CDCConsumer) applyPatientSummaryUpdate(event CDCEvent) error {
 	p.logger.Debugw("applying patient summary update", "offset", event.Offset)
-	if event.FullDocument.UserId == nil {
+	if event.FullDocument.UserID == nil {
 		return errors.New("expected user id to be defined")
 	}
 
-	userId := clinics.PatientId(*event.FullDocument.UserId)
+	userId := clinics.PatientId(*event.FullDocument.UserID)
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
