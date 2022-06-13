@@ -30,9 +30,8 @@ func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
 	if p.FullDocument.UserId == nil {
 		return false
 	}
-
-	// We want to apply profile updates and send invites only to newly created custodial accounts.
-	return p.FullDocument.IsCustodial() && !p.FullDocument.IsMigrated
+	// We want to apply profile updates and send invites only to custodial accounts.
+	return p.FullDocument.IsCustodial()
 }
 
 func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interface{}) {
