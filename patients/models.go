@@ -1,6 +1,8 @@
 package patients
 
-import "github.com/tidepool-org/clinic-worker/cdc"
+import (
+	"github.com/tidepool-org/clinic-worker/cdc"
+)
 
 type PatientCDCEvent struct {
 	Offset            int64             `json:"-"`
@@ -9,13 +11,26 @@ type PatientCDCEvent struct {
 	UpdateDescription UpdateDescription `json:"updateDescription"`
 }
 
-func (p PatientCDCEvent) ShouldApplyUpdates() bool {
+func (p PatientCDCEvent) IsUploadReminderEvent() bool {
+	if p.OperationType != cdc.OperationTypeUpdate && p.OperationType != cdc.OperationTypeReplace {
+		return false
+	}
+	if p.FullDocument.UserId == nil {
+		return false
+	}
+
+	lastUploadReminderTime := p.UpdateDescription.UpdatedFields.LastUploadReminderTime
+	return lastUploadReminderTime != nil && lastUploadReminderTime.Value > 0
+}
+
+func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
 	if p.OperationType != cdc.OperationTypeInsert && p.OperationType != cdc.OperationTypeUpdate && p.OperationType != cdc.OperationTypeReplace {
 		return false
 	}
 	if p.FullDocument.UserId == nil {
 		return false
 	}
+
 	// We want to apply profile updates and send invites only to newly created custodial accounts.
 	return p.FullDocument.IsCustodial() && !p.FullDocument.IsMigrated
 }
@@ -30,17 +45,18 @@ func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interf
 }
 
 type Patient struct {
-	Id            *cdc.ObjectId `json:"_id"`
-	ClinicId      *cdc.ObjectId `json:"clinicId"`
-	UserId        *string       `json:"userId"`
-	BirthDate     *string       `json:"birthDate"`
-	Email         *string       `json:"email"`
-	FullName      *string       `json:"fullName"`
-	Mrn           *string       `json:"mrn"`
-	TargetDevices *[]string     `json:"targetDevices"`
-	Permissions   *Permissions  `json:"permissions"`
-	IsMigrated    bool          `json:"isMigrated"`
-	InvitedBy     *string       `json:"invitedBy"`
+	Id                     *cdc.ObjectId `json:"_id"`
+	ClinicId               *cdc.ObjectId `json:"clinicId"`
+	UserId                 *string       `json:"userId"`
+	BirthDate              *string       `json:"birthDate"`
+	Email                  *string       `json:"email"`
+	FullName               *string       `json:"fullName"`
+	Mrn                    *string       `json:"mrn"`
+	TargetDevices          *[]string     `json:"targetDevices"`
+	Permissions            *Permissions  `json:"permissions"`
+	IsMigrated             bool          `json:"isMigrated"`
+	InvitedBy              *string       `json:"invitedBy"`
+	LastUploadReminderTime *cdc.Date     `json:"lastUploadReminderTime"`
 }
 
 func (p Patient) IsCustodial() bool {
