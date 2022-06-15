@@ -1,7 +1,6 @@
 package patients
 
 import (
-	"fmt"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/patientsummary"
 )
@@ -37,9 +36,6 @@ func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
 }
 
 func (p PatientCDCEvent) PatientNeedsSummary() bool {
-	fmt.Println("operation type", p.OperationType, cdc.OperationTypeInsert)
-	fmt.Println("userid", p.FullDocument.UserId)
-	fmt.Println("summary", p.FullDocument.Summary)
 	if p.OperationType != cdc.OperationTypeInsert {
 		return false
 	}

@@ -1,7 +1,6 @@
 package patients
 
 import (
-	"fmt"
 	clinics "github.com/tidepool-org/clinic/client"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 )
@@ -86,11 +85,6 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 	}
 
 	if periodExists && period14dExists {
-		fmt.Println("summary", summary)
-		fmt.Println("periods", summary.Periods)
-		fmt.Println("periods 14", summary.Periods.N14d)
-		fmt.Println("periods 14 glucose", summary.Periods.N14d.AvgGlucose)
-		fmt.Println("periods 14 glucose value", summary.Periods.N14d.AvgGlucose.Value)
 		patientUpdate.Periods = &clinics.PatientSummaryPeriods{N14d: &clinics.PatientSummaryPeriod{
 			AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N14d.AvgGlucose.Value,
 				Units: clinics.AverageGlucoseUnits(summary.Periods.N14d.AvgGlucose.Units)},
