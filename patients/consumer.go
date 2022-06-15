@@ -137,7 +137,7 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		}
 	}
 
-	if event.IsPatientNeedsSummaryEvent() {
+	if event.PatientNeedsSummary() {
 		p.logger.Infow("processing summary initialization", "event", event)
 		return p.populateSummary(*event.FullDocument.UserId)
 	}
