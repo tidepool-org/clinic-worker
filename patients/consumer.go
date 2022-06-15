@@ -8,9 +8,11 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/confirmation"
+	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
+	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -36,6 +38,8 @@ type PatientCDCConsumer struct {
 	mailer     clients.MailerClient
 	shoreline  shoreline.Client
 	seagull    clients.Seagull
+	clinics    clinics.ClientWithResponsesInterface
+	summaries  summaries.ClientWithResponsesInterface
 }
 
 type Params struct {
@@ -47,6 +51,8 @@ type Params struct {
 	Mailer     clients.MailerClient
 	Shoreline  shoreline.Client
 	Seagull    clients.Seagull
+	Clinics    clinics.ClientWithResponsesInterface
+	Summaries  summaries.ClientWithResponsesInterface
 }
 
 func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
@@ -77,6 +83,8 @@ func NewPatientCDCConsumer(p Params) (events.MessageConsumer, error) {
 		mailer:     p.Mailer,
 		seagull:    p.Seagull,
 		shoreline:  p.Shoreline,
+		clinics:    p.Clinics,
+		summaries:  p.Summaries,
 	}, nil
 }
 
@@ -129,9 +137,37 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		}
 	}
 
+	if event.IsPatientNeedsSummaryEvent() {
+		p.logger.Infow("processing summary initialization", "event", event)
+		return p.populateSummary(*event.FullDocument.UserId)
+	}
+
 	if event.IsUploadReminderEvent() {
 		p.logger.Infow("processing upload reminder", "event", event)
 		return p.sendUploadReminder(*event.FullDocument.UserId)
+	}
+
+	return nil
+}
+
+func (p *PatientCDCConsumer) populateSummary(userId string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+	summaryResponse, err := p.summaries.GetSummaryWithResponse(ctx, summaries.UserId(userId))
+	if err != nil {
+		return err
+	}
+	userSummary := summaryResponse.JSON200
+
+	updateBody := CreateSummaryUpdateBody(userSummary)
+
+	response, err := p.clinics.UpdatePatientSummaryWithResponse(ctx, clinics.PatientId(userId), updateBody)
+	if err != nil {
+		return err
+	}
+
+	if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNotFound) {
+		return fmt.Errorf("unexpected status code when updating patient summary %v", response.StatusCode())
 	}
 
 	return nil

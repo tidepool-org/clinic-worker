@@ -2,6 +2,7 @@ package patients
 
 import (
 	"github.com/tidepool-org/clinic-worker/cdc"
+	"github.com/tidepool-org/clinic-worker/patientsummary"
 )
 
 type PatientCDCEvent struct {
@@ -34,6 +35,19 @@ func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
 	return p.FullDocument.IsCustodial()
 }
 
+func (p PatientCDCEvent) IsPatientNeedsSummaryEvent() bool {
+	if p.OperationType != cdc.OperationTypeInsert {
+		return false
+	}
+
+	if p.FullDocument.UserId == nil {
+		return false
+	}
+
+	// return true if summary is missing
+	return p.FullDocument.Summary == nil
+}
+
 func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interface{}) {
 	switch p.OperationType {
 	case cdc.OperationTypeInsert, cdc.OperationTypeReplace:
@@ -44,18 +58,19 @@ func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interf
 }
 
 type Patient struct {
-	Id                     *cdc.ObjectId `json:"_id"`
-	ClinicId               *cdc.ObjectId `json:"clinicId"`
-	UserId                 *string       `json:"userId"`
-	BirthDate              *string       `json:"birthDate"`
-	Email                  *string       `json:"email"`
-	FullName               *string       `json:"fullName"`
-	Mrn                    *string       `json:"mrn"`
-	TargetDevices          *[]string     `json:"targetDevices"`
-	Permissions            *Permissions  `json:"permissions"`
-	IsMigrated             bool          `json:"isMigrated"`
-	InvitedBy              *string       `json:"invitedBy"`
-	LastUploadReminderTime *cdc.Date     `json:"lastUploadReminderTime"`
+	Id                     *cdc.ObjectId           `json:"_id"`
+	ClinicId               *cdc.ObjectId           `json:"clinicId"`
+	UserId                 *string                 `json:"userId"`
+	BirthDate              *string                 `json:"birthDate"`
+	Email                  *string                 `json:"email"`
+	FullName               *string                 `json:"fullName"`
+	Mrn                    *string                 `json:"mrn"`
+	TargetDevices          *[]string               `json:"targetDevices"`
+	Permissions            *Permissions            `json:"permissions"`
+	IsMigrated             bool                    `json:"isMigrated"`
+	InvitedBy              *string                 `json:"invitedBy"`
+	LastUploadReminderTime *cdc.Date               `json:"lastUploadReminderTime"`
+	Summary                *patientsummary.Summary `json:"summary"`
 }
 
 func (p Patient) IsCustodial() bool {
