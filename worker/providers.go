@@ -8,6 +8,7 @@ import (
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/disc"
 	"github.com/tidepool-org/go-common/clients/shoreline"
+	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
 	"net/http"
@@ -20,6 +21,7 @@ type DependenciesConfig struct {
 	SeagullHost    string `envconfig:"TIDEPOOL_SEAGULL_CLIENT_ADDRESS" default:"http://seagull:9120"`
 	GatekeeperHost string `envconfig:"TIDEPOOL_GATEKEEPER_CLIENT_ADDRESS" default:"http://gatekeeper:9123"`
 	ClinicsHost    string `envconfig:"TIDEPOOL_CLINIC_CLIENT_ADDRESS" default:"http://clinic:8080"`
+	DataHost       string `envconfig:"TIDEPOOL_DATA_CLIENT_ADDRESS" default:"http://data:9220"`
 	ServerSecret   string `envconfig:"TIDEPOOL_SERVER_SECRET"`
 }
 
@@ -72,6 +74,14 @@ func gatekeeperProvider(config DependenciesConfig, httpClient *http.Client, shor
 		WithHttpClient(httpClient).
 		WithTokenProvider(shoreline).
 		Build()
+}
+
+func summariesProvider(config DependenciesConfig, shoreline shoreline.Client) (summaries.ClientWithResponsesInterface, error) {
+	opts := summaries.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
+		req.Header.Add("x-tidepool-session-token", shoreline.TokenProvide())
+		return nil
+	})
+	return summaries.NewClientWithResponses(config.DataHost, opts)
 }
 
 func clinicProvider(config DependenciesConfig, shoreline shoreline.Client) (clinics.ClientWithResponsesInterface, error) {

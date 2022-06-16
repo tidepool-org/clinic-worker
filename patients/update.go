@@ -1,5 +1,10 @@
 package patients
 
+import (
+	clinics "github.com/tidepool-org/clinic/client"
+	summaries "github.com/tidepool-org/go-common/clients/summary"
+)
+
 func ApplyPatientChangesToProfile(patient Patient, profile map[string]interface{}) {
 	patientProfile := EnsurePatientProfileExists(profile)
 	if patient.FullName != nil {
@@ -54,4 +59,66 @@ func EnsurePatientProfileExists(profile map[string]interface{}) map[string]inter
 		profile["patient"] = patientProfile
 		return patientProfile
 	}
+}
+
+func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSummaryJSONRequestBody {
+	// summary doesn't exist, return empty body
+	if summary == nil {
+		return clinics.UpdatePatientSummaryJSONRequestBody{}
+	}
+
+	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{
+		FirstData:                summary.FirstData,
+		LastData:                 summary.LastData,
+		LastUpdatedDate:          summary.LastUpdatedDate,
+		LastUploadDate:           summary.LastUploadDate,
+		OutdatedSince:            summary.OutdatedSince,
+		TotalDays:                summary.TotalDays,
+		LowGlucoseThreshold:      summary.LowGlucoseThreshold,
+		VeryLowGlucoseThreshold:  summary.VeryLowGlucoseThreshold,
+		HighGlucoseThreshold:     summary.HighGlucoseThreshold,
+		VeryHighGlucoseThreshold: summary.VeryHighGlucoseThreshold,
+	}
+
+	var periodExists = false
+	var period14dExists = false
+	if summary.Periods != nil {
+		periodExists = true
+		if summary.Periods.N14d != nil {
+			period14dExists = true
+		}
+	}
+
+	if periodExists && period14dExists {
+		patientUpdate.Periods = &clinics.PatientSummaryPeriods{N14d: &clinics.PatientSummaryPeriod{
+			AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N14d.AvgGlucose.Value,
+				Units: clinics.AverageGlucoseUnits(summary.Periods.N14d.AvgGlucose.Units)},
+			GlucoseManagementIndicator: summary.Periods.N14d.GlucoseManagementIndicator,
+
+			TimeCGMUseMinutes: summary.Periods.N14d.TimeCGMUseMinutes,
+			TimeCGMUsePercent: summary.Periods.N14d.TimeCGMUsePercent,
+			TimeCGMUseRecords: summary.Periods.N14d.TimeCGMUseRecords,
+
+			TimeInHighMinutes: summary.Periods.N14d.TimeInHighMinutes,
+			TimeInHighPercent: summary.Periods.N14d.TimeInHighPercent,
+			TimeInHighRecords: summary.Periods.N14d.TimeInHighRecords,
+
+			TimeInLowMinutes: summary.Periods.N14d.TimeInLowMinutes,
+			TimeInLowPercent: summary.Periods.N14d.TimeInLowPercent,
+			TimeInLowRecords: summary.Periods.N14d.TimeInLowRecords,
+
+			TimeInTargetMinutes: summary.Periods.N14d.TimeInTargetMinutes,
+			TimeInTargetPercent: summary.Periods.N14d.TimeInTargetPercent,
+			TimeInTargetRecords: summary.Periods.N14d.TimeInTargetRecords,
+
+			TimeInVeryHighMinutes: summary.Periods.N14d.TimeInVeryHighMinutes,
+			TimeInVeryHighPercent: summary.Periods.N14d.TimeInVeryHighPercent,
+			TimeInVeryHighRecords: summary.Periods.N14d.TimeInVeryHighRecords,
+
+			TimeInVeryLowMinutes: summary.Periods.N14d.TimeInVeryLowMinutes,
+			TimeInVeryLowPercent: summary.Periods.N14d.TimeInVeryLowPercent,
+			TimeInVeryLowRecords: summary.Periods.N14d.TimeInVeryLowRecords,
+		}}
+	}
+	return patientUpdate
 }

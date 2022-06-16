@@ -23,6 +23,7 @@ var dependencies = fx.Provide(
 	seagullProvider,
 	shorelineProvider,
 	gatekeeperProvider,
+	summariesProvider,
 	clinicProvider,
 	mailerProvider,
 )
