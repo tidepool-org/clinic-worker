@@ -139,7 +139,10 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 
 	if event.PatientNeedsSummary() {
 		p.logger.Infow("processing summary initialization", "event", event)
-		return p.populateSummary(*event.FullDocument.UserId)
+		err := p.populateSummary(*event.FullDocument.UserId)
+		if err != nil {
+			return err
+		}
 	}
 
 	if event.IsUploadReminderEvent() {
