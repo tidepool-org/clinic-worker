@@ -62,6 +62,11 @@ func EnsurePatientProfileExists(profile map[string]interface{}) map[string]inter
 }
 
 func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSummaryJSONRequestBody {
+	// summary doesn't exist, return empty body
+	if summary == nil {
+		return clinics.UpdatePatientSummaryJSONRequestBody{}
+	}
+
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{
 		FirstData:                summary.FirstData,
 		LastData:                 summary.LastData,

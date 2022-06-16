@@ -157,7 +157,16 @@ func (p *PatientCDCConsumer) populateSummary(userId string) error {
 	if err != nil {
 		return err
 	}
+
+	if !(summaryResponse.StatusCode() == http.StatusOK || summaryResponse.StatusCode() == http.StatusNotFound) {
+		return fmt.Errorf("unexpected status code when retrieving patient summary %v", summaryResponse.StatusCode())
+	}
+
 	userSummary := summaryResponse.JSON200
+	// user has no summary, do nothing
+	if userSummary == nil {
+		return nil
+	}
 
 	updateBody := CreateSummaryUpdateBody(userSummary)
 
