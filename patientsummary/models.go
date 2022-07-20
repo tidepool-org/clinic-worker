@@ -146,8 +146,10 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 	}
 
 	if p.FullDocument.Periods != nil {
-		patientUpdate.Periods = &clinics.PatientSummaryPeriods{
-			N1d: &clinics.PatientSummaryPeriod{
+		patientUpdate.Periods = &clinics.PatientSummaryPeriods{}
+
+		if _, exists := p.FullDocument.Periods["1d"]; exists {
+			patientUpdate.Periods.N1d = &clinics.PatientSummaryPeriod{
 				AverageGlucose:             p.FullDocument.Periods["1d"].AverageGlucose,
 				GlucoseManagementIndicator: p.FullDocument.Periods["1d"].GlucoseManagementIndicator,
 
@@ -174,8 +176,11 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 				TimeInVeryLowMinutes: p.FullDocument.Periods["1d"].TimeInVeryLowMinutes,
 				TimeInVeryLowPercent: p.FullDocument.Periods["1d"].TimeInVeryLowPercent,
 				TimeInVeryLowRecords: p.FullDocument.Periods["1d"].TimeInVeryLowRecords,
-			},
-			N7d: &clinics.PatientSummaryPeriod{
+			}
+		}
+
+		if _, exists := p.FullDocument.Periods["7d"]; exists {
+			patientUpdate.Periods.N7d = &clinics.PatientSummaryPeriod{
 				AverageGlucose:             p.FullDocument.Periods["7d"].AverageGlucose,
 				GlucoseManagementIndicator: p.FullDocument.Periods["7d"].GlucoseManagementIndicator,
 
@@ -202,8 +207,11 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 				TimeInVeryLowMinutes: p.FullDocument.Periods["7d"].TimeInVeryLowMinutes,
 				TimeInVeryLowPercent: p.FullDocument.Periods["7d"].TimeInVeryLowPercent,
 				TimeInVeryLowRecords: p.FullDocument.Periods["7d"].TimeInVeryLowRecords,
-			},
-			N14d: &clinics.PatientSummaryPeriod{
+			}
+		}
+
+		if _, exists := p.FullDocument.Periods["14d"]; exists {
+			patientUpdate.Periods.N14d = &clinics.PatientSummaryPeriod{
 				AverageGlucose:             p.FullDocument.Periods["14d"].AverageGlucose,
 				GlucoseManagementIndicator: p.FullDocument.Periods["14d"].GlucoseManagementIndicator,
 
@@ -230,8 +238,11 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 				TimeInVeryLowMinutes: p.FullDocument.Periods["14d"].TimeInVeryLowMinutes,
 				TimeInVeryLowPercent: p.FullDocument.Periods["14d"].TimeInVeryLowPercent,
 				TimeInVeryLowRecords: p.FullDocument.Periods["14d"].TimeInVeryLowRecords,
-			},
-			N30d: &clinics.PatientSummaryPeriod{
+			}
+		}
+
+		if _, exists := p.FullDocument.Periods["30d"]; exists {
+			patientUpdate.Periods.N30d = &clinics.PatientSummaryPeriod{
 				AverageGlucose:             p.FullDocument.Periods["30d"].AverageGlucose,
 				GlucoseManagementIndicator: p.FullDocument.Periods["30d"].GlucoseManagementIndicator,
 
@@ -258,7 +269,7 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 				TimeInVeryLowMinutes: p.FullDocument.Periods["30d"].TimeInVeryLowMinutes,
 				TimeInVeryLowPercent: p.FullDocument.Periods["30d"].TimeInVeryLowPercent,
 				TimeInVeryLowRecords: p.FullDocument.Periods["30d"].TimeInVeryLowRecords,
-			},
+			}
 		}
 	}
 	return patientUpdate

@@ -81,8 +81,10 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 	}
 
 	if summary.Periods != nil {
-		patientUpdate.Periods = &clinics.PatientSummaryPeriods{
-			N1d: &clinics.PatientSummaryPeriod{
+		patientUpdate.Periods = &clinics.PatientSummaryPeriods{}
+
+		if summary.Periods.N1d != nil {
+			patientUpdate.Periods.N1d = &clinics.PatientSummaryPeriod{
 				AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N1d.AvgGlucose.Value,
 					Units: clinics.AverageGlucoseUnits(summary.Periods.N1d.AvgGlucose.Units)},
 				GlucoseManagementIndicator: summary.Periods.N1d.GlucoseManagementIndicator,
@@ -110,8 +112,11 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 				TimeInVeryLowMinutes: summary.Periods.N1d.TimeInVeryLowMinutes,
 				TimeInVeryLowPercent: summary.Periods.N1d.TimeInVeryLowPercent,
 				TimeInVeryLowRecords: summary.Periods.N1d.TimeInVeryLowRecords,
-			},
-			N7d: &clinics.PatientSummaryPeriod{
+			}
+		}
+
+		if summary.Periods.N7d != nil {
+			patientUpdate.Periods.N7d = &clinics.PatientSummaryPeriod{
 				AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N7d.AvgGlucose.Value,
 					Units: clinics.AverageGlucoseUnits(summary.Periods.N7d.AvgGlucose.Units)},
 				GlucoseManagementIndicator: summary.Periods.N7d.GlucoseManagementIndicator,
@@ -139,8 +144,11 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 				TimeInVeryLowMinutes: summary.Periods.N7d.TimeInVeryLowMinutes,
 				TimeInVeryLowPercent: summary.Periods.N7d.TimeInVeryLowPercent,
 				TimeInVeryLowRecords: summary.Periods.N7d.TimeInVeryLowRecords,
-			},
-			N14d: &clinics.PatientSummaryPeriod{
+			}
+		}
+
+		if summary.Periods.N14d != nil {
+			patientUpdate.Periods.N14d = &clinics.PatientSummaryPeriod{
 				AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N14d.AvgGlucose.Value,
 					Units: clinics.AverageGlucoseUnits(summary.Periods.N14d.AvgGlucose.Units)},
 				GlucoseManagementIndicator: summary.Periods.N14d.GlucoseManagementIndicator,
@@ -168,8 +176,11 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 				TimeInVeryLowMinutes: summary.Periods.N14d.TimeInVeryLowMinutes,
 				TimeInVeryLowPercent: summary.Periods.N14d.TimeInVeryLowPercent,
 				TimeInVeryLowRecords: summary.Periods.N14d.TimeInVeryLowRecords,
-			},
-			N30d: &clinics.PatientSummaryPeriod{
+			}
+		}
+
+		if summary.Periods.N30d != nil {
+			patientUpdate.Periods.N30d = &clinics.PatientSummaryPeriod{
 				AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N30d.AvgGlucose.Value,
 					Units: clinics.AverageGlucoseUnits(summary.Periods.N30d.AvgGlucose.Units)},
 				GlucoseManagementIndicator: summary.Periods.N30d.GlucoseManagementIndicator,
@@ -197,8 +208,9 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 				TimeInVeryLowMinutes: summary.Periods.N30d.TimeInVeryLowMinutes,
 				TimeInVeryLowPercent: summary.Periods.N30d.TimeInVeryLowPercent,
 				TimeInVeryLowRecords: summary.Periods.N30d.TimeInVeryLowRecords,
-			},
+			}
 		}
 	}
+
 	return patientUpdate
 }
