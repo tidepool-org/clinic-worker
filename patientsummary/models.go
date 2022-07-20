@@ -145,141 +145,121 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 		VeryHighGlucoseThreshold: p.FullDocument.VeryHighGlucoseThreshold,
 	}
 
-	var periodExists = false
-	var period1dExists = false
-	var period7dExists = false
-	var period14dExists = false
-	var period30dExists = false
 	if p.FullDocument.Periods != nil {
-		periodExists = true
-		_, period1dExists = p.FullDocument.Periods["1d"]
-		_, period7dExists = p.FullDocument.Periods["7d"]
-		_, period14dExists = p.FullDocument.Periods["14d"]
-		_, period30dExists = p.FullDocument.Periods["30d"]
-	}
+		patientUpdate.Periods = &clinics.PatientSummaryPeriods{
+			N1d: &clinics.PatientSummaryPeriod{
+				AverageGlucose:             p.FullDocument.Periods["1d"].AverageGlucose,
+				GlucoseManagementIndicator: p.FullDocument.Periods["1d"].GlucoseManagementIndicator,
 
-	if periodExists && period1dExists {
-		patientUpdate.Periods = &clinics.PatientSummaryPeriods{N1d: &clinics.PatientSummaryPeriod{
-			AverageGlucose:             p.FullDocument.Periods["1d"].AverageGlucose,
-			GlucoseManagementIndicator: p.FullDocument.Periods["1d"].GlucoseManagementIndicator,
+				TimeCGMUseMinutes: p.FullDocument.Periods["1d"].TimeCGMUseMinutes,
+				TimeCGMUsePercent: p.FullDocument.Periods["1d"].TimeCGMUsePercent,
+				TimeCGMUseRecords: p.FullDocument.Periods["1d"].TimeCGMUseRecords,
 
-			TimeCGMUseMinutes: p.FullDocument.Periods["1d"].TimeCGMUseMinutes,
-			TimeCGMUsePercent: p.FullDocument.Periods["1d"].TimeCGMUsePercent,
-			TimeCGMUseRecords: p.FullDocument.Periods["1d"].TimeCGMUseRecords,
+				TimeInHighMinutes: p.FullDocument.Periods["1d"].TimeInHighMinutes,
+				TimeInHighPercent: p.FullDocument.Periods["1d"].TimeInHighPercent,
+				TimeInHighRecords: p.FullDocument.Periods["1d"].TimeInHighRecords,
 
-			TimeInHighMinutes: p.FullDocument.Periods["1d"].TimeInHighMinutes,
-			TimeInHighPercent: p.FullDocument.Periods["1d"].TimeInHighPercent,
-			TimeInHighRecords: p.FullDocument.Periods["1d"].TimeInHighRecords,
+				TimeInLowMinutes: p.FullDocument.Periods["1d"].TimeInLowMinutes,
+				TimeInLowPercent: p.FullDocument.Periods["1d"].TimeInLowPercent,
+				TimeInLowRecords: p.FullDocument.Periods["1d"].TimeInLowRecords,
 
-			TimeInLowMinutes: p.FullDocument.Periods["1d"].TimeInLowMinutes,
-			TimeInLowPercent: p.FullDocument.Periods["1d"].TimeInLowPercent,
-			TimeInLowRecords: p.FullDocument.Periods["1d"].TimeInLowRecords,
+				TimeInTargetMinutes: p.FullDocument.Periods["1d"].TimeInTargetMinutes,
+				TimeInTargetPercent: p.FullDocument.Periods["1d"].TimeInTargetPercent,
+				TimeInTargetRecords: p.FullDocument.Periods["1d"].TimeInTargetRecords,
 
-			TimeInTargetMinutes: p.FullDocument.Periods["1d"].TimeInTargetMinutes,
-			TimeInTargetPercent: p.FullDocument.Periods["1d"].TimeInTargetPercent,
-			TimeInTargetRecords: p.FullDocument.Periods["1d"].TimeInTargetRecords,
+				TimeInVeryHighMinutes: p.FullDocument.Periods["1d"].TimeInVeryHighMinutes,
+				TimeInVeryHighPercent: p.FullDocument.Periods["1d"].TimeInVeryHighPercent,
+				TimeInVeryHighRecords: p.FullDocument.Periods["1d"].TimeInVeryHighRecords,
 
-			TimeInVeryHighMinutes: p.FullDocument.Periods["1d"].TimeInVeryHighMinutes,
-			TimeInVeryHighPercent: p.FullDocument.Periods["1d"].TimeInVeryHighPercent,
-			TimeInVeryHighRecords: p.FullDocument.Periods["1d"].TimeInVeryHighRecords,
+				TimeInVeryLowMinutes: p.FullDocument.Periods["1d"].TimeInVeryLowMinutes,
+				TimeInVeryLowPercent: p.FullDocument.Periods["1d"].TimeInVeryLowPercent,
+				TimeInVeryLowRecords: p.FullDocument.Periods["1d"].TimeInVeryLowRecords,
+			},
+			N7d: &clinics.PatientSummaryPeriod{
+				AverageGlucose:             p.FullDocument.Periods["7d"].AverageGlucose,
+				GlucoseManagementIndicator: p.FullDocument.Periods["7d"].GlucoseManagementIndicator,
 
-			TimeInVeryLowMinutes: p.FullDocument.Periods["1d"].TimeInVeryLowMinutes,
-			TimeInVeryLowPercent: p.FullDocument.Periods["1d"].TimeInVeryLowPercent,
-			TimeInVeryLowRecords: p.FullDocument.Periods["1d"].TimeInVeryLowRecords,
-		}}
-	}
+				TimeCGMUseMinutes: p.FullDocument.Periods["7d"].TimeCGMUseMinutes,
+				TimeCGMUsePercent: p.FullDocument.Periods["7d"].TimeCGMUsePercent,
+				TimeCGMUseRecords: p.FullDocument.Periods["7d"].TimeCGMUseRecords,
 
-	if periodExists && period7dExists {
-		patientUpdate.Periods = &clinics.PatientSummaryPeriods{N7d: &clinics.PatientSummaryPeriod{
-			AverageGlucose:             p.FullDocument.Periods["7d"].AverageGlucose,
-			GlucoseManagementIndicator: p.FullDocument.Periods["7d"].GlucoseManagementIndicator,
+				TimeInHighMinutes: p.FullDocument.Periods["7d"].TimeInHighMinutes,
+				TimeInHighPercent: p.FullDocument.Periods["7d"].TimeInHighPercent,
+				TimeInHighRecords: p.FullDocument.Periods["7d"].TimeInHighRecords,
 
-			TimeCGMUseMinutes: p.FullDocument.Periods["7d"].TimeCGMUseMinutes,
-			TimeCGMUsePercent: p.FullDocument.Periods["7d"].TimeCGMUsePercent,
-			TimeCGMUseRecords: p.FullDocument.Periods["7d"].TimeCGMUseRecords,
+				TimeInLowMinutes: p.FullDocument.Periods["7d"].TimeInLowMinutes,
+				TimeInLowPercent: p.FullDocument.Periods["7d"].TimeInLowPercent,
+				TimeInLowRecords: p.FullDocument.Periods["7d"].TimeInLowRecords,
 
-			TimeInHighMinutes: p.FullDocument.Periods["7d"].TimeInHighMinutes,
-			TimeInHighPercent: p.FullDocument.Periods["7d"].TimeInHighPercent,
-			TimeInHighRecords: p.FullDocument.Periods["7d"].TimeInHighRecords,
+				TimeInTargetMinutes: p.FullDocument.Periods["7d"].TimeInTargetMinutes,
+				TimeInTargetPercent: p.FullDocument.Periods["7d"].TimeInTargetPercent,
+				TimeInTargetRecords: p.FullDocument.Periods["7d"].TimeInTargetRecords,
 
-			TimeInLowMinutes: p.FullDocument.Periods["7d"].TimeInLowMinutes,
-			TimeInLowPercent: p.FullDocument.Periods["7d"].TimeInLowPercent,
-			TimeInLowRecords: p.FullDocument.Periods["7d"].TimeInLowRecords,
+				TimeInVeryHighMinutes: p.FullDocument.Periods["7d"].TimeInVeryHighMinutes,
+				TimeInVeryHighPercent: p.FullDocument.Periods["7d"].TimeInVeryHighPercent,
+				TimeInVeryHighRecords: p.FullDocument.Periods["7d"].TimeInVeryHighRecords,
 
-			TimeInTargetMinutes: p.FullDocument.Periods["7d"].TimeInTargetMinutes,
-			TimeInTargetPercent: p.FullDocument.Periods["7d"].TimeInTargetPercent,
-			TimeInTargetRecords: p.FullDocument.Periods["7d"].TimeInTargetRecords,
+				TimeInVeryLowMinutes: p.FullDocument.Periods["7d"].TimeInVeryLowMinutes,
+				TimeInVeryLowPercent: p.FullDocument.Periods["7d"].TimeInVeryLowPercent,
+				TimeInVeryLowRecords: p.FullDocument.Periods["7d"].TimeInVeryLowRecords,
+			},
+			N14d: &clinics.PatientSummaryPeriod{
+				AverageGlucose:             p.FullDocument.Periods["14d"].AverageGlucose,
+				GlucoseManagementIndicator: p.FullDocument.Periods["14d"].GlucoseManagementIndicator,
 
-			TimeInVeryHighMinutes: p.FullDocument.Periods["7d"].TimeInVeryHighMinutes,
-			TimeInVeryHighPercent: p.FullDocument.Periods["7d"].TimeInVeryHighPercent,
-			TimeInVeryHighRecords: p.FullDocument.Periods["7d"].TimeInVeryHighRecords,
+				TimeCGMUseMinutes: p.FullDocument.Periods["14d"].TimeCGMUseMinutes,
+				TimeCGMUsePercent: p.FullDocument.Periods["14d"].TimeCGMUsePercent,
+				TimeCGMUseRecords: p.FullDocument.Periods["14d"].TimeCGMUseRecords,
 
-			TimeInVeryLowMinutes: p.FullDocument.Periods["7d"].TimeInVeryLowMinutes,
-			TimeInVeryLowPercent: p.FullDocument.Periods["7d"].TimeInVeryLowPercent,
-			TimeInVeryLowRecords: p.FullDocument.Periods["7d"].TimeInVeryLowRecords,
-		}}
-	}
+				TimeInHighMinutes: p.FullDocument.Periods["14d"].TimeInHighMinutes,
+				TimeInHighPercent: p.FullDocument.Periods["14d"].TimeInHighPercent,
+				TimeInHighRecords: p.FullDocument.Periods["14d"].TimeInHighRecords,
 
-	if periodExists && period14dExists {
-		patientUpdate.Periods = &clinics.PatientSummaryPeriods{N14d: &clinics.PatientSummaryPeriod{
-			AverageGlucose:             p.FullDocument.Periods["14d"].AverageGlucose,
-			GlucoseManagementIndicator: p.FullDocument.Periods["14d"].GlucoseManagementIndicator,
+				TimeInLowMinutes: p.FullDocument.Periods["14d"].TimeInLowMinutes,
+				TimeInLowPercent: p.FullDocument.Periods["14d"].TimeInLowPercent,
+				TimeInLowRecords: p.FullDocument.Periods["14d"].TimeInLowRecords,
 
-			TimeCGMUseMinutes: p.FullDocument.Periods["14d"].TimeCGMUseMinutes,
-			TimeCGMUsePercent: p.FullDocument.Periods["14d"].TimeCGMUsePercent,
-			TimeCGMUseRecords: p.FullDocument.Periods["14d"].TimeCGMUseRecords,
+				TimeInTargetMinutes: p.FullDocument.Periods["14d"].TimeInTargetMinutes,
+				TimeInTargetPercent: p.FullDocument.Periods["14d"].TimeInTargetPercent,
+				TimeInTargetRecords: p.FullDocument.Periods["14d"].TimeInTargetRecords,
 
-			TimeInHighMinutes: p.FullDocument.Periods["14d"].TimeInHighMinutes,
-			TimeInHighPercent: p.FullDocument.Periods["14d"].TimeInHighPercent,
-			TimeInHighRecords: p.FullDocument.Periods["14d"].TimeInHighRecords,
+				TimeInVeryHighMinutes: p.FullDocument.Periods["14d"].TimeInVeryHighMinutes,
+				TimeInVeryHighPercent: p.FullDocument.Periods["14d"].TimeInVeryHighPercent,
+				TimeInVeryHighRecords: p.FullDocument.Periods["14d"].TimeInVeryHighRecords,
 
-			TimeInLowMinutes: p.FullDocument.Periods["14d"].TimeInLowMinutes,
-			TimeInLowPercent: p.FullDocument.Periods["14d"].TimeInLowPercent,
-			TimeInLowRecords: p.FullDocument.Periods["14d"].TimeInLowRecords,
+				TimeInVeryLowMinutes: p.FullDocument.Periods["14d"].TimeInVeryLowMinutes,
+				TimeInVeryLowPercent: p.FullDocument.Periods["14d"].TimeInVeryLowPercent,
+				TimeInVeryLowRecords: p.FullDocument.Periods["14d"].TimeInVeryLowRecords,
+			},
+			N30d: &clinics.PatientSummaryPeriod{
+				AverageGlucose:             p.FullDocument.Periods["30d"].AverageGlucose,
+				GlucoseManagementIndicator: p.FullDocument.Periods["30d"].GlucoseManagementIndicator,
 
-			TimeInTargetMinutes: p.FullDocument.Periods["14d"].TimeInTargetMinutes,
-			TimeInTargetPercent: p.FullDocument.Periods["14d"].TimeInTargetPercent,
-			TimeInTargetRecords: p.FullDocument.Periods["14d"].TimeInTargetRecords,
+				TimeCGMUseMinutes: p.FullDocument.Periods["30d"].TimeCGMUseMinutes,
+				TimeCGMUsePercent: p.FullDocument.Periods["30d"].TimeCGMUsePercent,
+				TimeCGMUseRecords: p.FullDocument.Periods["30d"].TimeCGMUseRecords,
 
-			TimeInVeryHighMinutes: p.FullDocument.Periods["14d"].TimeInVeryHighMinutes,
-			TimeInVeryHighPercent: p.FullDocument.Periods["14d"].TimeInVeryHighPercent,
-			TimeInVeryHighRecords: p.FullDocument.Periods["14d"].TimeInVeryHighRecords,
+				TimeInHighMinutes: p.FullDocument.Periods["30d"].TimeInHighMinutes,
+				TimeInHighPercent: p.FullDocument.Periods["30d"].TimeInHighPercent,
+				TimeInHighRecords: p.FullDocument.Periods["30d"].TimeInHighRecords,
 
-			TimeInVeryLowMinutes: p.FullDocument.Periods["14d"].TimeInVeryLowMinutes,
-			TimeInVeryLowPercent: p.FullDocument.Periods["14d"].TimeInVeryLowPercent,
-			TimeInVeryLowRecords: p.FullDocument.Periods["14d"].TimeInVeryLowRecords,
-		}}
-	}
+				TimeInLowMinutes: p.FullDocument.Periods["30d"].TimeInLowMinutes,
+				TimeInLowPercent: p.FullDocument.Periods["30d"].TimeInLowPercent,
+				TimeInLowRecords: p.FullDocument.Periods["30d"].TimeInLowRecords,
 
-	if periodExists && period30dExists {
-		patientUpdate.Periods = &clinics.PatientSummaryPeriods{N30d: &clinics.PatientSummaryPeriod{
-			AverageGlucose:             p.FullDocument.Periods["30d"].AverageGlucose,
-			GlucoseManagementIndicator: p.FullDocument.Periods["30d"].GlucoseManagementIndicator,
+				TimeInTargetMinutes: p.FullDocument.Periods["30d"].TimeInTargetMinutes,
+				TimeInTargetPercent: p.FullDocument.Periods["30d"].TimeInTargetPercent,
+				TimeInTargetRecords: p.FullDocument.Periods["30d"].TimeInTargetRecords,
 
-			TimeCGMUseMinutes: p.FullDocument.Periods["30d"].TimeCGMUseMinutes,
-			TimeCGMUsePercent: p.FullDocument.Periods["30d"].TimeCGMUsePercent,
-			TimeCGMUseRecords: p.FullDocument.Periods["30d"].TimeCGMUseRecords,
+				TimeInVeryHighMinutes: p.FullDocument.Periods["30d"].TimeInVeryHighMinutes,
+				TimeInVeryHighPercent: p.FullDocument.Periods["30d"].TimeInVeryHighPercent,
+				TimeInVeryHighRecords: p.FullDocument.Periods["30d"].TimeInVeryHighRecords,
 
-			TimeInHighMinutes: p.FullDocument.Periods["30d"].TimeInHighMinutes,
-			TimeInHighPercent: p.FullDocument.Periods["30d"].TimeInHighPercent,
-			TimeInHighRecords: p.FullDocument.Periods["30d"].TimeInHighRecords,
-
-			TimeInLowMinutes: p.FullDocument.Periods["30d"].TimeInLowMinutes,
-			TimeInLowPercent: p.FullDocument.Periods["30d"].TimeInLowPercent,
-			TimeInLowRecords: p.FullDocument.Periods["30d"].TimeInLowRecords,
-
-			TimeInTargetMinutes: p.FullDocument.Periods["30d"].TimeInTargetMinutes,
-			TimeInTargetPercent: p.FullDocument.Periods["30d"].TimeInTargetPercent,
-			TimeInTargetRecords: p.FullDocument.Periods["30d"].TimeInTargetRecords,
-
-			TimeInVeryHighMinutes: p.FullDocument.Periods["30d"].TimeInVeryHighMinutes,
-			TimeInVeryHighPercent: p.FullDocument.Periods["30d"].TimeInVeryHighPercent,
-			TimeInVeryHighRecords: p.FullDocument.Periods["30d"].TimeInVeryHighRecords,
-
-			TimeInVeryLowMinutes: p.FullDocument.Periods["30d"].TimeInVeryLowMinutes,
-			TimeInVeryLowPercent: p.FullDocument.Periods["30d"].TimeInVeryLowPercent,
-			TimeInVeryLowRecords: p.FullDocument.Periods["30d"].TimeInVeryLowRecords,
-		}}
+				TimeInVeryLowMinutes: p.FullDocument.Periods["30d"].TimeInVeryLowMinutes,
+				TimeInVeryLowPercent: p.FullDocument.Periods["30d"].TimeInVeryLowPercent,
+				TimeInVeryLowRecords: p.FullDocument.Periods["30d"].TimeInVeryLowRecords,
+			},
+		}
 	}
 	return patientUpdate
 }
