@@ -52,13 +52,15 @@ type Stats struct {
 }
 
 type Period struct {
-	TimeCGMUsePercent *float64 `json:"timeCGMUsePercent"`
-	TimeCGMUseMinutes *int     `json:"timeCGMUseMinutes"`
-	TimeCGMUseRecords *int     `json:"timeCGMUseRecords"`
+	TimeCGMUsePercent    *float64 `json:"timeCGMUsePercent"`
+	HasTimeCGMUsePercent *bool    `json:"hasTimeCGMUsePercent"`
+	TimeCGMUseMinutes    *int     `json:"timeCGMUseMinutes"`
+	TimeCGMUseRecords    *int     `json:"timeCGMUseRecords"`
 
 	// actual values
-	AverageGlucose             *clinics.AverageGlucose `json:"avgGlucose"`
-	GlucoseManagementIndicator *float64                `json:"glucoseManagementIndicator"`
+	AverageGlucose                *clinics.AverageGlucose `json:"avgGlucose"`
+	GlucoseManagementIndicator    *float64                `json:"glucoseManagementIndicator"`
+	HasGlucoseManagementIndicator *bool                   `json:"hasGlucoseManagementIndicator"`
 
 	TimeInTargetPercent *float64 `json:"timeInTargetPercent"`
 	TimeInTargetMinutes *int     `json:"timeInTargetMinutes"`
@@ -89,11 +91,12 @@ type Summary struct {
 	Periods     map[string]*Period `json:"periods"`
 
 	// date tracking
-	LastUpdatedDate *cdc.Date `json:"lastUpdatedDate"`
-	FirstData       *cdc.Date `json:"firstData"`
-	LastData        *cdc.Date `json:"lastData"`
-	LastUploadDate  *cdc.Date `json:"lastUploadDate"`
-	OutdatedSince   *cdc.Date `json:"outdatedSince"`
+	LastUpdatedDate   *cdc.Date `json:"lastUpdatedDate"`
+	FirstData         *cdc.Date `json:"firstData"`
+	LastData          *cdc.Date `json:"lastData"`
+	LastUploadDate    *cdc.Date `json:"lastUploadDate"`
+	HasLastUploadDate *bool     `json:"hasLastUploadDate"`
+	OutdatedSince     *cdc.Date `json:"outdatedSince"`
 
 	TotalHours *int `json:"totalHours"`
 
@@ -137,6 +140,7 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 		LastData:                 lastData,
 		LastUpdatedDate:          lastUpdatedDate,
 		LastUploadDate:           lastUploadDate,
+		HasLastUploadDate:        p.FullDocument.HasLastUploadDate,
 		OutdatedSince:            outdatedSince,
 		TotalHours:               p.FullDocument.TotalHours,
 		LowGlucoseThreshold:      p.FullDocument.LowGlucoseThreshold,
@@ -150,12 +154,14 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 
 		if _, exists := p.FullDocument.Periods["1d"]; exists {
 			patientUpdate.Periods.N1d = &clinics.PatientSummaryPeriod{
-				AverageGlucose:             p.FullDocument.Periods["1d"].AverageGlucose,
-				GlucoseManagementIndicator: p.FullDocument.Periods["1d"].GlucoseManagementIndicator,
+				AverageGlucose:                p.FullDocument.Periods["1d"].AverageGlucose,
+				GlucoseManagementIndicator:    p.FullDocument.Periods["1d"].GlucoseManagementIndicator,
+				HasGlucoseManagementIndicator: p.FullDocument.Periods["1d"].HasGlucoseManagementIndicator,
 
-				TimeCGMUseMinutes: p.FullDocument.Periods["1d"].TimeCGMUseMinutes,
-				TimeCGMUsePercent: p.FullDocument.Periods["1d"].TimeCGMUsePercent,
-				TimeCGMUseRecords: p.FullDocument.Periods["1d"].TimeCGMUseRecords,
+				TimeCGMUseMinutes:    p.FullDocument.Periods["1d"].TimeCGMUseMinutes,
+				TimeCGMUsePercent:    p.FullDocument.Periods["1d"].TimeCGMUsePercent,
+				HasTimeCGMUsePercent: p.FullDocument.Periods["1d"].HasTimeCGMUsePercent,
+				TimeCGMUseRecords:    p.FullDocument.Periods["1d"].TimeCGMUseRecords,
 
 				TimeInHighMinutes: p.FullDocument.Periods["1d"].TimeInHighMinutes,
 				TimeInHighPercent: p.FullDocument.Periods["1d"].TimeInHighPercent,
@@ -181,12 +187,14 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 
 		if _, exists := p.FullDocument.Periods["7d"]; exists {
 			patientUpdate.Periods.N7d = &clinics.PatientSummaryPeriod{
-				AverageGlucose:             p.FullDocument.Periods["7d"].AverageGlucose,
-				GlucoseManagementIndicator: p.FullDocument.Periods["7d"].GlucoseManagementIndicator,
+				AverageGlucose:                p.FullDocument.Periods["7d"].AverageGlucose,
+				GlucoseManagementIndicator:    p.FullDocument.Periods["7d"].GlucoseManagementIndicator,
+				HasGlucoseManagementIndicator: p.FullDocument.Periods["7d"].HasGlucoseManagementIndicator,
 
-				TimeCGMUseMinutes: p.FullDocument.Periods["7d"].TimeCGMUseMinutes,
-				TimeCGMUsePercent: p.FullDocument.Periods["7d"].TimeCGMUsePercent,
-				TimeCGMUseRecords: p.FullDocument.Periods["7d"].TimeCGMUseRecords,
+				TimeCGMUseMinutes:    p.FullDocument.Periods["7d"].TimeCGMUseMinutes,
+				TimeCGMUsePercent:    p.FullDocument.Periods["7d"].TimeCGMUsePercent,
+				HasTimeCGMUsePercent: p.FullDocument.Periods["7d"].HasTimeCGMUsePercent,
+				TimeCGMUseRecords:    p.FullDocument.Periods["7d"].TimeCGMUseRecords,
 
 				TimeInHighMinutes: p.FullDocument.Periods["7d"].TimeInHighMinutes,
 				TimeInHighPercent: p.FullDocument.Periods["7d"].TimeInHighPercent,
@@ -212,12 +220,14 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 
 		if _, exists := p.FullDocument.Periods["14d"]; exists {
 			patientUpdate.Periods.N14d = &clinics.PatientSummaryPeriod{
-				AverageGlucose:             p.FullDocument.Periods["14d"].AverageGlucose,
-				GlucoseManagementIndicator: p.FullDocument.Periods["14d"].GlucoseManagementIndicator,
+				AverageGlucose:                p.FullDocument.Periods["14d"].AverageGlucose,
+				GlucoseManagementIndicator:    p.FullDocument.Periods["14d"].GlucoseManagementIndicator,
+				HasGlucoseManagementIndicator: p.FullDocument.Periods["14d"].HasGlucoseManagementIndicator,
 
-				TimeCGMUseMinutes: p.FullDocument.Periods["14d"].TimeCGMUseMinutes,
-				TimeCGMUsePercent: p.FullDocument.Periods["14d"].TimeCGMUsePercent,
-				TimeCGMUseRecords: p.FullDocument.Periods["14d"].TimeCGMUseRecords,
+				TimeCGMUseMinutes:    p.FullDocument.Periods["14d"].TimeCGMUseMinutes,
+				TimeCGMUsePercent:    p.FullDocument.Periods["14d"].TimeCGMUsePercent,
+				HasTimeCGMUsePercent: p.FullDocument.Periods["14d"].HasTimeCGMUsePercent,
+				TimeCGMUseRecords:    p.FullDocument.Periods["14d"].TimeCGMUseRecords,
 
 				TimeInHighMinutes: p.FullDocument.Periods["14d"].TimeInHighMinutes,
 				TimeInHighPercent: p.FullDocument.Periods["14d"].TimeInHighPercent,
@@ -243,12 +253,14 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 
 		if _, exists := p.FullDocument.Periods["30d"]; exists {
 			patientUpdate.Periods.N30d = &clinics.PatientSummaryPeriod{
-				AverageGlucose:             p.FullDocument.Periods["30d"].AverageGlucose,
-				GlucoseManagementIndicator: p.FullDocument.Periods["30d"].GlucoseManagementIndicator,
+				AverageGlucose:                p.FullDocument.Periods["30d"].AverageGlucose,
+				GlucoseManagementIndicator:    p.FullDocument.Periods["30d"].GlucoseManagementIndicator,
+				HasGlucoseManagementIndicator: p.FullDocument.Periods["30d"].HasGlucoseManagementIndicator,
 
-				TimeCGMUseMinutes: p.FullDocument.Periods["30d"].TimeCGMUseMinutes,
-				TimeCGMUsePercent: p.FullDocument.Periods["30d"].TimeCGMUsePercent,
-				TimeCGMUseRecords: p.FullDocument.Periods["30d"].TimeCGMUseRecords,
+				TimeCGMUseMinutes:    p.FullDocument.Periods["30d"].TimeCGMUseMinutes,
+				TimeCGMUsePercent:    p.FullDocument.Periods["30d"].TimeCGMUsePercent,
+				HasTimeCGMUsePercent: p.FullDocument.Periods["30d"].HasTimeCGMUsePercent,
+				TimeCGMUseRecords:    p.FullDocument.Periods["30d"].TimeCGMUseRecords,
 
 				TimeInHighMinutes: p.FullDocument.Periods["30d"].TimeInHighMinutes,
 				TimeInHighPercent: p.FullDocument.Periods["30d"].TimeInHighPercent,

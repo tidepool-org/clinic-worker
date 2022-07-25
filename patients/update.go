@@ -72,6 +72,7 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 		LastData:                 summary.LastData,
 		LastUpdatedDate:          summary.LastUpdatedDate,
 		LastUploadDate:           summary.LastUploadDate,
+		HasLastUploadDate:        summary.HasLastUploadDate,
 		OutdatedSince:            summary.OutdatedSince,
 		TotalHours:               summary.TotalHours,
 		LowGlucoseThreshold:      summary.LowGlucoseThreshold,
@@ -87,11 +88,13 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 			patientUpdate.Periods.N1d = &clinics.PatientSummaryPeriod{
 				AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N1d.AvgGlucose.Value,
 					Units: clinics.AverageGlucoseUnits(summary.Periods.N1d.AvgGlucose.Units)},
-				GlucoseManagementIndicator: summary.Periods.N1d.GlucoseManagementIndicator,
+				GlucoseManagementIndicator:    summary.Periods.N1d.GlucoseManagementIndicator,
+				HasGlucoseManagementIndicator: summary.Periods.N1d.HasGlucoseManagementIndicator,
 
-				TimeCGMUseMinutes: summary.Periods.N1d.TimeCGMUseMinutes,
-				TimeCGMUsePercent: summary.Periods.N1d.TimeCGMUsePercent,
-				TimeCGMUseRecords: summary.Periods.N1d.TimeCGMUseRecords,
+				TimeCGMUseMinutes:    summary.Periods.N1d.TimeCGMUseMinutes,
+				TimeCGMUsePercent:    summary.Periods.N1d.TimeCGMUsePercent,
+				HasTimeCGMUsePercent: summary.Periods.N1d.HasTimeCGMUsePercent,
+				TimeCGMUseRecords:    summary.Periods.N1d.TimeCGMUseRecords,
 
 				TimeInHighMinutes: summary.Periods.N1d.TimeInHighMinutes,
 				TimeInHighPercent: summary.Periods.N1d.TimeInHighPercent,
@@ -119,11 +122,13 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 			patientUpdate.Periods.N7d = &clinics.PatientSummaryPeriod{
 				AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N7d.AvgGlucose.Value,
 					Units: clinics.AverageGlucoseUnits(summary.Periods.N7d.AvgGlucose.Units)},
-				GlucoseManagementIndicator: summary.Periods.N7d.GlucoseManagementIndicator,
+				GlucoseManagementIndicator:    summary.Periods.N7d.GlucoseManagementIndicator,
+				HasGlucoseManagementIndicator: summary.Periods.N7d.HasGlucoseManagementIndicator,
 
-				TimeCGMUseMinutes: summary.Periods.N7d.TimeCGMUseMinutes,
-				TimeCGMUsePercent: summary.Periods.N7d.TimeCGMUsePercent,
-				TimeCGMUseRecords: summary.Periods.N7d.TimeCGMUseRecords,
+				TimeCGMUseMinutes:    summary.Periods.N7d.TimeCGMUseMinutes,
+				TimeCGMUsePercent:    summary.Periods.N7d.TimeCGMUsePercent,
+				HasTimeCGMUsePercent: summary.Periods.N7d.HasTimeCGMUsePercent,
+				TimeCGMUseRecords:    summary.Periods.N7d.TimeCGMUseRecords,
 
 				TimeInHighMinutes: summary.Periods.N7d.TimeInHighMinutes,
 				TimeInHighPercent: summary.Periods.N7d.TimeInHighPercent,
@@ -151,11 +156,13 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 			patientUpdate.Periods.N14d = &clinics.PatientSummaryPeriod{
 				AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N14d.AvgGlucose.Value,
 					Units: clinics.AverageGlucoseUnits(summary.Periods.N14d.AvgGlucose.Units)},
-				GlucoseManagementIndicator: summary.Periods.N14d.GlucoseManagementIndicator,
+				GlucoseManagementIndicator:    summary.Periods.N14d.GlucoseManagementIndicator,
+				HasGlucoseManagementIndicator: summary.Periods.N14d.HasGlucoseManagementIndicator,
 
-				TimeCGMUseMinutes: summary.Periods.N14d.TimeCGMUseMinutes,
-				TimeCGMUsePercent: summary.Periods.N14d.TimeCGMUsePercent,
-				TimeCGMUseRecords: summary.Periods.N14d.TimeCGMUseRecords,
+				TimeCGMUseMinutes:    summary.Periods.N14d.TimeCGMUseMinutes,
+				TimeCGMUsePercent:    summary.Periods.N14d.TimeCGMUsePercent,
+				HasTimeCGMUsePercent: summary.Periods.N14d.HasTimeCGMUsePercent,
+				TimeCGMUseRecords:    summary.Periods.N14d.TimeCGMUseRecords,
 
 				TimeInHighMinutes: summary.Periods.N14d.TimeInHighMinutes,
 				TimeInHighPercent: summary.Periods.N14d.TimeInHighPercent,
@@ -183,11 +190,13 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 			patientUpdate.Periods.N30d = &clinics.PatientSummaryPeriod{
 				AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N30d.AvgGlucose.Value,
 					Units: clinics.AverageGlucoseUnits(summary.Periods.N30d.AvgGlucose.Units)},
-				GlucoseManagementIndicator: summary.Periods.N30d.GlucoseManagementIndicator,
+				GlucoseManagementIndicator:    summary.Periods.N30d.GlucoseManagementIndicator,
+				HasGlucoseManagementIndicator: summary.Periods.N30d.HasGlucoseManagementIndicator,
 
-				TimeCGMUseMinutes: summary.Periods.N30d.TimeCGMUseMinutes,
-				TimeCGMUsePercent: summary.Periods.N30d.TimeCGMUsePercent,
-				TimeCGMUseRecords: summary.Periods.N30d.TimeCGMUseRecords,
+				TimeCGMUseMinutes:    summary.Periods.N30d.TimeCGMUseMinutes,
+				TimeCGMUsePercent:    summary.Periods.N30d.TimeCGMUsePercent,
+				HasTimeCGMUsePercent: summary.Periods.N30d.HasTimeCGMUsePercent,
+				TimeCGMUseRecords:    summary.Periods.N30d.TimeCGMUseRecords,
 
 				TimeInHighMinutes: summary.Periods.N30d.TimeInHighMinutes,
 				TimeInHighPercent: summary.Periods.N30d.TimeInHighPercent,
