@@ -114,8 +114,8 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 
 		for i := range sourcePeriods {
 			destPeriods[i].AverageGlucose = &clinics.AverageGlucose{
-				Value: sourcePeriods[i].AvgGlucose.Value,
-				Units: clinics.AverageGlucoseUnits(sourcePeriods[i].AvgGlucose.Units)}
+				Value: sourcePeriods[i].AverageGlucose.Value,
+				Units: clinics.AverageGlucoseUnits(sourcePeriods[i].AverageGlucose.Units)}
 
 			destPeriods[i].GlucoseManagementIndicator = sourcePeriods[i].GlucoseManagementIndicator
 			destPeriods[i].HasGlucoseManagementIndicator = sourcePeriods[i].HasGlucoseManagementIndicator
