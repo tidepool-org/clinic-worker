@@ -152,136 +152,64 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 	if p.FullDocument.Periods != nil {
 		patientUpdate.Periods = &clinics.PatientSummaryPeriods{}
 
+		// this is bad, but it's better than copy and pasting the copy code N times
+		sourcePeriods := map[string]*Period{}
+		destPeriods := map[string]*clinics.PatientSummaryPeriod{}
 		if _, exists := p.FullDocument.Periods["1d"]; exists {
-			patientUpdate.Periods.N1d = &clinics.PatientSummaryPeriod{
-				AverageGlucose:                p.FullDocument.Periods["1d"].AverageGlucose,
-				GlucoseManagementIndicator:    p.FullDocument.Periods["1d"].GlucoseManagementIndicator,
-				HasGlucoseManagementIndicator: p.FullDocument.Periods["1d"].HasGlucoseManagementIndicator,
+			sourcePeriods["1d"] = p.FullDocument.Periods["1d"]
 
-				TimeCGMUseMinutes:    p.FullDocument.Periods["1d"].TimeCGMUseMinutes,
-				TimeCGMUsePercent:    p.FullDocument.Periods["1d"].TimeCGMUsePercent,
-				HasTimeCGMUsePercent: p.FullDocument.Periods["1d"].HasTimeCGMUsePercent,
-				TimeCGMUseRecords:    p.FullDocument.Periods["1d"].TimeCGMUseRecords,
-
-				TimeInHighMinutes: p.FullDocument.Periods["1d"].TimeInHighMinutes,
-				TimeInHighPercent: p.FullDocument.Periods["1d"].TimeInHighPercent,
-				TimeInHighRecords: p.FullDocument.Periods["1d"].TimeInHighRecords,
-
-				TimeInLowMinutes: p.FullDocument.Periods["1d"].TimeInLowMinutes,
-				TimeInLowPercent: p.FullDocument.Periods["1d"].TimeInLowPercent,
-				TimeInLowRecords: p.FullDocument.Periods["1d"].TimeInLowRecords,
-
-				TimeInTargetMinutes: p.FullDocument.Periods["1d"].TimeInTargetMinutes,
-				TimeInTargetPercent: p.FullDocument.Periods["1d"].TimeInTargetPercent,
-				TimeInTargetRecords: p.FullDocument.Periods["1d"].TimeInTargetRecords,
-
-				TimeInVeryHighMinutes: p.FullDocument.Periods["1d"].TimeInVeryHighMinutes,
-				TimeInVeryHighPercent: p.FullDocument.Periods["1d"].TimeInVeryHighPercent,
-				TimeInVeryHighRecords: p.FullDocument.Periods["1d"].TimeInVeryHighRecords,
-
-				TimeInVeryLowMinutes: p.FullDocument.Periods["1d"].TimeInVeryLowMinutes,
-				TimeInVeryLowPercent: p.FullDocument.Periods["1d"].TimeInVeryLowPercent,
-				TimeInVeryLowRecords: p.FullDocument.Periods["1d"].TimeInVeryLowRecords,
-			}
+			patientUpdate.Periods.N1d = &clinics.PatientSummaryPeriod{}
+			destPeriods["1d"] = patientUpdate.Periods.N1d
 		}
-
 		if _, exists := p.FullDocument.Periods["7d"]; exists {
-			patientUpdate.Periods.N7d = &clinics.PatientSummaryPeriod{
-				AverageGlucose:                p.FullDocument.Periods["7d"].AverageGlucose,
-				GlucoseManagementIndicator:    p.FullDocument.Periods["7d"].GlucoseManagementIndicator,
-				HasGlucoseManagementIndicator: p.FullDocument.Periods["7d"].HasGlucoseManagementIndicator,
+			sourcePeriods["8d"] = p.FullDocument.Periods["7d"]
 
-				TimeCGMUseMinutes:    p.FullDocument.Periods["7d"].TimeCGMUseMinutes,
-				TimeCGMUsePercent:    p.FullDocument.Periods["7d"].TimeCGMUsePercent,
-				HasTimeCGMUsePercent: p.FullDocument.Periods["7d"].HasTimeCGMUsePercent,
-				TimeCGMUseRecords:    p.FullDocument.Periods["7d"].TimeCGMUseRecords,
-
-				TimeInHighMinutes: p.FullDocument.Periods["7d"].TimeInHighMinutes,
-				TimeInHighPercent: p.FullDocument.Periods["7d"].TimeInHighPercent,
-				TimeInHighRecords: p.FullDocument.Periods["7d"].TimeInHighRecords,
-
-				TimeInLowMinutes: p.FullDocument.Periods["7d"].TimeInLowMinutes,
-				TimeInLowPercent: p.FullDocument.Periods["7d"].TimeInLowPercent,
-				TimeInLowRecords: p.FullDocument.Periods["7d"].TimeInLowRecords,
-
-				TimeInTargetMinutes: p.FullDocument.Periods["7d"].TimeInTargetMinutes,
-				TimeInTargetPercent: p.FullDocument.Periods["7d"].TimeInTargetPercent,
-				TimeInTargetRecords: p.FullDocument.Periods["7d"].TimeInTargetRecords,
-
-				TimeInVeryHighMinutes: p.FullDocument.Periods["7d"].TimeInVeryHighMinutes,
-				TimeInVeryHighPercent: p.FullDocument.Periods["7d"].TimeInVeryHighPercent,
-				TimeInVeryHighRecords: p.FullDocument.Periods["7d"].TimeInVeryHighRecords,
-
-				TimeInVeryLowMinutes: p.FullDocument.Periods["7d"].TimeInVeryLowMinutes,
-				TimeInVeryLowPercent: p.FullDocument.Periods["7d"].TimeInVeryLowPercent,
-				TimeInVeryLowRecords: p.FullDocument.Periods["7d"].TimeInVeryLowRecords,
-			}
+			patientUpdate.Periods.N7d = &clinics.PatientSummaryPeriod{}
+			destPeriods["7d"] = patientUpdate.Periods.N7d
 		}
-
 		if _, exists := p.FullDocument.Periods["14d"]; exists {
-			patientUpdate.Periods.N14d = &clinics.PatientSummaryPeriod{
-				AverageGlucose:                p.FullDocument.Periods["14d"].AverageGlucose,
-				GlucoseManagementIndicator:    p.FullDocument.Periods["14d"].GlucoseManagementIndicator,
-				HasGlucoseManagementIndicator: p.FullDocument.Periods["14d"].HasGlucoseManagementIndicator,
+			sourcePeriods["14d"] = p.FullDocument.Periods["14d"]
 
-				TimeCGMUseMinutes:    p.FullDocument.Periods["14d"].TimeCGMUseMinutes,
-				TimeCGMUsePercent:    p.FullDocument.Periods["14d"].TimeCGMUsePercent,
-				HasTimeCGMUsePercent: p.FullDocument.Periods["14d"].HasTimeCGMUsePercent,
-				TimeCGMUseRecords:    p.FullDocument.Periods["14d"].TimeCGMUseRecords,
+			patientUpdate.Periods.N14d = &clinics.PatientSummaryPeriod{}
+			destPeriods["14d"] = patientUpdate.Periods.N14d
+		}
+		if _, exists := p.FullDocument.Periods["30d"]; exists {
+			sourcePeriods["30d"] = p.FullDocument.Periods["30d"]
 
-				TimeInHighMinutes: p.FullDocument.Periods["14d"].TimeInHighMinutes,
-				TimeInHighPercent: p.FullDocument.Periods["14d"].TimeInHighPercent,
-				TimeInHighRecords: p.FullDocument.Periods["14d"].TimeInHighRecords,
-
-				TimeInLowMinutes: p.FullDocument.Periods["14d"].TimeInLowMinutes,
-				TimeInLowPercent: p.FullDocument.Periods["14d"].TimeInLowPercent,
-				TimeInLowRecords: p.FullDocument.Periods["14d"].TimeInLowRecords,
-
-				TimeInTargetMinutes: p.FullDocument.Periods["14d"].TimeInTargetMinutes,
-				TimeInTargetPercent: p.FullDocument.Periods["14d"].TimeInTargetPercent,
-				TimeInTargetRecords: p.FullDocument.Periods["14d"].TimeInTargetRecords,
-
-				TimeInVeryHighMinutes: p.FullDocument.Periods["14d"].TimeInVeryHighMinutes,
-				TimeInVeryHighPercent: p.FullDocument.Periods["14d"].TimeInVeryHighPercent,
-				TimeInVeryHighRecords: p.FullDocument.Periods["14d"].TimeInVeryHighRecords,
-
-				TimeInVeryLowMinutes: p.FullDocument.Periods["14d"].TimeInVeryLowMinutes,
-				TimeInVeryLowPercent: p.FullDocument.Periods["14d"].TimeInVeryLowPercent,
-				TimeInVeryLowRecords: p.FullDocument.Periods["14d"].TimeInVeryLowRecords,
-			}
+			patientUpdate.Periods.N30d = &clinics.PatientSummaryPeriod{}
+			destPeriods["30d"] = patientUpdate.Periods.N30d
 		}
 
-		if _, exists := p.FullDocument.Periods["30d"]; exists {
-			patientUpdate.Periods.N30d = &clinics.PatientSummaryPeriod{
-				AverageGlucose:                p.FullDocument.Periods["30d"].AverageGlucose,
-				GlucoseManagementIndicator:    p.FullDocument.Periods["30d"].GlucoseManagementIndicator,
-				HasGlucoseManagementIndicator: p.FullDocument.Periods["30d"].HasGlucoseManagementIndicator,
+		for i := range sourcePeriods {
+			destPeriods[i].AverageGlucose = sourcePeriods[i].AverageGlucose
 
-				TimeCGMUseMinutes:    p.FullDocument.Periods["30d"].TimeCGMUseMinutes,
-				TimeCGMUsePercent:    p.FullDocument.Periods["30d"].TimeCGMUsePercent,
-				HasTimeCGMUsePercent: p.FullDocument.Periods["30d"].HasTimeCGMUsePercent,
-				TimeCGMUseRecords:    p.FullDocument.Periods["30d"].TimeCGMUseRecords,
+			destPeriods[i].GlucoseManagementIndicator = sourcePeriods[i].GlucoseManagementIndicator
+			destPeriods[i].HasGlucoseManagementIndicator = sourcePeriods[i].HasGlucoseManagementIndicator
 
-				TimeInHighMinutes: p.FullDocument.Periods["30d"].TimeInHighMinutes,
-				TimeInHighPercent: p.FullDocument.Periods["30d"].TimeInHighPercent,
-				TimeInHighRecords: p.FullDocument.Periods["30d"].TimeInHighRecords,
+			destPeriods[i].TimeCGMUseMinutes = sourcePeriods[i].TimeCGMUseMinutes
+			destPeriods[i].TimeCGMUsePercent = sourcePeriods[i].TimeCGMUsePercent
+			destPeriods[i].HasTimeCGMUsePercent = sourcePeriods[i].HasTimeCGMUsePercent
+			destPeriods[i].TimeCGMUseRecords = sourcePeriods[i].TimeCGMUseRecords
 
-				TimeInLowMinutes: p.FullDocument.Periods["30d"].TimeInLowMinutes,
-				TimeInLowPercent: p.FullDocument.Periods["30d"].TimeInLowPercent,
-				TimeInLowRecords: p.FullDocument.Periods["30d"].TimeInLowRecords,
+			destPeriods[i].TimeInHighMinutes = sourcePeriods[i].TimeInHighMinutes
+			destPeriods[i].TimeInHighPercent = sourcePeriods[i].TimeInHighPercent
+			destPeriods[i].TimeInHighRecords = sourcePeriods[i].TimeInHighRecords
 
-				TimeInTargetMinutes: p.FullDocument.Periods["30d"].TimeInTargetMinutes,
-				TimeInTargetPercent: p.FullDocument.Periods["30d"].TimeInTargetPercent,
-				TimeInTargetRecords: p.FullDocument.Periods["30d"].TimeInTargetRecords,
+			destPeriods[i].TimeInLowMinutes = sourcePeriods[i].TimeInLowMinutes
+			destPeriods[i].TimeInLowPercent = sourcePeriods[i].TimeInLowPercent
+			destPeriods[i].TimeInLowRecords = sourcePeriods[i].TimeInLowRecords
 
-				TimeInVeryHighMinutes: p.FullDocument.Periods["30d"].TimeInVeryHighMinutes,
-				TimeInVeryHighPercent: p.FullDocument.Periods["30d"].TimeInVeryHighPercent,
-				TimeInVeryHighRecords: p.FullDocument.Periods["30d"].TimeInVeryHighRecords,
+			destPeriods[i].TimeInTargetMinutes = sourcePeriods[i].TimeInTargetMinutes
+			destPeriods[i].TimeInTargetPercent = sourcePeriods[i].TimeInTargetPercent
+			destPeriods[i].TimeInTargetRecords = sourcePeriods[i].TimeInTargetRecords
 
-				TimeInVeryLowMinutes: p.FullDocument.Periods["30d"].TimeInVeryLowMinutes,
-				TimeInVeryLowPercent: p.FullDocument.Periods["30d"].TimeInVeryLowPercent,
-				TimeInVeryLowRecords: p.FullDocument.Periods["30d"].TimeInVeryLowRecords,
-			}
+			destPeriods[i].TimeInVeryHighMinutes = sourcePeriods[i].TimeInVeryHighMinutes
+			destPeriods[i].TimeInVeryHighPercent = sourcePeriods[i].TimeInVeryHighPercent
+			destPeriods[i].TimeInVeryHighRecords = sourcePeriods[i].TimeInVeryHighRecords
+
+			destPeriods[i].TimeInVeryLowMinutes = sourcePeriods[i].TimeInVeryLowMinutes
+			destPeriods[i].TimeInVeryLowPercent = sourcePeriods[i].TimeInVeryLowPercent
+			destPeriods[i].TimeInVeryLowRecords = sourcePeriods[i].TimeInVeryLowRecords
 		}
 	}
 	return patientUpdate

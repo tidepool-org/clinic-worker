@@ -84,140 +84,66 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 	if summary.Periods != nil {
 		patientUpdate.Periods = &clinics.PatientSummaryPeriods{}
 
+		// this is bad, but it's better than copy and pasting the copy code N times
+		sourcePeriods := map[string]*summaries.SummaryPeriod{}
+		destPeriods := map[string]*clinics.PatientSummaryPeriod{}
 		if summary.Periods.N1d != nil {
-			patientUpdate.Periods.N1d = &clinics.PatientSummaryPeriod{
-				AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N1d.AvgGlucose.Value,
-					Units: clinics.AverageGlucoseUnits(summary.Periods.N1d.AvgGlucose.Units)},
-				GlucoseManagementIndicator:    summary.Periods.N1d.GlucoseManagementIndicator,
-				HasGlucoseManagementIndicator: summary.Periods.N1d.HasGlucoseManagementIndicator,
+			sourcePeriods["1d"] = summary.Periods.N1d
 
-				TimeCGMUseMinutes:    summary.Periods.N1d.TimeCGMUseMinutes,
-				TimeCGMUsePercent:    summary.Periods.N1d.TimeCGMUsePercent,
-				HasTimeCGMUsePercent: summary.Periods.N1d.HasTimeCGMUsePercent,
-				TimeCGMUseRecords:    summary.Periods.N1d.TimeCGMUseRecords,
-
-				TimeInHighMinutes: summary.Periods.N1d.TimeInHighMinutes,
-				TimeInHighPercent: summary.Periods.N1d.TimeInHighPercent,
-				TimeInHighRecords: summary.Periods.N1d.TimeInHighRecords,
-
-				TimeInLowMinutes: summary.Periods.N1d.TimeInLowMinutes,
-				TimeInLowPercent: summary.Periods.N1d.TimeInLowPercent,
-				TimeInLowRecords: summary.Periods.N1d.TimeInLowRecords,
-
-				TimeInTargetMinutes: summary.Periods.N1d.TimeInTargetMinutes,
-				TimeInTargetPercent: summary.Periods.N1d.TimeInTargetPercent,
-				TimeInTargetRecords: summary.Periods.N1d.TimeInTargetRecords,
-
-				TimeInVeryHighMinutes: summary.Periods.N1d.TimeInVeryHighMinutes,
-				TimeInVeryHighPercent: summary.Periods.N1d.TimeInVeryHighPercent,
-				TimeInVeryHighRecords: summary.Periods.N1d.TimeInVeryHighRecords,
-
-				TimeInVeryLowMinutes: summary.Periods.N1d.TimeInVeryLowMinutes,
-				TimeInVeryLowPercent: summary.Periods.N1d.TimeInVeryLowPercent,
-				TimeInVeryLowRecords: summary.Periods.N1d.TimeInVeryLowRecords,
-			}
+			patientUpdate.Periods.N1d = &clinics.PatientSummaryPeriod{}
+			destPeriods["1d"] = patientUpdate.Periods.N1d
 		}
-
 		if summary.Periods.N7d != nil {
-			patientUpdate.Periods.N7d = &clinics.PatientSummaryPeriod{
-				AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N7d.AvgGlucose.Value,
-					Units: clinics.AverageGlucoseUnits(summary.Periods.N7d.AvgGlucose.Units)},
-				GlucoseManagementIndicator:    summary.Periods.N7d.GlucoseManagementIndicator,
-				HasGlucoseManagementIndicator: summary.Periods.N7d.HasGlucoseManagementIndicator,
+			sourcePeriods["7d"] = summary.Periods.N7d
 
-				TimeCGMUseMinutes:    summary.Periods.N7d.TimeCGMUseMinutes,
-				TimeCGMUsePercent:    summary.Periods.N7d.TimeCGMUsePercent,
-				HasTimeCGMUsePercent: summary.Periods.N7d.HasTimeCGMUsePercent,
-				TimeCGMUseRecords:    summary.Periods.N7d.TimeCGMUseRecords,
-
-				TimeInHighMinutes: summary.Periods.N7d.TimeInHighMinutes,
-				TimeInHighPercent: summary.Periods.N7d.TimeInHighPercent,
-				TimeInHighRecords: summary.Periods.N7d.TimeInHighRecords,
-
-				TimeInLowMinutes: summary.Periods.N7d.TimeInLowMinutes,
-				TimeInLowPercent: summary.Periods.N7d.TimeInLowPercent,
-				TimeInLowRecords: summary.Periods.N7d.TimeInLowRecords,
-
-				TimeInTargetMinutes: summary.Periods.N7d.TimeInTargetMinutes,
-				TimeInTargetPercent: summary.Periods.N7d.TimeInTargetPercent,
-				TimeInTargetRecords: summary.Periods.N7d.TimeInTargetRecords,
-
-				TimeInVeryHighMinutes: summary.Periods.N7d.TimeInVeryHighMinutes,
-				TimeInVeryHighPercent: summary.Periods.N7d.TimeInVeryHighPercent,
-				TimeInVeryHighRecords: summary.Periods.N7d.TimeInVeryHighRecords,
-
-				TimeInVeryLowMinutes: summary.Periods.N7d.TimeInVeryLowMinutes,
-				TimeInVeryLowPercent: summary.Periods.N7d.TimeInVeryLowPercent,
-				TimeInVeryLowRecords: summary.Periods.N7d.TimeInVeryLowRecords,
-			}
+			patientUpdate.Periods.N7d = &clinics.PatientSummaryPeriod{}
+			destPeriods["7d"] = patientUpdate.Periods.N7d
 		}
-
 		if summary.Periods.N14d != nil {
-			patientUpdate.Periods.N14d = &clinics.PatientSummaryPeriod{
-				AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N14d.AvgGlucose.Value,
-					Units: clinics.AverageGlucoseUnits(summary.Periods.N14d.AvgGlucose.Units)},
-				GlucoseManagementIndicator:    summary.Periods.N14d.GlucoseManagementIndicator,
-				HasGlucoseManagementIndicator: summary.Periods.N14d.HasGlucoseManagementIndicator,
+			sourcePeriods["14d"] = summary.Periods.N14d
 
-				TimeCGMUseMinutes:    summary.Periods.N14d.TimeCGMUseMinutes,
-				TimeCGMUsePercent:    summary.Periods.N14d.TimeCGMUsePercent,
-				HasTimeCGMUsePercent: summary.Periods.N14d.HasTimeCGMUsePercent,
-				TimeCGMUseRecords:    summary.Periods.N14d.TimeCGMUseRecords,
+			patientUpdate.Periods.N14d = &clinics.PatientSummaryPeriod{}
+			destPeriods["14d"] = patientUpdate.Periods.N14d
+		}
+		if summary.Periods.N30d != nil {
+			sourcePeriods["30d"] = summary.Periods.N30d
 
-				TimeInHighMinutes: summary.Periods.N14d.TimeInHighMinutes,
-				TimeInHighPercent: summary.Periods.N14d.TimeInHighPercent,
-				TimeInHighRecords: summary.Periods.N14d.TimeInHighRecords,
-
-				TimeInLowMinutes: summary.Periods.N14d.TimeInLowMinutes,
-				TimeInLowPercent: summary.Periods.N14d.TimeInLowPercent,
-				TimeInLowRecords: summary.Periods.N14d.TimeInLowRecords,
-
-				TimeInTargetMinutes: summary.Periods.N14d.TimeInTargetMinutes,
-				TimeInTargetPercent: summary.Periods.N14d.TimeInTargetPercent,
-				TimeInTargetRecords: summary.Periods.N14d.TimeInTargetRecords,
-
-				TimeInVeryHighMinutes: summary.Periods.N14d.TimeInVeryHighMinutes,
-				TimeInVeryHighPercent: summary.Periods.N14d.TimeInVeryHighPercent,
-				TimeInVeryHighRecords: summary.Periods.N14d.TimeInVeryHighRecords,
-
-				TimeInVeryLowMinutes: summary.Periods.N14d.TimeInVeryLowMinutes,
-				TimeInVeryLowPercent: summary.Periods.N14d.TimeInVeryLowPercent,
-				TimeInVeryLowRecords: summary.Periods.N14d.TimeInVeryLowRecords,
-			}
+			patientUpdate.Periods.N30d = &clinics.PatientSummaryPeriod{}
+			destPeriods["30d"] = patientUpdate.Periods.N30d
 		}
 
-		if summary.Periods.N30d != nil {
-			patientUpdate.Periods.N30d = &clinics.PatientSummaryPeriod{
-				AverageGlucose: &clinics.AverageGlucose{Value: summary.Periods.N30d.AvgGlucose.Value,
-					Units: clinics.AverageGlucoseUnits(summary.Periods.N30d.AvgGlucose.Units)},
-				GlucoseManagementIndicator:    summary.Periods.N30d.GlucoseManagementIndicator,
-				HasGlucoseManagementIndicator: summary.Periods.N30d.HasGlucoseManagementIndicator,
+		for i := range sourcePeriods {
+			destPeriods[i].AverageGlucose = &clinics.AverageGlucose{
+				Value: sourcePeriods[i].AvgGlucose.Value,
+				Units: clinics.AverageGlucoseUnits(sourcePeriods[i].AvgGlucose.Units)}
 
-				TimeCGMUseMinutes:    summary.Periods.N30d.TimeCGMUseMinutes,
-				TimeCGMUsePercent:    summary.Periods.N30d.TimeCGMUsePercent,
-				HasTimeCGMUsePercent: summary.Periods.N30d.HasTimeCGMUsePercent,
-				TimeCGMUseRecords:    summary.Periods.N30d.TimeCGMUseRecords,
+			destPeriods[i].GlucoseManagementIndicator = sourcePeriods[i].GlucoseManagementIndicator
+			destPeriods[i].HasGlucoseManagementIndicator = sourcePeriods[i].HasGlucoseManagementIndicator
 
-				TimeInHighMinutes: summary.Periods.N30d.TimeInHighMinutes,
-				TimeInHighPercent: summary.Periods.N30d.TimeInHighPercent,
-				TimeInHighRecords: summary.Periods.N30d.TimeInHighRecords,
+			destPeriods[i].TimeCGMUseMinutes = sourcePeriods[i].TimeCGMUseMinutes
+			destPeriods[i].TimeCGMUsePercent = sourcePeriods[i].TimeCGMUsePercent
+			destPeriods[i].HasTimeCGMUsePercent = sourcePeriods[i].HasTimeCGMUsePercent
+			destPeriods[i].TimeCGMUseRecords = sourcePeriods[i].TimeCGMUseRecords
 
-				TimeInLowMinutes: summary.Periods.N30d.TimeInLowMinutes,
-				TimeInLowPercent: summary.Periods.N30d.TimeInLowPercent,
-				TimeInLowRecords: summary.Periods.N30d.TimeInLowRecords,
+			destPeriods[i].TimeInHighMinutes = sourcePeriods[i].TimeInHighMinutes
+			destPeriods[i].TimeInHighPercent = sourcePeriods[i].TimeInHighPercent
+			destPeriods[i].TimeInHighRecords = sourcePeriods[i].TimeInHighRecords
 
-				TimeInTargetMinutes: summary.Periods.N30d.TimeInTargetMinutes,
-				TimeInTargetPercent: summary.Periods.N30d.TimeInTargetPercent,
-				TimeInTargetRecords: summary.Periods.N30d.TimeInTargetRecords,
+			destPeriods[i].TimeInLowMinutes = sourcePeriods[i].TimeInLowMinutes
+			destPeriods[i].TimeInLowPercent = sourcePeriods[i].TimeInLowPercent
+			destPeriods[i].TimeInLowRecords = sourcePeriods[i].TimeInLowRecords
 
-				TimeInVeryHighMinutes: summary.Periods.N30d.TimeInVeryHighMinutes,
-				TimeInVeryHighPercent: summary.Periods.N30d.TimeInVeryHighPercent,
-				TimeInVeryHighRecords: summary.Periods.N30d.TimeInVeryHighRecords,
+			destPeriods[i].TimeInTargetMinutes = sourcePeriods[i].TimeInTargetMinutes
+			destPeriods[i].TimeInTargetPercent = sourcePeriods[i].TimeInTargetPercent
+			destPeriods[i].TimeInTargetRecords = sourcePeriods[i].TimeInTargetRecords
 
-				TimeInVeryLowMinutes: summary.Periods.N30d.TimeInVeryLowMinutes,
-				TimeInVeryLowPercent: summary.Periods.N30d.TimeInVeryLowPercent,
-				TimeInVeryLowRecords: summary.Periods.N30d.TimeInVeryLowRecords,
-			}
+			destPeriods[i].TimeInVeryHighMinutes = sourcePeriods[i].TimeInVeryHighMinutes
+			destPeriods[i].TimeInVeryHighPercent = sourcePeriods[i].TimeInVeryHighPercent
+			destPeriods[i].TimeInVeryHighRecords = sourcePeriods[i].TimeInVeryHighRecords
+
+			destPeriods[i].TimeInVeryLowMinutes = sourcePeriods[i].TimeInVeryLowMinutes
+			destPeriods[i].TimeInVeryLowPercent = sourcePeriods[i].TimeInVeryLowPercent
+			destPeriods[i].TimeInVeryLowRecords = sourcePeriods[i].TimeInVeryLowRecords
 		}
 	}
 
