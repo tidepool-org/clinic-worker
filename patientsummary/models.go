@@ -163,7 +163,7 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 			destPeriods["1d"] = patientUpdate.Periods.N1d
 		}
 		if _, exists := p.FullDocument.Periods["7d"]; exists {
-			sourcePeriods["8d"] = p.FullDocument.Periods["7d"]
+			sourcePeriods["7d"] = p.FullDocument.Periods["7d"]
 
 			patientUpdate.Periods.N7d = &clinics.PatientSummaryPeriod{}
 			destPeriods["7d"] = patientUpdate.Periods.N7d
@@ -181,11 +181,11 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 			destPeriods["30d"] = patientUpdate.Periods.N30d
 		}
 
-		fmt.Println(destPeriods)
-		fmt.Println(sourcePeriods)
+		fmt.Println("\n", destPeriods)
+		fmt.Println("\n", sourcePeriods)
 
 		for i := range sourcePeriods {
-			fmt.Println(i, destPeriods[i].AverageGlucose, sourcePeriods[i].AverageGlucose)
+			fmt.Println("\n", i, destPeriods[i].AverageGlucose, sourcePeriods[i].AverageGlucose)
 			destPeriods[i].AverageGlucose = sourcePeriods[i].AverageGlucose
 
 			destPeriods[i].GlucoseManagementIndicator = sourcePeriods[i].GlucoseManagementIndicator
