@@ -1,7 +1,6 @@
 package patientsummary
 
 import (
-	"fmt"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
 	"time"
@@ -181,11 +180,7 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 			destPeriods["30d"] = patientUpdate.Periods.N30d
 		}
 
-		fmt.Println("\n", destPeriods)
-		fmt.Println("\n", sourcePeriods)
-
 		for i := range sourcePeriods {
-			fmt.Println("\n", i, destPeriods[i].AverageGlucose, sourcePeriods[i].AverageGlucose)
 			destPeriods[i].AverageGlucose = sourcePeriods[i].AverageGlucose
 
 			destPeriods[i].GlucoseManagementIndicator = sourcePeriods[i].GlucoseManagementIndicator
