@@ -113,9 +113,12 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 		}
 
 		for i := range sourcePeriods {
-			destPeriods[i].AverageGlucose = &clinics.AverageGlucose{
-				Value: sourcePeriods[i].AverageGlucose.Value,
-				Units: clinics.AverageGlucoseUnits(sourcePeriods[i].AverageGlucose.Units)}
+			if sourcePeriods[i].AverageGlucose != nil {
+				destPeriods[i].AverageGlucose = &clinics.AverageGlucose{
+					Value: sourcePeriods[i].AverageGlucose.Value,
+					Units: clinics.AverageGlucoseUnits(sourcePeriods[i].AverageGlucose.Units)}
+			}
+			destPeriods[i].HasAverageGlucose = sourcePeriods[i].HasAverageGlucose
 
 			destPeriods[i].GlucoseManagementIndicator = sourcePeriods[i].GlucoseManagementIndicator
 			destPeriods[i].HasGlucoseManagementIndicator = sourcePeriods[i].HasGlucoseManagementIndicator
@@ -127,22 +130,27 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 
 			destPeriods[i].TimeInHighMinutes = sourcePeriods[i].TimeInHighMinutes
 			destPeriods[i].TimeInHighPercent = sourcePeriods[i].TimeInHighPercent
+			destPeriods[i].HasTimeInHighPercent = sourcePeriods[i].HasTimeInHighPercent
 			destPeriods[i].TimeInHighRecords = sourcePeriods[i].TimeInHighRecords
 
 			destPeriods[i].TimeInLowMinutes = sourcePeriods[i].TimeInLowMinutes
 			destPeriods[i].TimeInLowPercent = sourcePeriods[i].TimeInLowPercent
+			destPeriods[i].HasTimeInLowPercent = sourcePeriods[i].HasTimeInLowPercent
 			destPeriods[i].TimeInLowRecords = sourcePeriods[i].TimeInLowRecords
 
 			destPeriods[i].TimeInTargetMinutes = sourcePeriods[i].TimeInTargetMinutes
 			destPeriods[i].TimeInTargetPercent = sourcePeriods[i].TimeInTargetPercent
+			destPeriods[i].HasTimeInTargetPercent = sourcePeriods[i].HasTimeInTargetPercent
 			destPeriods[i].TimeInTargetRecords = sourcePeriods[i].TimeInTargetRecords
 
 			destPeriods[i].TimeInVeryHighMinutes = sourcePeriods[i].TimeInVeryHighMinutes
 			destPeriods[i].TimeInVeryHighPercent = sourcePeriods[i].TimeInVeryHighPercent
+			destPeriods[i].HasTimeInVeryHighPercent = sourcePeriods[i].HasTimeInVeryHighPercent
 			destPeriods[i].TimeInVeryHighRecords = sourcePeriods[i].TimeInVeryHighRecords
 
 			destPeriods[i].TimeInVeryLowMinutes = sourcePeriods[i].TimeInVeryLowMinutes
 			destPeriods[i].TimeInVeryLowPercent = sourcePeriods[i].TimeInVeryLowPercent
+			destPeriods[i].HasTimeInVeryLowPercent = sourcePeriods[i].HasTimeInVeryLowPercent
 			destPeriods[i].TimeInVeryLowRecords = sourcePeriods[i].TimeInVeryLowRecords
 		}
 	}

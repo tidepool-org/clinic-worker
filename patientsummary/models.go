@@ -58,29 +58,36 @@ type Period struct {
 	TimeCGMUseRecords    *int     `json:"timeCGMUseRecords"`
 
 	// actual values
-	AverageGlucose                *clinics.AverageGlucose `json:"avgGlucose"`
-	GlucoseManagementIndicator    *float64                `json:"glucoseManagementIndicator"`
-	HasGlucoseManagementIndicator *bool                   `json:"hasGlucoseManagementIndicator"`
+	AverageGlucose    *clinics.AverageGlucose `json:"avgGlucose"`
+	HasAverageGlucose *bool                   `json:"hasAverageGlucose"`
 
-	TimeInTargetPercent *float64 `json:"timeInTargetPercent"`
-	TimeInTargetMinutes *int     `json:"timeInTargetMinutes"`
-	TimeInTargetRecords *int     `json:"timeInTargetRecords"`
+	GlucoseManagementIndicator    *float64 `json:"glucoseManagementIndicator"`
+	HasGlucoseManagementIndicator *bool    `json:"hasGlucoseManagementIndicator"`
 
-	TimeInLowPercent *float64 `json:"timeInLowPercent"`
-	TimeInLowMinutes *int     `json:"timeInLowMinutes"`
-	TimeInLowRecords *int     `json:"timeInLowRecords"`
+	TimeInTargetPercent    *float64 `json:"timeInTargetPercent"`
+	HasTimeInTargetPercent *bool    `json:"hasTimeInTargetPercent"`
+	TimeInTargetMinutes    *int     `json:"timeInTargetMinutes"`
+	TimeInTargetRecords    *int     `json:"timeInTargetRecords"`
 
-	TimeInVeryLowPercent *float64 `json:"timeInVeryLowPercent"`
-	TimeInVeryLowMinutes *int     `json:"timeInVeryLowMinutes"`
-	TimeInVeryLowRecords *int     `json:"timeInVeryLowRecords"`
+	TimeInLowPercent    *float64 `json:"timeInLowPercent"`
+	HasTimeInLowPercent *bool    `json:"hasTimeInLowPercent"`
+	TimeInLowMinutes    *int     `json:"timeInLowMinutes"`
+	TimeInLowRecords    *int     `json:"timeInLowRecords"`
 
-	TimeInHighPercent *float64 `json:"timeInHighPercent"`
-	TimeInHighMinutes *int     `json:"timeInHighMinutes"`
-	TimeInHighRecords *int     `json:"timeInHighRecords"`
+	TimeInVeryLowPercent    *float64 `json:"timeInVeryLowPercent"`
+	HasTimeInVeryLowPercent *bool    `json:"hasTimeInVeryLowPercent"`
+	TimeInVeryLowMinutes    *int     `json:"timeInVeryLowMinutes"`
+	TimeInVeryLowRecords    *int     `json:"timeInVeryLowRecords"`
 
-	TimeInVeryHighPercent *float64 `json:"timeInVeryHighPercent"`
-	TimeInVeryHighMinutes *int     `json:"timeInVeryHighMinutes"`
-	TimeInVeryHighRecords *int     `json:"timeInVeryHighRecords"`
+	TimeInHighPercent    *float64 `json:"timeInHighPercent"`
+	HasTimeInHighPercent *bool    `json:"hasTimeInHighPercent"`
+	TimeInHighMinutes    *int     `json:"timeInHighMinutes"`
+	TimeInHighRecords    *int     `json:"timeInHighRecords"`
+
+	TimeInVeryHighPercent    *float64 `json:"timeInVeryHighPercent"`
+	HasTimeInVeryHighPercent *bool    `json:"hasTimeInVeryHighPercent"`
+	TimeInVeryHighMinutes    *int     `json:"timeInVeryHighMinutes"`
+	TimeInVeryHighRecords    *int     `json:"timeInVeryHighRecords"`
 }
 
 type Summary struct {
@@ -182,6 +189,7 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 
 		for i := range sourcePeriods {
 			destPeriods[i].AverageGlucose = sourcePeriods[i].AverageGlucose
+			destPeriods[i].HasAverageGlucose = sourcePeriods[i].HasAverageGlucose
 
 			destPeriods[i].GlucoseManagementIndicator = sourcePeriods[i].GlucoseManagementIndicator
 			destPeriods[i].HasGlucoseManagementIndicator = sourcePeriods[i].HasGlucoseManagementIndicator
@@ -193,22 +201,27 @@ func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody
 
 			destPeriods[i].TimeInHighMinutes = sourcePeriods[i].TimeInHighMinutes
 			destPeriods[i].TimeInHighPercent = sourcePeriods[i].TimeInHighPercent
+			destPeriods[i].HasTimeInHighPercent = sourcePeriods[i].HasTimeInHighPercent
 			destPeriods[i].TimeInHighRecords = sourcePeriods[i].TimeInHighRecords
 
 			destPeriods[i].TimeInLowMinutes = sourcePeriods[i].TimeInLowMinutes
 			destPeriods[i].TimeInLowPercent = sourcePeriods[i].TimeInLowPercent
+			destPeriods[i].HasTimeInLowPercent = sourcePeriods[i].HasTimeInLowPercent
 			destPeriods[i].TimeInLowRecords = sourcePeriods[i].TimeInLowRecords
 
 			destPeriods[i].TimeInTargetMinutes = sourcePeriods[i].TimeInTargetMinutes
 			destPeriods[i].TimeInTargetPercent = sourcePeriods[i].TimeInTargetPercent
+			destPeriods[i].HasTimeInTargetPercent = sourcePeriods[i].HasTimeInTargetPercent
 			destPeriods[i].TimeInTargetRecords = sourcePeriods[i].TimeInTargetRecords
 
 			destPeriods[i].TimeInVeryHighMinutes = sourcePeriods[i].TimeInVeryHighMinutes
 			destPeriods[i].TimeInVeryHighPercent = sourcePeriods[i].TimeInVeryHighPercent
+			destPeriods[i].HasTimeInVeryHighPercent = sourcePeriods[i].HasTimeInVeryHighPercent
 			destPeriods[i].TimeInVeryHighRecords = sourcePeriods[i].TimeInVeryHighRecords
 
 			destPeriods[i].TimeInVeryLowMinutes = sourcePeriods[i].TimeInVeryLowMinutes
 			destPeriods[i].TimeInVeryLowPercent = sourcePeriods[i].TimeInVeryLowPercent
+			destPeriods[i].HasTimeInVeryLowPercent = sourcePeriods[i].HasTimeInVeryLowPercent
 			destPeriods[i].TimeInVeryLowRecords = sourcePeriods[i].TimeInVeryLowRecords
 		}
 	}
