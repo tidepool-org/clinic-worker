@@ -111,7 +111,9 @@ func (p *CDCConsumer) handleCDCEvent(event CDCEvent) error {
 	}
 
 	p.logger.Infow("processing summary event for user", "userid", event.FullDocument.UserID)
-	p.logger.Debugw("event being processed", "event", event)
+
+	// The following is so noisy, that even debug is not a high enough level for it.
+	//p.logger.Debugw("event being processed", "event", event)
 
 	return p.applyPatientSummaryUpdate(event)
 }
