@@ -112,46 +112,46 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 			destPeriods["30d"] = patientUpdate.Periods.N30d
 		}
 
-		for i := range sourcePeriods {
-			if sourcePeriods[i].AverageGlucose != nil {
-				destPeriods[i].AverageGlucose = &clinics.AverageGlucose{
-					Value: sourcePeriods[i].AverageGlucose.Value,
-					Units: clinics.AverageGlucoseUnits(sourcePeriods[i].AverageGlucose.Units)}
+		for period := range sourcePeriods {
+			if sourcePeriods[period].AverageGlucose != nil {
+				destPeriods[period].AverageGlucose = &clinics.AverageGlucose{
+					Value: sourcePeriods[period].AverageGlucose.Value,
+					Units: clinics.AverageGlucoseUnits(sourcePeriods[period].AverageGlucose.Units)}
 			}
-			destPeriods[i].HasAverageGlucose = sourcePeriods[i].HasAverageGlucose
+			destPeriods[period].HasAverageGlucose = sourcePeriods[period].HasAverageGlucose
 
-			destPeriods[i].GlucoseManagementIndicator = sourcePeriods[i].GlucoseManagementIndicator
-			destPeriods[i].HasGlucoseManagementIndicator = sourcePeriods[i].HasGlucoseManagementIndicator
+			destPeriods[period].GlucoseManagementIndicator = sourcePeriods[period].GlucoseManagementIndicator
+			destPeriods[period].HasGlucoseManagementIndicator = sourcePeriods[period].HasGlucoseManagementIndicator
 
-			destPeriods[i].TimeCGMUseMinutes = sourcePeriods[i].TimeCGMUseMinutes
-			destPeriods[i].TimeCGMUsePercent = sourcePeriods[i].TimeCGMUsePercent
-			destPeriods[i].HasTimeCGMUsePercent = sourcePeriods[i].HasTimeCGMUsePercent
-			destPeriods[i].TimeCGMUseRecords = sourcePeriods[i].TimeCGMUseRecords
+			destPeriods[period].TimeCGMUseMinutes = sourcePeriods[period].TimeCGMUseMinutes
+			destPeriods[period].TimeCGMUsePercent = sourcePeriods[period].TimeCGMUsePercent
+			destPeriods[period].HasTimeCGMUsePercent = sourcePeriods[period].HasTimeCGMUsePercent
+			destPeriods[period].TimeCGMUseRecords = sourcePeriods[period].TimeCGMUseRecords
 
-			destPeriods[i].TimeInHighMinutes = sourcePeriods[i].TimeInHighMinutes
-			destPeriods[i].TimeInHighPercent = sourcePeriods[i].TimeInHighPercent
-			destPeriods[i].HasTimeInHighPercent = sourcePeriods[i].HasTimeInHighPercent
-			destPeriods[i].TimeInHighRecords = sourcePeriods[i].TimeInHighRecords
+			destPeriods[period].TimeInHighMinutes = sourcePeriods[period].TimeInHighMinutes
+			destPeriods[period].TimeInHighPercent = sourcePeriods[period].TimeInHighPercent
+			destPeriods[period].HasTimeInHighPercent = sourcePeriods[period].HasTimeInHighPercent
+			destPeriods[period].TimeInHighRecords = sourcePeriods[period].TimeInHighRecords
 
-			destPeriods[i].TimeInLowMinutes = sourcePeriods[i].TimeInLowMinutes
-			destPeriods[i].TimeInLowPercent = sourcePeriods[i].TimeInLowPercent
-			destPeriods[i].HasTimeInLowPercent = sourcePeriods[i].HasTimeInLowPercent
-			destPeriods[i].TimeInLowRecords = sourcePeriods[i].TimeInLowRecords
+			destPeriods[period].TimeInLowMinutes = sourcePeriods[period].TimeInLowMinutes
+			destPeriods[period].TimeInLowPercent = sourcePeriods[period].TimeInLowPercent
+			destPeriods[period].HasTimeInLowPercent = sourcePeriods[period].HasTimeInLowPercent
+			destPeriods[period].TimeInLowRecords = sourcePeriods[period].TimeInLowRecords
 
-			destPeriods[i].TimeInTargetMinutes = sourcePeriods[i].TimeInTargetMinutes
-			destPeriods[i].TimeInTargetPercent = sourcePeriods[i].TimeInTargetPercent
-			destPeriods[i].HasTimeInTargetPercent = sourcePeriods[i].HasTimeInTargetPercent
-			destPeriods[i].TimeInTargetRecords = sourcePeriods[i].TimeInTargetRecords
+			destPeriods[period].TimeInTargetMinutes = sourcePeriods[period].TimeInTargetMinutes
+			destPeriods[period].TimeInTargetPercent = sourcePeriods[period].TimeInTargetPercent
+			destPeriods[period].HasTimeInTargetPercent = sourcePeriods[period].HasTimeInTargetPercent
+			destPeriods[period].TimeInTargetRecords = sourcePeriods[period].TimeInTargetRecords
 
-			destPeriods[i].TimeInVeryHighMinutes = sourcePeriods[i].TimeInVeryHighMinutes
-			destPeriods[i].TimeInVeryHighPercent = sourcePeriods[i].TimeInVeryHighPercent
-			destPeriods[i].HasTimeInVeryHighPercent = sourcePeriods[i].HasTimeInVeryHighPercent
-			destPeriods[i].TimeInVeryHighRecords = sourcePeriods[i].TimeInVeryHighRecords
+			destPeriods[period].TimeInVeryHighMinutes = sourcePeriods[period].TimeInVeryHighMinutes
+			destPeriods[period].TimeInVeryHighPercent = sourcePeriods[period].TimeInVeryHighPercent
+			destPeriods[period].HasTimeInVeryHighPercent = sourcePeriods[period].HasTimeInVeryHighPercent
+			destPeriods[period].TimeInVeryHighRecords = sourcePeriods[period].TimeInVeryHighRecords
 
-			destPeriods[i].TimeInVeryLowMinutes = sourcePeriods[i].TimeInVeryLowMinutes
-			destPeriods[i].TimeInVeryLowPercent = sourcePeriods[i].TimeInVeryLowPercent
-			destPeriods[i].HasTimeInVeryLowPercent = sourcePeriods[i].HasTimeInVeryLowPercent
-			destPeriods[i].TimeInVeryLowRecords = sourcePeriods[i].TimeInVeryLowRecords
+			destPeriods[period].TimeInVeryLowMinutes = sourcePeriods[period].TimeInVeryLowMinutes
+			destPeriods[period].TimeInVeryLowPercent = sourcePeriods[period].TimeInVeryLowPercent
+			destPeriods[period].HasTimeInVeryLowPercent = sourcePeriods[period].HasTimeInVeryLowPercent
+			destPeriods[period].TimeInVeryLowRecords = sourcePeriods[period].TimeInVeryLowRecords
 		}
 	}
 
