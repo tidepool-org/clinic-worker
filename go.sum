@@ -239,6 +239,16 @@ github.com/tidepool-org/clinic/client v0.0.0-20221003185821-e63f19cee19e h1:LxnD
 github.com/tidepool-org/clinic/client v0.0.0-20221003185821-e63f19cee19e/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/clinic/client v0.0.0-20221003195138-b931a650b598 h1:8xo/fCyAeqr99bbAU2AmDV1Rg1PEf3RyX16lXZiPHpY=
 github.com/tidepool-org/clinic/client v0.0.0-20221003195138-b931a650b598/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
+github.com/tidepool-org/clinic/client v0.0.0-20221007203352-06981c82c033 h1:cxkfkqn55gbc2G1XN115Ide7G9e2Ctt4x73+KDNelZo=
+github.com/tidepool-org/clinic/client v0.0.0-20221007203352-06981c82c033/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
+github.com/tidepool-org/clinic/client v0.0.0-20221007204251-41123ab32c77 h1:hYcn9ZlWD8Ej2DvCp0a/WzK+WTTqNvBCi2H0a3mRHBM=
+github.com/tidepool-org/clinic/client v0.0.0-20221007204251-41123ab32c77/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
+github.com/tidepool-org/clinic/client v0.0.0-20221007210324-66ec76f7f594 h1:1ie0JwLGDYONYPnaJKl3iYZRTNVnYQT0zUJmn7u7dmg=
+github.com/tidepool-org/clinic/client v0.0.0-20221007210324-66ec76f7f594/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
+github.com/tidepool-org/clinic/client v0.0.0-20221011144301-13062971b9cb h1:Bp5WwasxSuCngTBv7QLJj2TR1qnKxbHsERwQjAN1d18=
+github.com/tidepool-org/clinic/client v0.0.0-20221011144301-13062971b9cb/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
+github.com/tidepool-org/clinic/client v0.0.0-20221011170745-a50dd2384fb0 h1:Mj9gG1yto8/dz+wayt/EqbjDiX4HZDZEuX7T1vEBFHQ=
+github.com/tidepool-org/clinic/client v0.0.0-20221011170745-a50dd2384fb0/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/go-common v0.9.1-0.20220506092204-2f5c48bd23a7 h1:Yivp3LhxUw9pt3gLddhlIPdR66aIU8rhEWRuvIrd7fI=
 github.com/tidepool-org/go-common v0.9.1-0.20220506092204-2f5c48bd23a7/go.mod h1:0S1OUe8aQH8bKLyeemNKW4WOPkCXxK5FqN9OXu1as7E=
 github.com/tidepool-org/go-common v0.9.1-0.20220615033523-d0010626318d h1:yjHNM2JKBDFSELv6lTkgThzMOijU/eYjGh5UNTFg5Ro=
