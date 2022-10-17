@@ -243,6 +243,8 @@ github.com/tidepool-org/clinic/client v0.0.0-20220801232921-5d9a7ef856a0 h1:vc8b
 github.com/tidepool-org/clinic/client v0.0.0-20220801232921-5d9a7ef856a0/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/clinic/client v0.0.0-20220805005056-b799d3d573bc h1:lejSCe8rUzmTZ8era94/3Dxmapb4hxxHVIUe4P4ILd0=
 github.com/tidepool-org/clinic/client v0.0.0-20220805005056-b799d3d573bc/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
+github.com/tidepool-org/clinic/client v0.0.0-20221014041846-39d7b4471818 h1:wohD0j7ND6XSdoyMuKS9XLLhQQ9f4GjouLyT2ZbbPso=
+github.com/tidepool-org/clinic/client v0.0.0-20221014041846-39d7b4471818/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/go-common v0.9.1-0.20220506092204-2f5c48bd23a7 h1:Yivp3LhxUw9pt3gLddhlIPdR66aIU8rhEWRuvIrd7fI=
 github.com/tidepool-org/go-common v0.9.1-0.20220506092204-2f5c48bd23a7/go.mod h1:0S1OUe8aQH8bKLyeemNKW4WOPkCXxK5FqN9OXu1as7E=
 github.com/tidepool-org/go-common v0.9.1-0.20220615033523-d0010626318d h1:yjHNM2JKBDFSELv6lTkgThzMOijU/eYjGh5UNTFg5Ro=
@@ -261,6 +263,8 @@ github.com/tidepool-org/go-common v0.10.1-0.20220801234147-df6bbb2c441b h1:3Uwtz
 github.com/tidepool-org/go-common v0.10.1-0.20220801234147-df6bbb2c441b/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
 github.com/tidepool-org/go-common v0.10.1-0.20220805001620-5f4142de08dd h1:k66iMzzk1bggIRypjZ0OcKVBhPpK0022n3Ve7Od4pH8=
 github.com/tidepool-org/go-common v0.10.1-0.20220805001620-5f4142de08dd/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
+github.com/tidepool-org/go-common v0.10.1-0.20221013232012-9f2348085f3a h1:xHS0ChLfmM47sJa7Kzftq4/rGUl39BkdoM23tLF4jNQ=
+github.com/tidepool-org/go-common v0.10.1-0.20221013232012-9f2348085f3a/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
 github.com/ugorji/go v1.1.7/go.mod h1:kZn38zHttfInRq0xu/PH0az30d+z6vm202qpg1oXVMw=
 github.com/ugorji/go v1.2.6/go.mod h1:anCg0y61KIhDlPZmnH+so+RQbysYVyDko0IMgJv0Nn0=
 github.com/ugorji/go v1.2.7/go.mod h1:nF9osbDWLy6bDVv/Rtoh6QgnvNDpmCalQV5urGCCS6M=

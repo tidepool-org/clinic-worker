@@ -68,48 +68,62 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 	}
 
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{
-		FirstData:                summary.FirstData,
-		LastData:                 summary.LastData,
-		LastUpdatedDate:          summary.LastUpdatedDate,
-		LastUploadDate:           summary.LastUploadDate,
-		HasLastUploadDate:        summary.HasLastUploadDate,
-		OutdatedSince:            summary.OutdatedSince,
-		TotalHours:               summary.TotalHours,
-		LowGlucoseThreshold:      summary.LowGlucoseThreshold,
-		VeryLowGlucoseThreshold:  summary.VeryLowGlucoseThreshold,
-		HighGlucoseThreshold:     summary.HighGlucoseThreshold,
-		VeryHighGlucoseThreshold: summary.VeryHighGlucoseThreshold,
+		CgmSummary: &clinics.PatientCGMSummary{
+			FirstData:         summary.CgmSummary.FirstData,
+			HasLastUploadDate: summary.CgmSummary.HasLastUploadDate,
+			LastData:          summary.CgmSummary.LastData,
+			LastUpdatedDate:   summary.CgmSummary.LastUpdatedDate,
+			LastUploadDate:    summary.CgmSummary.LastUploadDate,
+			OutdatedSince:     summary.CgmSummary.OutdatedSince,
+			TotalHours:        summary.CgmSummary.TotalHours,
+		},
+		BgmSummary: &clinics.PatientBGMSummary{
+			FirstData:         summary.BgmSummary.FirstData,
+			HasLastUploadDate: summary.BgmSummary.HasLastUploadDate,
+			LastData:          summary.BgmSummary.LastData,
+			LastUpdatedDate:   summary.BgmSummary.LastUpdatedDate,
+			LastUploadDate:    summary.BgmSummary.LastUploadDate,
+			OutdatedSince:     summary.BgmSummary.OutdatedSince,
+			TotalHours:        summary.BgmSummary.TotalHours,
+		},
+		Config: &clinics.PatientSummaryConfig{
+			HighGlucoseThreshold:     summary.Config.HighGlucoseThreshold,
+			LowGlucoseThreshold:      summary.Config.LowGlucoseThreshold,
+			SchemaVersion:            summary.Config.SchemaVersion,
+			VeryHighGlucoseThreshold: summary.Config.VeryHighGlucoseThreshold,
+			VeryLowGlucoseThreshold:  summary.Config.VeryLowGlucoseThreshold,
+		},
 	}
 
-	if summary.Periods != nil {
-		patientUpdate.Periods = &clinics.PatientSummaryPeriods{}
+	if summary.CgmSummary.Periods != nil {
+		patientUpdate.CgmSummary.Periods = &clinics.PatientCGMPeriods{}
 
 		// this is bad, but it's better than copy and pasting the copy code N times
-		sourcePeriods := map[string]*summaries.SummaryPeriod{}
-		destPeriods := map[string]*clinics.PatientSummaryPeriod{}
-		if summary.Periods.N1d != nil {
-			sourcePeriods["1d"] = summary.Periods.N1d
+		sourcePeriods := map[string]*summaries.CGMPeriod{}
+		destPeriods := map[string]*clinics.PatientCGMPeriod{}
+		if summary.CgmSummary.Periods.N1d != nil {
+			sourcePeriods["1d"] = summary.CgmSummary.Periods.N1d
 
-			patientUpdate.Periods.N1d = &clinics.PatientSummaryPeriod{}
-			destPeriods["1d"] = patientUpdate.Periods.N1d
+			patientUpdate.CgmSummary.Periods.N1d = &clinics.PatientCGMPeriod{}
+			destPeriods["1d"] = patientUpdate.CgmSummary.Periods.N1d
 		}
-		if summary.Periods.N7d != nil {
-			sourcePeriods["7d"] = summary.Periods.N7d
+		if summary.CgmSummary.Periods.N7d != nil {
+			sourcePeriods["7d"] = summary.CgmSummary.Periods.N7d
 
-			patientUpdate.Periods.N7d = &clinics.PatientSummaryPeriod{}
-			destPeriods["7d"] = patientUpdate.Periods.N7d
+			patientUpdate.CgmSummary.Periods.N7d = &clinics.PatientCGMPeriod{}
+			destPeriods["7d"] = patientUpdate.CgmSummary.Periods.N7d
 		}
-		if summary.Periods.N14d != nil {
-			sourcePeriods["14d"] = summary.Periods.N14d
+		if summary.CgmSummary.Periods.N14d != nil {
+			sourcePeriods["14d"] = summary.CgmSummary.Periods.N14d
 
-			patientUpdate.Periods.N14d = &clinics.PatientSummaryPeriod{}
-			destPeriods["14d"] = patientUpdate.Periods.N14d
+			patientUpdate.CgmSummary.Periods.N14d = &clinics.PatientCGMPeriod{}
+			destPeriods["14d"] = patientUpdate.CgmSummary.Periods.N14d
 		}
-		if summary.Periods.N30d != nil {
-			sourcePeriods["30d"] = summary.Periods.N30d
+		if summary.CgmSummary.Periods.N30d != nil {
+			sourcePeriods["30d"] = summary.CgmSummary.Periods.N30d
 
-			patientUpdate.Periods.N30d = &clinics.PatientSummaryPeriod{}
-			destPeriods["30d"] = patientUpdate.Periods.N30d
+			patientUpdate.CgmSummary.Periods.N30d = &clinics.PatientCGMPeriod{}
+			destPeriods["30d"] = patientUpdate.CgmSummary.Periods.N30d
 		}
 
 		for period := range sourcePeriods {
@@ -149,6 +163,67 @@ func CreateSummaryUpdateBody(summary *summaries.Summary) clinics.UpdatePatientSu
 			destPeriods[period].TimeInVeryHighRecords = sourcePeriods[period].TimeInVeryHighRecords
 
 			destPeriods[period].TimeInVeryLowMinutes = sourcePeriods[period].TimeInVeryLowMinutes
+			destPeriods[period].TimeInVeryLowPercent = sourcePeriods[period].TimeInVeryLowPercent
+			destPeriods[period].HasTimeInVeryLowPercent = sourcePeriods[period].HasTimeInVeryLowPercent
+			destPeriods[period].TimeInVeryLowRecords = sourcePeriods[period].TimeInVeryLowRecords
+		}
+	}
+
+	if summary.BgmSummary.Periods != nil {
+		patientUpdate.BgmSummary.Periods = &clinics.PatientBGMPeriods{}
+
+		// this is bad, but it's better than copy and pasting the copy code N times
+		sourcePeriods := map[string]*summaries.BGMPeriod{}
+		destPeriods := map[string]*clinics.PatientBGMPeriod{}
+		if summary.BgmSummary.Periods.N1d != nil {
+			sourcePeriods["1d"] = summary.BgmSummary.Periods.N1d
+
+			patientUpdate.BgmSummary.Periods.N1d = &clinics.PatientBGMPeriod{}
+			destPeriods["1d"] = patientUpdate.BgmSummary.Periods.N1d
+		}
+		if summary.BgmSummary.Periods.N7d != nil {
+			sourcePeriods["7d"] = summary.BgmSummary.Periods.N7d
+
+			patientUpdate.BgmSummary.Periods.N7d = &clinics.PatientBGMPeriod{}
+			destPeriods["7d"] = patientUpdate.BgmSummary.Periods.N7d
+		}
+		if summary.BgmSummary.Periods.N14d != nil {
+			sourcePeriods["14d"] = summary.BgmSummary.Periods.N14d
+
+			patientUpdate.BgmSummary.Periods.N14d = &clinics.PatientBGMPeriod{}
+			destPeriods["14d"] = patientUpdate.BgmSummary.Periods.N14d
+		}
+		if summary.BgmSummary.Periods.N30d != nil {
+			sourcePeriods["30d"] = summary.BgmSummary.Periods.N30d
+
+			patientUpdate.BgmSummary.Periods.N30d = &clinics.PatientBGMPeriod{}
+			destPeriods["30d"] = patientUpdate.BgmSummary.Periods.N30d
+		}
+
+		for period := range sourcePeriods {
+			if sourcePeriods[period].AverageGlucose != nil {
+				destPeriods[period].AverageGlucose = &clinics.AverageGlucose{
+					Value: sourcePeriods[period].AverageGlucose.Value,
+					Units: clinics.AverageGlucoseUnits(sourcePeriods[period].AverageGlucose.Units)}
+			}
+			destPeriods[period].HasAverageGlucose = sourcePeriods[period].HasAverageGlucose
+
+			destPeriods[period].TimeInHighPercent = sourcePeriods[period].TimeInHighPercent
+			destPeriods[period].HasTimeInHighPercent = sourcePeriods[period].HasTimeInHighPercent
+			destPeriods[period].TimeInHighRecords = sourcePeriods[period].TimeInHighRecords
+
+			destPeriods[period].TimeInLowPercent = sourcePeriods[period].TimeInLowPercent
+			destPeriods[period].HasTimeInLowPercent = sourcePeriods[period].HasTimeInLowPercent
+			destPeriods[period].TimeInLowRecords = sourcePeriods[period].TimeInLowRecords
+
+			destPeriods[period].TimeInTargetPercent = sourcePeriods[period].TimeInTargetPercent
+			destPeriods[period].HasTimeInTargetPercent = sourcePeriods[period].HasTimeInTargetPercent
+			destPeriods[period].TimeInTargetRecords = sourcePeriods[period].TimeInTargetRecords
+
+			destPeriods[period].TimeInVeryHighPercent = sourcePeriods[period].TimeInVeryHighPercent
+			destPeriods[period].HasTimeInVeryHighPercent = sourcePeriods[period].HasTimeInVeryHighPercent
+			destPeriods[period].TimeInVeryHighRecords = sourcePeriods[period].TimeInVeryHighRecords
+
 			destPeriods[period].TimeInVeryLowPercent = sourcePeriods[period].TimeInVeryLowPercent
 			destPeriods[period].HasTimeInVeryLowPercent = sourcePeriods[period].HasTimeInVeryLowPercent
 			destPeriods[period].TimeInVeryLowRecords = sourcePeriods[period].TimeInVeryLowRecords
