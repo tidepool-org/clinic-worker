@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/Shopify/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
@@ -13,9 +17,6 @@ import (
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 const (
@@ -42,6 +43,7 @@ type Params struct {
 	Logger    *zap.SugaredLogger
 	Mailer    clients.MailerClient
 	Shoreline shoreline.Client
+	Clinics   clinics.ClientWithResponsesInterface
 }
 
 func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
@@ -70,6 +72,7 @@ func NewClinicsCDCConsumer(p Params) (events.MessageConsumer, error) {
 		logger:    p.Logger,
 		mailer:    p.Mailer,
 		shoreline: p.Shoreline,
+		clinics:   p.Clinics,
 	}, nil
 }
 
@@ -118,6 +121,13 @@ func (p *ClinicsCDCConsumer) handleCDCEvent(event ClinicCDCEvent) error {
 
 	p.logger.Infow("processing event", "event", event)
 
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	if event.isPatientTagDelete() {
+		return p.DeletePatientTagFromClinicPatients(ctx, event.FullDocument.Id.Value, event.UpdateDescription.UpdatedFields.LastDeletedPatientTag.Value)
+	}
+
 	clinicName := event.FullDocument.Name
 	adminUserId := event.FullDocument.Admins[0]
 	recipient, err := p.getUserEmail(adminUserId)
@@ -137,8 +147,6 @@ func (p *ClinicsCDCConsumer) handleCDCEvent(event ClinicCDCEvent) error {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-	defer cancel()
 	return p.mailer.SendEmailTemplate(ctx, template)
 }
 
@@ -153,4 +161,17 @@ func (p *ClinicsCDCConsumer) getUserEmail(userId string) (string, error) {
 		return "", fmt.Errorf("unexpected error when fetching user: %w", err)
 	}
 	return user.Username, nil
+}
+
+func (p *ClinicsCDCConsumer) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, patientTagId string) error {
+	p.logger.Debugw("Deleteing tag from clinic patients", "clinicId", clinicId, "patientTagId", patientTagId)
+
+	response, err := p.clinics.DeletePatientTagFromClinicPatientsWithResponse(ctx, clinics.ClinicId(clinicId), clinics.PatientTagId(patientTagId))
+	if err != nil {
+		return err
+	} else if response.StatusCode() != http.StatusOK {
+		return fmt.Errorf("unexpected response when deleting tag %s from clinic %s patients", clinicId, patientTagId)
+	}
+
+	return nil
 }
