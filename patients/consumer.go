@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/Shopify/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/confirmation"
@@ -16,14 +20,12 @@ import (
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 const (
-	patientsTopic  = "clinic.patients"
-	defaultTimeout = 30 * time.Second
+	patientsTopic        = "clinic.patients"
+	defaultClinicianName = "Clinic administrator"
+	defaultTimeout       = 30 * time.Second
 )
 
 var Module = fx.Provide(fx.Annotated{
@@ -150,6 +152,16 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		return p.sendUploadReminder(*event.FullDocument.UserId)
 	}
 
+	if event.IsRequestDexcomConnectEvent() {
+		p.logger.Infow("processing upload reminder", "event", event)
+		return p.sendDexcomConnectEmail(
+			*event.FullDocument.UserId,
+			event.FullDocument.ClinicId.Value,
+			*event.FullDocument.LastRequestedDexcomConnect.ClinicianId,
+			*event.FullDocument.FullName,
+		)
+	}
+
 	return nil
 }
 
@@ -206,6 +218,51 @@ func (p *PatientCDCConsumer) sendUploadReminder(userId string) error {
 	return p.mailer.SendEmailTemplate(ctx, template)
 }
 
+func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianId, patientName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	email, err := p.getUserEmail(userId)
+	if err != nil {
+		return err
+	}
+
+	clinicName, err := p.getClinicName(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+
+	clinicianName, err := p.getClinicianName(ctx, clinicId, clinicianId)
+	if err != nil {
+		// return err
+	}
+
+	// Todo: set auth token here or in clinic service when setting pending dexcom time, and passing to
+	// this worker for sending?
+
+	p.logger.Infow("Sending Dexcom connect email",
+		"userId", userId,
+		"email", email,
+		"clinicId", clinicId,
+	)
+
+	template := events.SendEmailTemplateEvent{
+		Recipient: email,
+		Template:  "request_dexcom_connect",
+		Variables: map[string]string{
+			"ClinicName":       clinicName,
+			"ClinicianName":    clinicianName,
+			"DexcomConnectURL": "https://DexcomConnectUrl",
+			"PatientName":      patientName,
+		},
+	}
+
+	s, _ := json.MarshalIndent(template, "", "\t")
+	fmt.Println("template", string(s))
+
+	return p.mailer.SendEmailTemplate(ctx, template)
+}
+
 func (p *PatientCDCConsumer) getUserEmail(userId string) (string, error) {
 	p.logger.Debugw("Fetching user by id", "userId", userId)
 	user, err := p.shoreline.GetUser(userId, p.shoreline.TokenProvide())
@@ -217,6 +274,38 @@ func (p *PatientCDCConsumer) getUserEmail(userId string) (string, error) {
 		return "", fmt.Errorf("unexpected error when fetching user: %w", err)
 	}
 	return user.Username, nil
+}
+
+func (p *PatientCDCConsumer) getClinicianName(ctx context.Context, clinicId, clinicianId string) (string, error) {
+	p.logger.Debugw("Fetching clinician by id", "clinicId", clinicId, "clinicianId", clinicianId)
+	response, err := p.clinics.GetClinicianWithResponse(ctx, clinics.ClinicId(clinicId), clinics.ClinicianId(clinicianId))
+	if err != nil {
+		return defaultClinicianName, err
+	}
+
+	if response.StatusCode() == http.StatusOK {
+		if response.JSON200.Name != nil && len(*response.JSON200.Name) > 0 {
+			return *response.JSON200.Name, nil
+		}
+	} else if response.StatusCode() != http.StatusNotFound {
+		return defaultClinicianName, fmt.Errorf("unexpected status code when fetching clinician %v", response.StatusCode())
+	}
+
+	return defaultClinicianName, nil
+}
+
+func (p *PatientCDCConsumer) getClinicName(ctx context.Context, clinicId string) (string, error) {
+	p.logger.Debugw("Fetching clinic by id", "clinicId", clinicId)
+	response, err := p.clinics.GetClinicWithResponse(ctx, clinics.ClinicId(clinicId))
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode() != http.StatusOK {
+		return "", fmt.Errorf("unexpected status code when fetching clinic %v", response.StatusCode())
+	}
+
+	return response.JSON200.Name, nil
 }
 
 func (p *PatientCDCConsumer) applyProfileUpdate(event PatientCDCEvent) error {

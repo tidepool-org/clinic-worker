@@ -24,6 +24,16 @@ func (p PatientCDCEvent) IsUploadReminderEvent() bool {
 	return lastUploadReminderTime != nil && lastUploadReminderTime.Value > 0
 }
 
+func (p PatientCDCEvent) IsRequestDexcomConnectEvent() bool {
+	if p.OperationType != cdc.OperationTypeUpdate && p.OperationType != cdc.OperationTypeReplace {
+		return false
+	}
+	if p.FullDocument.UserId == nil || p.UpdateDescription.UpdatedFields.LastRequestedDexcomConnect == nil {
+		return false
+	}
+	return p.UpdateDescription.UpdatedFields.LastRequestedDexcomConnect.ClinicianId != nil && p.UpdateDescription.UpdatedFields.LastRequestedDexcomConnect.Time.Value > 0
+}
+
 func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
 	if p.OperationType != cdc.OperationTypeInsert && p.OperationType != cdc.OperationTypeUpdate && p.OperationType != cdc.OperationTypeReplace {
 		return false
@@ -57,20 +67,34 @@ func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interf
 	}
 }
 
+type PatientDataSource struct {
+	DataSourceId *cdc.ObjectId `json:"dataSourceId,omitempty"`
+	ModifiedTime *cdc.Date     `json:"modifiedTime,omitempty"`
+	ProviderName *string       `json:"providerName"`
+	State        *string       `json:"state"`
+}
+
+type LastRequestedDexcomConnect struct {
+	Time        cdc.Date `bson:"time,omitempty"`
+	ClinicianId *string  `bson:"clinicianId,omitempty"`
+}
+
 type Patient struct {
-	Id                     *cdc.ObjectId           `json:"_id"`
-	ClinicId               *cdc.ObjectId           `json:"clinicId"`
-	UserId                 *string                 `json:"userId"`
-	BirthDate              *string                 `json:"birthDate"`
-	Email                  *string                 `json:"email"`
-	FullName               *string                 `json:"fullName"`
-	Mrn                    *string                 `json:"mrn"`
-	TargetDevices          *[]string               `json:"targetDevices"`
-	Permissions            *Permissions            `json:"permissions"`
-	IsMigrated             bool                    `json:"isMigrated"`
-	InvitedBy              *string                 `json:"invitedBy"`
-	LastUploadReminderTime *cdc.Date               `json:"lastUploadReminderTime"`
-	Summary                *patientsummary.Summary `json:"summary"`
+	Id                         *cdc.ObjectId               `json:"_id"`
+	ClinicId                   *cdc.ObjectId               `json:"clinicId"`
+	UserId                     *string                     `json:"userId"`
+	BirthDate                  *string                     `json:"birthDate"`
+	Email                      *string                     `json:"email"`
+	FullName                   *string                     `json:"fullName"`
+	Mrn                        *string                     `json:"mrn"`
+	TargetDevices              *[]string                   `json:"targetDevices"`
+	DataSources                *[]PatientDataSource        `json:"dataSources"`
+	Permissions                *Permissions                `json:"permissions"`
+	IsMigrated                 bool                        `json:"isMigrated"`
+	InvitedBy                  *string                     `json:"invitedBy"`
+	LastRequestedDexcomConnect *LastRequestedDexcomConnect `json:"lastRequestedDexcomConnect"`
+	LastUploadReminderTime     *cdc.Date                   `json:"lastUploadReminderTime"`
+	Summary                    *patientsummary.Summary     `json:"summary"`
 }
 
 func (p Patient) IsCustodial() bool {
