@@ -27,6 +27,7 @@ var dependencies = fx.Provide(
 	gatekeeperProvider,
 	summariesProvider,
 	datasourcesProvider,
+	authProvider,
 	clinicProvider,
 	mailerProvider,
 )

@@ -38,6 +38,7 @@ type PatientCDCConsumer struct {
 
 	hydrophone confirmation.Service
 	mailer     clients.MailerClient
+	auth       clients.AuthClient
 	shoreline  shoreline.Client
 	seagull    clients.Seagull
 	clinics    clinics.ClientWithResponsesInterface
@@ -51,6 +52,7 @@ type Params struct {
 
 	Hydrophone confirmation.Service
 	Mailer     clients.MailerClient
+	Auth       clients.AuthClient
 	Shoreline  shoreline.Client
 	Seagull    clients.Seagull
 	Clinics    clinics.ClientWithResponsesInterface
@@ -83,6 +85,7 @@ func NewPatientCDCConsumer(p Params) (events.MessageConsumer, error) {
 		logger:     p.Logger,
 		hydrophone: p.Hydrophone,
 		mailer:     p.Mailer,
+		auth:       p.Auth,
 		seagull:    p.Seagull,
 		shoreline:  p.Shoreline,
 		clinics:    p.Clinics,
@@ -233,32 +236,32 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianI
 	}
 
 	clinicianName, err := p.getClinicianName(ctx, clinicId, clinicianId)
-	if err != nil {
-		// return err
-	}
 
-	// Todo: set auth token here or in clinic service when setting pending dexcom time, and passing to
-	// this worker for sending?
+	restrictedTokenPaths := []string{"/v1/oauth/dexcom/authorize"}
+	restrictedTokenExpirationTime := time.Now().Add(time.Hour * 24)
+	restrictedToken, err := p.auth.CreateRestrictedToken(userId, restrictedTokenExpirationTime, restrictedTokenPaths, p.shoreline.TokenProvide())
+	if err != nil {
+		return err
+	}
 
 	p.logger.Infow("Sending Dexcom connect email",
 		"userId", userId,
 		"email", email,
 		"clinicId", clinicId,
+		"restrictedTokenId", restrictedToken.ID,
 	)
 
 	template := events.SendEmailTemplateEvent{
 		Recipient: email,
 		Template:  "request_dexcom_connect",
 		Variables: map[string]string{
-			"ClinicName":       clinicName,
-			"ClinicianName":    clinicianName,
-			"DexcomConnectURL": "https://DexcomConnectUrl",
+			"ClinicName":    clinicName,
+			"ClinicianName": clinicianName,
+			// TODO: proper dexcomConnectURL
+			"DexcomConnectURL": "https://DexcomConnectUrl" + "?restrictedToken=" + string(restrictedToken.ID),
 			"PatientName":      patientName,
 		},
 	}
-
-	s, _ := json.MarshalIndent(template, "", "\t")
-	fmt.Println("template", string(s))
 
 	return p.mailer.SendEmailTemplate(ctx, template)
 }

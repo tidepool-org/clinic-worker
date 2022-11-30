@@ -23,6 +23,7 @@ type DependenciesConfig struct {
 	GatekeeperHost string `envconfig:"TIDEPOOL_GATEKEEPER_CLIENT_ADDRESS" default:"http://gatekeeper:9123"`
 	ClinicsHost    string `envconfig:"TIDEPOOL_CLINIC_CLIENT_ADDRESS" default:"http://clinic:8080"`
 	DataHost       string `envconfig:"TIDEPOOL_DATA_CLIENT_ADDRESS" default:"http://data:9220"`
+	AuthHost       string `envconfig:"TIDEPOOL_DOCKER_PLATFORM_AUTH_HOST" default:"http://auth:9222"`
 	ServerSecret   string `envconfig:"TIDEPOOL_SERVER_SECRET"`
 }
 
@@ -88,6 +89,14 @@ func summariesProvider(config DependenciesConfig, shoreline shoreline.Client) (s
 func datasourcesProvider(config DependenciesConfig, httpClient *http.Client, shoreline shoreline.Client) clients.DataClient {
 	return *clients.NewDataClientBuilder().
 		WithHostGetter(disc.NewStaticHostGetterFromString(config.DataHost)).
+		WithHttpClient(httpClient).
+		WithTokenProvider(shoreline).
+		Build()
+}
+
+func authProvider(config DependenciesConfig, httpClient *http.Client, shoreline shoreline.Client) clients.AuthClient {
+	return *clients.NewAuthClientBuilder().
+		WithHostGetter(disc.NewStaticHostGetterFromString(config.AuthHost)).
 		WithHttpClient(httpClient).
 		WithTokenProvider(shoreline).
 		Build()
