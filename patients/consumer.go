@@ -255,11 +255,10 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianI
 		Recipient: email,
 		Template:  "request_dexcom_connect",
 		Variables: map[string]string{
-			"ClinicName":    clinicName,
-			"ClinicianName": clinicianName,
-			// TODO: proper dexcomConnectURL
-			"DexcomConnectURL": "https://DexcomConnectUrl" + "?restrictedToken=" + string(restrictedToken.ID),
-			"PatientName":      patientName,
+			"ClinicName":        clinicName,
+			"ClinicianName":     clinicianName,
+			"RestrictedTokenId": restrictedToken.ID,
+			"PatientName":       patientName,
 		},
 	}
 
