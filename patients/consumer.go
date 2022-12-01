@@ -237,7 +237,7 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianI
 
 	clinicianName, err := p.getClinicianName(ctx, clinicId, clinicianId)
 
-	restrictedTokenPaths := []string{"/v1/oauth/dexcom/authorize"}
+	restrictedTokenPaths := []string{"/v1/oauth/dexcom"}
 	restrictedTokenExpirationTime := time.Now().Add(time.Hour * 24)
 	restrictedToken, err := p.auth.CreateRestrictedToken(userId, restrictedTokenExpirationTime, restrictedTokenPaths, p.shoreline.TokenProvide())
 	if err != nil {
