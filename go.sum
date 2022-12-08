@@ -297,6 +297,16 @@ github.com/tidepool-org/go-common v0.10.1-0.20221129162528-7e48cbad0c83 h1:fHpbb
 github.com/tidepool-org/go-common v0.10.1-0.20221129162528-7e48cbad0c83/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
 github.com/tidepool-org/go-common v0.10.1-0.20221129164231-bb9866c46ec6 h1:43K684I1Vt+aq4FQFgzZ/fL8Tjp8zu4Pk0m8osHXMuE=
 github.com/tidepool-org/go-common v0.10.1-0.20221129164231-bb9866c46ec6/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
+github.com/tidepool-org/go-common v0.10.1-0.20221208185648-af47f676c0c2 h1:wSWLOObKCyz8cI7fXiyg7/IPXP/kn4fyIdX0XDDFMXo=
+github.com/tidepool-org/go-common v0.10.1-0.20221208185648-af47f676c0c2/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
+github.com/tidepool-org/go-common v0.10.1-0.20221208202308-0a8abebff1d6 h1:N/bMRv19wcL70M2uz3+J5pxxB2PcMOrZte6+90TDjr0=
+github.com/tidepool-org/go-common v0.10.1-0.20221208202308-0a8abebff1d6/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
+github.com/tidepool-org/go-common v0.10.1-0.20221208204715-9408895cd1c4 h1:c8aoBg3ZhajP65WbMYvPgstqpdhq0PjP9Ayx+QRtJkI=
+github.com/tidepool-org/go-common v0.10.1-0.20221208204715-9408895cd1c4/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
+github.com/tidepool-org/go-common v0.10.1-0.20221208212531-bfc7bd1b06b9 h1:GV+b8LX7vyfHnac86VqjXQtOIJfnIskvlE58cFHhTHY=
+github.com/tidepool-org/go-common v0.10.1-0.20221208212531-bfc7bd1b06b9/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
+github.com/tidepool-org/go-common v0.10.1-0.20221208220235-f7ecd77504bf h1:NbEHaN27TeS3wfhz31mDHMT37AVGLLzT2xPLA3LjjhE=
+github.com/tidepool-org/go-common v0.10.1-0.20221208220235-f7ecd77504bf/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
 github.com/ugorji/go v1.1.7/go.mod h1:kZn38zHttfInRq0xu/PH0az30d+z6vm202qpg1oXVMw=
 github.com/ugorji/go v1.2.6/go.mod h1:anCg0y61KIhDlPZmnH+so+RQbysYVyDko0IMgJv0Nn0=
 github.com/ugorji/go v1.2.7/go.mod h1:nF9osbDWLy6bDVv/Rtoh6QgnvNDpmCalQV5urGCCS6M=

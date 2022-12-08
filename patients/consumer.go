@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -240,11 +241,37 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianI
 
 	restrictedTokenPaths := []string{"/v1/oauth/dexcom"}
 	restrictedTokenExpirationTime := time.Now().Add(time.Hour * 24 * 30)
-	restrictedToken, err := p.auth.CreateRestrictedToken(userId, restrictedTokenExpirationTime, restrictedTokenPaths, p.shoreline.TokenProvide())
+
+	// Create new or update existing restricted token for this path and user
+	currentRestrictedTokens, err := p.getUserRestrictedTokens(userId)
 	if err != nil {
 		return err
 	}
 
+	var currentRestrictedTokenId string
+	for _, token := range currentRestrictedTokens {
+		if reflect.DeepEqual(token.Paths, &restrictedTokenPaths) {
+			currentRestrictedTokenId = token.ID
+			break
+		}
+	}
+
+	var restrictedToken clients.RestrictedToken
+	if currentRestrictedTokenId != "" {
+		updatedRestrictedToken, err := p.auth.UpdateRestrictedToken(currentRestrictedTokenId, restrictedTokenExpirationTime, restrictedTokenPaths, p.shoreline.TokenProvide())
+		if err != nil {
+			return err
+		}
+		restrictedToken = *updatedRestrictedToken
+	} else {
+		createdRestrictedToken, err := p.auth.CreateRestrictedToken(userId, restrictedTokenExpirationTime, restrictedTokenPaths, p.shoreline.TokenProvide())
+		if err != nil {
+			return err
+		}
+		restrictedToken = *createdRestrictedToken
+	}
+
+	// Send the email with restricted token ID
 	p.logger.Infow("Sending Dexcom connect email",
 		"userId", userId,
 		"email", email,
@@ -282,6 +309,20 @@ func (p *PatientCDCConsumer) getUserEmail(userId string) (string, error) {
 		return "", fmt.Errorf("unexpected error when fetching user: %w", err)
 	}
 	return user.Username, nil
+}
+
+func (p *PatientCDCConsumer) getUserRestrictedTokens(userId string) (clients.RestrictedTokens, error) {
+	p.logger.Debugw("Fetching restricted tokens by user id", "userId", userId)
+
+	restrictedTokens, err := p.auth.ListUserRestrictedTokens(userId, p.shoreline.TokenProvide())
+	if err != nil {
+		if e, ok := err.(*status.StatusError); ok && e.Code == http.StatusNotFound {
+			// User has no restricted tokens
+			return nil, nil
+		}
+		return nil, fmt.Errorf("unexpected error when fetching user: %w", err)
+	}
+	return restrictedTokens, nil
 }
 
 func (p *PatientCDCConsumer) getClinicianName(ctx context.Context, clinicId, clinicianId string) (string, error) {
