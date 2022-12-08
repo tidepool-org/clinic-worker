@@ -162,6 +162,7 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			event.FullDocument.ClinicId.Value,
 			*event.FullDocument.LastRequestedDexcomConnect.ClinicianId,
 			*event.FullDocument.FullName,
+			event.FullDocument.IsCustodial(),
 		)
 	}
 
@@ -221,7 +222,7 @@ func (p *PatientCDCConsumer) sendUploadReminder(userId string) error {
 	return p.mailer.SendEmailTemplate(ctx, template)
 }
 
-func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianId, patientName string) error {
+func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianId, patientName string, IsCustodial bool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
@@ -251,9 +252,14 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianI
 		"restrictedTokenId", restrictedToken.ID,
 	)
 
+	templateName := "request_dexcom_connect"
+	if IsCustodial {
+		templateName = "request_dexcom_connect_custodial"
+	}
+
 	template := events.SendEmailTemplateEvent{
 		Recipient: email,
-		Template:  "request_dexcom_connect",
+		Template:  templateName,
 		Variables: map[string]string{
 			"ClinicName":        clinicName,
 			"ClinicianName":     clinicianName,
