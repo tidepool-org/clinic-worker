@@ -12,7 +12,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.16.0
 	github.com/tidepool-org/clinic/client v0.0.0-20221123202142-172952ddf5b0
-	github.com/tidepool-org/go-common v0.10.1-0.20221208220235-f7ecd77504bf
+	github.com/tidepool-org/go-common v0.10.1-0.20221213195046-9cf40867443c
 	go.uber.org/fx v1.13.1
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.16.0
