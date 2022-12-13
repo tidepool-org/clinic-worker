@@ -95,9 +95,6 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 		return err
 	}
 
-	s, _ := json.MarshalIndent(event, "", "\t")
-	fmt.Println("event", string(s))
-
 	if err := p.handleCDCEvent(event); err != nil {
 		p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
 		return err

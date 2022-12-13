@@ -24,9 +24,10 @@ import (
 )
 
 const (
-	patientsTopic        = "clinic.patients"
-	defaultClinicianName = "Clinic administrator"
-	defaultTimeout       = 30 * time.Second
+	patientsTopic                     = "clinic.patients"
+	defaultClinicianName              = "Clinic administrator"
+	defaultTimeout                    = 30 * time.Second
+	restrictedTokenExpirationDuration = time.Hour * 24 * 30
 )
 
 var Module = fx.Provide(fx.Annotated{
@@ -233,7 +234,10 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianI
 	}
 
 	if email == "" {
-		// Abort early if the user was fetched but does not have an email address
+		p.logger.Infow("Abort sending Dexcom connect email - empty email",
+			"userId", userId,
+			"clinicId", clinicId,
+		)
 		return nil
 	}
 
@@ -245,7 +249,7 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianI
 	clinicianName, err := p.getClinicianName(ctx, clinicId, clinicianId)
 
 	restrictedTokenPaths := []string{"/v1/oauth/dexcom"}
-	restrictedTokenExpirationTime := time.Now().Add(time.Hour * 24 * 30)
+	restrictedTokenExpirationTime := time.Now().Add(restrictedTokenExpirationDuration)
 
 	// Create new or update existing restricted token for this path and user
 	currentRestrictedTokens, err := p.getUserRestrictedTokens(userId)
@@ -281,7 +285,6 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianI
 		"userId", userId,
 		"email", email,
 		"clinicId", clinicId,
-		"restrictedTokenId", restrictedToken.ID,
 	)
 
 	templateName := "request_dexcom_connect"
@@ -321,10 +324,6 @@ func (p *PatientCDCConsumer) getUserRestrictedTokens(userId string) (clients.Res
 
 	restrictedTokens, err := p.auth.ListUserRestrictedTokens(userId, p.shoreline.TokenProvide())
 	if err != nil {
-		if e, ok := err.(*status.StatusError); ok && e.Code == http.StatusNotFound {
-			// User has no restricted tokens
-			return nil, nil
-		}
 		return nil, fmt.Errorf("unexpected error when fetching user: %w", err)
 	}
 	return restrictedTokens, nil
