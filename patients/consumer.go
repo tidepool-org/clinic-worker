@@ -232,6 +232,11 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianI
 		return err
 	}
 
+	if email == "" {
+		// Abort early if the user was fetched but does not have an email address
+		return nil
+	}
+
 	clinicName, err := p.getClinicName(ctx, clinicId)
 	if err != nil {
 		return err
