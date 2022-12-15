@@ -158,11 +158,10 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 	}
 
 	if event.IsRequestDexcomConnectEvent() {
-		p.logger.Infow("processing upload reminder", "event", event)
+		p.logger.Infow("processing dexcom connect email", "event", event)
 		return p.sendDexcomConnectEmail(
 			*event.FullDocument.UserId,
 			event.FullDocument.ClinicId.Value,
-			*event.FullDocument.LastRequestedDexcomConnect.ClinicianId,
 			*event.FullDocument.FullName,
 			event.FullDocument.IsCustodial(),
 		)
@@ -224,7 +223,7 @@ func (p *PatientCDCConsumer) sendUploadReminder(userId string) error {
 	return p.mailer.SendEmailTemplate(ctx, template)
 }
 
-func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianId, patientName string, IsCustodial bool) error {
+func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, patientName string, IsCustodial bool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
@@ -245,8 +244,6 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianI
 	if err != nil {
 		return err
 	}
-
-	clinicianName, err := p.getClinicianName(ctx, clinicId, clinicianId)
 
 	restrictedTokenPaths := []string{"/v1/oauth/dexcom"}
 	restrictedTokenExpirationTime := time.Now().Add(restrictedTokenExpirationDuration)
@@ -297,7 +294,6 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, clinicianI
 		Template:  templateName,
 		Variables: map[string]string{
 			"ClinicName":        clinicName,
-			"ClinicianName":     clinicianName,
 			"RestrictedTokenId": restrictedToken.ID,
 			"PatientName":       patientName,
 		},
