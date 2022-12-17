@@ -1,12 +1,13 @@
 package worker_test
 
 import (
+	"os"
+
 	"github.com/Shopify/sarama"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic-worker/worker"
 	"go.uber.org/fx"
-	"os"
 )
 
 const (
@@ -61,8 +62,8 @@ var _ = Describe("Boostrap", func() {
 		})
 
 		It("instantiates workers", func() {
-			// clinic, clinicians, migration, patients, patientsummary, users
-			expectedCount := 6
+			// clinic, clinicians, migration, patients, patientsummary, users, datasources
+			expectedCount := 7
 			Expect(components.Consumers).To(HaveLen(expectedCount))
 		})
 	})
