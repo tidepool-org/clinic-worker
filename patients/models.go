@@ -45,6 +45,15 @@ func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
 	return p.FullDocument.IsCustodial()
 }
 
+func (p PatientCDCEvent) PatientHasPendingDexcomConnection() bool {
+	for _, dataSource := range *p.FullDocument.DataSources {
+		if *dataSource.ProviderName == "dexcom" && *dataSource.State == "pending" {
+			return true
+		}
+	}
+	return false
+}
+
 func (p PatientCDCEvent) PatientNeedsSummary() bool {
 	if p.OperationType != cdc.OperationTypeInsert {
 		return false

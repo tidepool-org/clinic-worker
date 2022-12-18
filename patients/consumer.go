@@ -139,8 +139,11 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			return err
 		}
 
-		if err := p.applyInviteUpdate(event); err != nil {
-			return err
+		// Only send invite email if patient does not have a pending dexcom connect request
+		if !event.PatientHasPendingDexcomConnection() {
+			if err := p.applyInviteUpdate(event); err != nil {
+				return err
+			}
 		}
 	}
 
