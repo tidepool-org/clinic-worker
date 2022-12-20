@@ -12,13 +12,14 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
-	"github.com/tidepool-org/clinic-worker/confirmation"
+
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"github.com/tidepool-org/go-common/events"
+	confirmations "github.com/tidepool-org/hydrophone/client"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -38,13 +39,13 @@ var Module = fx.Provide(fx.Annotated{
 type PatientCDCConsumer struct {
 	logger *zap.SugaredLogger
 
-	hydrophone confirmation.Service
-	mailer     clients.MailerClient
-	auth       clients.AuthClient
-	shoreline  shoreline.Client
-	seagull    clients.Seagull
-	clinics    clinics.ClientWithResponsesInterface
-	summaries  summaries.ClientWithResponsesInterface
+	confirmations confirmations.ClientWithResponsesInterface
+	mailer        clients.MailerClient
+	auth          clients.AuthClient
+	shoreline     shoreline.Client
+	seagull       clients.Seagull
+	clinics       clinics.ClientWithResponsesInterface
+	summaries     summaries.ClientWithResponsesInterface
 }
 
 type Params struct {
@@ -52,13 +53,13 @@ type Params struct {
 
 	Logger *zap.SugaredLogger
 
-	Hydrophone confirmation.Service
-	Mailer     clients.MailerClient
-	Auth       clients.AuthClient
-	Shoreline  shoreline.Client
-	Seagull    clients.Seagull
-	Clinics    clinics.ClientWithResponsesInterface
-	Summaries  summaries.ClientWithResponsesInterface
+	Confirmations confirmations.ClientWithResponsesInterface
+	Mailer        clients.MailerClient
+	Auth          clients.AuthClient
+	Shoreline     shoreline.Client
+	Seagull       clients.Seagull
+	Clinics       clinics.ClientWithResponsesInterface
+	Summaries     summaries.ClientWithResponsesInterface
 }
 
 func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
@@ -84,14 +85,14 @@ func CreateConsumer(p Params) events.ConsumerFactory {
 
 func NewPatientCDCConsumer(p Params) (events.MessageConsumer, error) {
 	return &PatientCDCConsumer{
-		logger:     p.Logger,
-		hydrophone: p.Hydrophone,
-		mailer:     p.Mailer,
-		auth:       p.Auth,
-		seagull:    p.Seagull,
-		shoreline:  p.Shoreline,
-		clinics:    p.Clinics,
-		summaries:  p.Summaries,
+		logger:        p.Logger,
+		confirmations: p.Confirmations,
+		mailer:        p.Mailer,
+		auth:          p.Auth,
+		seagull:       p.Seagull,
+		shoreline:     p.Shoreline,
+		clinics:       p.Clinics,
+		summaries:     p.Summaries,
 	}, nil
 }
 
@@ -133,13 +134,17 @@ func (p *PatientCDCConsumer) unmarshalEvent(value []byte, event *PatientCDCEvent
 }
 
 func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
 	if event.IsProfileUpdateEvent() {
 		p.logger.Infow("processing profile update", "event", event)
 		if err := p.applyProfileUpdate(event); err != nil {
 			return err
 		}
 
-		// Only send invite email if patient does not have a pending dexcom connect request
+		// Only send invite email if patient does not have a pending dexcom connect request, which also
+		// sends an email that provides a pathway towards claiming the account
 		if !event.PatientHasPendingDexcomConnection() {
 			if err := p.applyInviteUpdate(event); err != nil {
 				return err
@@ -162,6 +167,24 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 
 	if event.IsRequestDexcomConnectEvent() {
 		p.logger.Infow("processing dexcom connect email", "event", event)
+
+		if event.FullDocument.IsCustodial() {
+			invite := confirmations.UpsertAccountSignupConfirmationJSONRequestBody{
+				ClinicId:  (*confirmations.ClinicId)(&event.FullDocument.ClinicId.Value),
+				InvitedBy: (*confirmations.TidepoolUserId)(event.FullDocument.InvitedBy),
+			}
+
+			response, err := p.confirmations.UpsertAccountSignupConfirmationWithResponse(ctx, confirmations.UserId(*event.FullDocument.UserId), invite)
+			if err != nil {
+				return fmt.Errorf("unable to upsert confirmation: %v", err)
+			}
+
+			// Hydrophone returns 403 when there's an existing invite so that's an expected response
+			if response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusForbidden {
+				return fmt.Errorf("unexpected status code %v when upserting confirmation", response.StatusCode())
+			}
+		}
+
 		return p.sendDexcomConnectEmail(
 			*event.FullDocument.UserId,
 			event.FullDocument.ClinicId.Value,
@@ -389,14 +412,22 @@ func (p *PatientCDCConsumer) applyInviteUpdate(event PatientCDCEvent) error {
 		return errors.New("expected patient id to be defined")
 	}
 
-	invite := confirmation.SignUpInvite{
-		UserId:    *event.FullDocument.UserId,
-		ClinicId:  event.FullDocument.ClinicId.Value,
-		InvitedBy: event.FullDocument.InvitedBy,
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	invite := confirmations.SendAccountSignupConfirmationJSONRequestBody{
+		ClinicId:  (*confirmations.ClinicId)(&event.FullDocument.ClinicId.Value),
+		InvitedBy: (*confirmations.TidepoolUserId)(event.FullDocument.InvitedBy),
 	}
-	if err := p.hydrophone.UpsertSignUpInvite(invite); err != nil {
-		p.logger.Warnw("unable to upsert sign up invite", "offset", event.Offset, zap.Error(err))
-		return err
+
+	response, err := p.confirmations.SendAccountSignupConfirmationWithResponse(ctx, confirmations.UserId(*event.FullDocument.UserId), invite)
+	if err != nil {
+		return fmt.Errorf("unable to upsert confirmation: %w", err)
+	}
+
+	// Hydrophone returns 403 when there's an existing invite so that's an expected response
+	if response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusForbidden {
+		return fmt.Errorf("unexpected status code %v when upserting confirmation", response.StatusCode())
 	}
 
 	return nil

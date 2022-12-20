@@ -13,6 +13,7 @@ require (
 	github.com/onsi/gomega v1.16.0
 	github.com/tidepool-org/clinic/client v0.0.0-20221214172745-738c1cbe291d
 	github.com/tidepool-org/go-common v0.10.1-0.20221213195046-9cf40867443c
+	github.com/tidepool-org/hydrophone/client v0.0.0-20221219223301-92bd47a8a11c
 	go.uber.org/fx v1.13.1
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.16.0

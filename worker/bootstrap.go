@@ -6,7 +6,6 @@ import (
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/clinicians"
 	"github.com/tidepool-org/clinic-worker/clinics"
-	"github.com/tidepool-org/clinic-worker/confirmation"
 	"github.com/tidepool-org/clinic-worker/datasources"
 	"github.com/tidepool-org/clinic-worker/marketo"
 	"github.com/tidepool-org/clinic-worker/migration"
@@ -26,6 +25,7 @@ var dependencies = fx.Provide(
 	shorelineProvider,
 	gatekeeperProvider,
 	summariesProvider,
+	confirmationsProvider,
 	datasourcesProvider,
 	authProvider,
 	clinicProvider,
@@ -34,7 +34,6 @@ var dependencies = fx.Provide(
 
 var Modules = []fx.Option{
 	dependencies,
-	confirmation.Module,
 	datasources.Module,
 	patients.Module,
 	patientsummary.Module,

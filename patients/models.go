@@ -46,9 +46,11 @@ func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
 }
 
 func (p PatientCDCEvent) PatientHasPendingDexcomConnection() bool {
-	for _, dataSource := range *p.FullDocument.DataSources {
-		if *dataSource.ProviderName == "dexcom" && *dataSource.State == "pending" {
-			return true
+	if p.FullDocument.DataSources != nil {
+		for _, dataSource := range *p.FullDocument.DataSources {
+			if *dataSource.ProviderName == "dexcom" && *dataSource.State == "pending" {
+				return true
+			}
 		}
 	}
 	return false
