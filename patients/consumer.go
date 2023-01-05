@@ -180,7 +180,7 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			}
 
 			// Hydrophone returns 403 when there's an existing invite so that's an expected response
-			if response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusForbidden {
+			if response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusForbidden && response.StatusCode() != http.StatusNotFound {
 				return fmt.Errorf("unexpected status code %v when upserting confirmation", response.StatusCode())
 			}
 		}
