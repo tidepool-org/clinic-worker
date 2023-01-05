@@ -179,7 +179,8 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 				return fmt.Errorf("unable to upsert confirmation: %v", err)
 			}
 
-			// Hydrophone returns 403 when there's an existing invite so that's an expected response
+			// Hydrophone returns 403 when there's an existing invite, or 404 if not found, as in the case of
+			// deleted users, so those are expected responses
 			if response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusForbidden && response.StatusCode() != http.StatusNotFound {
 				return fmt.Errorf("unexpected status code %v when upserting confirmation", response.StatusCode())
 			}
