@@ -1,8 +1,13 @@
 package patients
 
 import (
+	"time"
+
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/patientsummary"
+	api "github.com/tidepool-org/clinic/client"
+	clinics "github.com/tidepool-org/clinic/client"
+	"github.com/tidepool-org/go-common/clients"
 )
 
 type PatientCDCEvent struct {
@@ -45,6 +50,10 @@ func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
 	return p.FullDocument.IsCustodial()
 }
 
+func (p PatientCDCEvent) IsPatientCreateFromExistingUserEvent() bool {
+	return p.OperationType == cdc.OperationTypeInsert && !p.FullDocument.IsCustodial()
+}
+
 func (p PatientCDCEvent) PatientHasPendingDexcomConnection() bool {
 	if p.FullDocument.DataSources != nil {
 		for _, dataSource := range *p.FullDocument.DataSources {
@@ -76,6 +85,20 @@ func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interf
 	case cdc.OperationTypeUpdate:
 		p.UpdateDescription.applyUpdatesToExistingProfile(profile)
 	}
+}
+
+func (p PatientCDCEvent) CreateDataSourceBody(source clients.DataSource) clinics.DataSource {
+	dataSource := clinics.DataSource{
+		ProviderName: *source.ProviderName,
+		State:        api.DataSourceState(*source.State),
+	}
+
+	if source.ModifiedTime != nil {
+		modifiedTimeVal := source.ModifiedTime.Format(time.RFC3339)
+		dataSource.ModifiedTime = &modifiedTimeVal
+	}
+
+	return dataSource
 }
 
 type PatientDataSource struct {

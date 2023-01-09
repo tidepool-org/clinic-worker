@@ -46,6 +46,7 @@ type PatientCDCConsumer struct {
 	seagull       clients.Seagull
 	clinics       clinics.ClientWithResponsesInterface
 	summaries     summaries.ClientWithResponsesInterface
+	data          clients.DataClient
 }
 
 type Params struct {
@@ -60,6 +61,7 @@ type Params struct {
 	Seagull       clients.Seagull
 	Clinics       clinics.ClientWithResponsesInterface
 	Summaries     summaries.ClientWithResponsesInterface
+	Data          clients.DataClient
 }
 
 func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
@@ -93,6 +95,7 @@ func NewPatientCDCConsumer(p Params) (events.MessageConsumer, error) {
 		shoreline:     p.Shoreline,
 		clinics:       p.Clinics,
 		summaries:     p.Summaries,
+		data:          p.Data,
 	}, nil
 }
 
@@ -149,6 +152,14 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			if err := p.applyInviteUpdate(event); err != nil {
 				return err
 			}
+		}
+	}
+
+	if event.IsPatientCreateFromExistingUserEvent() {
+		p.logger.Infow("processing patient create from existing user", "event", event)
+		// Add existing user data sources to patient
+		if err := p.addPatientDataSources(event); err != nil {
+			return err
 		}
 	}
 
@@ -428,6 +439,41 @@ func (p *PatientCDCConsumer) applyInviteUpdate(event PatientCDCEvent) error {
 	// Hydrophone returns 403 when there's an existing invite so that's an expected response
 	if response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusForbidden {
 		return fmt.Errorf("unexpected status code %v when upserting confirmation", response.StatusCode())
+	}
+
+	return nil
+}
+
+func (p *PatientCDCConsumer) addPatientDataSources(event PatientCDCEvent) error {
+	p.logger.Debugw("adding patient data sources", "offset", event.Offset)
+	if event.FullDocument.UserId == nil {
+		return errors.New("expected user id to be defined")
+	}
+
+	userId := clinics.UserId(*event.FullDocument.UserId)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	sources, err := p.data.ListSources(string(userId))
+	if err != nil {
+		return fmt.Errorf("unexpected error when fetching user data sources %w", err)
+	}
+
+	if len(sources) > 0 {
+		var updateBody clinics.UpdatePatientDataSourcesJSONRequestBody
+
+		for _, source := range sources {
+			updateBody = append(updateBody, event.CreateDataSourceBody(*source))
+		}
+
+		response, err := p.clinics.UpdatePatientDataSourcesWithResponse(ctx, userId, updateBody)
+		if err != nil {
+			return err
+		}
+
+		if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNotFound) {
+			return fmt.Errorf("unexpected status code when adding patient data sources %v", response.StatusCode())
+		}
 	}
 
 	return nil
