@@ -137,19 +137,21 @@ func (p *CDCConsumer) applyPatientDataSourcesUpdate(event CDCEvent) error {
 		return fmt.Errorf("unexpected status code when fetching user data sources %w", err)
 	}
 
-	var updateBody clinics.UpdatePatientDataSourcesJSONRequestBody
+	if len(sources) > 0 {
+		var updateBody clinics.UpdatePatientDataSourcesJSONRequestBody
 
-	for _, source := range sources {
-		updateBody = append(updateBody, event.CreateUpdateBody(*source))
-	}
+		for _, source := range sources {
+			updateBody = append(updateBody, event.CreateUpdateBody(*source))
+		}
 
-	response, err := p.clinics.UpdatePatientDataSourcesWithResponse(ctx, userId, updateBody)
-	if err != nil {
-		return err
-	}
+		response, err := p.clinics.UpdatePatientDataSourcesWithResponse(ctx, userId, updateBody)
+		if err != nil {
+			return err
+		}
 
-	if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNotFound) {
-		return fmt.Errorf("unexpected status code when updating patient data sources %v", response.StatusCode())
+		if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNotFound) {
+			return fmt.Errorf("unexpected status code when updating patient data sources %v", response.StatusCode())
+		}
 	}
 
 	return nil
