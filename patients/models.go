@@ -57,7 +57,7 @@ func (p PatientCDCEvent) IsPatientCreateFromExistingUserEvent() bool {
 func (p PatientCDCEvent) PatientHasPendingDexcomConnection() bool {
 	if p.FullDocument.DataSources != nil {
 		for _, dataSource := range *p.FullDocument.DataSources {
-			if *dataSource.ProviderName == "dexcom" && *dataSource.State == "pending" {
+			if *dataSource.ProviderName == DexcomDataSourceProviderName && *dataSource.State == string(clinics.DataSourceStatePending) {
 				return true
 			}
 		}
@@ -94,7 +94,7 @@ func (p PatientCDCEvent) CreateDataSourceBody(source clients.DataSource) clinics
 	}
 
 	if source.ModifiedTime != nil {
-		modifiedTimeVal := source.ModifiedTime.Format(time.RFC3339)
+		modifiedTimeVal := clinics.DateTime(source.ModifiedTime.Format(time.RFC3339))
 		dataSource.ModifiedTime = &modifiedTimeVal
 	}
 
