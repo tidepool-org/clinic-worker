@@ -45,7 +45,7 @@ func (p CDCEvent) CreateUpdateBody(source clients.DataSource) clinics.DataSource
 	}
 
 	if source.ModifiedTime != nil {
-		modifiedTimeVal := source.ModifiedTime.Format(time.RFC3339)
+		modifiedTimeVal := clinics.DateTime(source.ModifiedTime.Format(time.RFC3339))
 		patientUpdate.ModifiedTime = &modifiedTimeVal
 	}
 

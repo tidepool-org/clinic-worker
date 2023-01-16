@@ -29,6 +29,7 @@ const (
 	defaultClinicianName              = "Clinic administrator"
 	defaultTimeout                    = 30 * time.Second
 	restrictedTokenExpirationDuration = time.Hour * 24 * 30
+	DexcomDataSourceProviderName      = "dexcom"
 )
 
 var Module = fx.Provide(fx.Annotated{
@@ -197,11 +198,25 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			}
 		}
 
+		templateName := "request_dexcom_connect"
+
+		if event.FullDocument.IsCustodial() {
+			templateName = "request_dexcom_connect_custodial"
+		}
+
+		if event.FullDocument.DataSources != nil {
+			for _, source := range *event.FullDocument.DataSources {
+				if *source.ProviderName == DexcomDataSourceProviderName && *source.State == string(clinics.DataSourceStatePendingReconnect) {
+					templateName = "request_dexcom_reconnect"
+				}
+			}
+		}
+
 		return p.sendDexcomConnectEmail(
 			*event.FullDocument.UserId,
 			event.FullDocument.ClinicId.Value,
 			*event.FullDocument.FullName,
-			event.FullDocument.IsCustodial(),
+			templateName,
 		)
 	}
 
@@ -261,7 +276,7 @@ func (p *PatientCDCConsumer) sendUploadReminder(userId string) error {
 	return p.mailer.SendEmailTemplate(ctx, template)
 }
 
-func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, patientName string, IsCustodial bool) error {
+func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, patientName, templateName string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
@@ -321,11 +336,6 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, patientNam
 		"email", email,
 		"clinicId", clinicId,
 	)
-
-	templateName := "request_dexcom_connect"
-	if IsCustodial {
-		templateName = "request_dexcom_connect_custodial"
-	}
 
 	template := events.SendEmailTemplateEvent{
 		Recipient: email,
