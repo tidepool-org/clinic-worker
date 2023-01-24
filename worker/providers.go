@@ -3,6 +3,10 @@ package worker
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/kelseyhightower/envconfig"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
@@ -10,10 +14,8 @@ import (
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"github.com/tidepool-org/go-common/events"
+	confirmations "github.com/tidepool-org/hydrophone/client"
 	"go.uber.org/fx"
-	"net/http"
-	"strings"
-	"time"
 )
 
 type DependenciesConfig struct {
@@ -22,6 +24,8 @@ type DependenciesConfig struct {
 	GatekeeperHost string `envconfig:"TIDEPOOL_GATEKEEPER_CLIENT_ADDRESS" default:"http://gatekeeper:9123"`
 	ClinicsHost    string `envconfig:"TIDEPOOL_CLINIC_CLIENT_ADDRESS" default:"http://clinic:8080"`
 	DataHost       string `envconfig:"TIDEPOOL_DATA_CLIENT_ADDRESS" default:"http://data:9220"`
+	HydrophoneHost string `envconfig:"TIDEPOOL_CONFIRMATION_CLIENT_ADDRESS" default:"http://hydrophone:9157"`
+	AuthHost       string `envconfig:"TIDEPOOL_DOCKER_PLATFORM_AUTH_HOST" default:"http://auth:9222"`
 	ServerSecret   string `envconfig:"TIDEPOOL_SERVER_SECRET"`
 }
 
@@ -82,6 +86,30 @@ func summariesProvider(config DependenciesConfig, shoreline shoreline.Client) (s
 		return nil
 	})
 	return summaries.NewClientWithResponses(config.DataHost, opts)
+}
+
+func confirmationsProvider(config DependenciesConfig, shoreline shoreline.Client) (confirmations.ClientWithResponsesInterface, error) {
+	opts := confirmations.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
+		req.Header.Add("x-tidepool-session-token", shoreline.TokenProvide())
+		return nil
+	})
+	return confirmations.NewClientWithResponses(config.HydrophoneHost, opts)
+}
+
+func datasourcesProvider(config DependenciesConfig, httpClient *http.Client, shoreline shoreline.Client) clients.DataClient {
+	return *clients.NewDataClientBuilder().
+		WithHostGetter(disc.NewStaticHostGetterFromString(config.DataHost)).
+		WithHttpClient(httpClient).
+		WithTokenProvider(shoreline).
+		Build()
+}
+
+func authProvider(config DependenciesConfig, httpClient *http.Client, shoreline shoreline.Client) clients.AuthClient {
+	return *clients.NewAuthClientBuilder().
+		WithHostGetter(disc.NewStaticHostGetterFromString(config.AuthHost)).
+		WithHttpClient(httpClient).
+		WithTokenProvider(shoreline).
+		Build()
 }
 
 func clinicProvider(config DependenciesConfig, shoreline shoreline.Client) (clinics.ClientWithResponsesInterface, error) {
