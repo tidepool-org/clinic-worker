@@ -2,7 +2,7 @@ package patients
 
 import (
 	"github.com/tidepool-org/clinic-worker/cdc"
-	"github.com/tidepool-org/clinic-worker/patientsummary"
+	clinics "github.com/tidepool-org/clinic/client"
 )
 
 type PatientCDCEvent struct {
@@ -70,7 +70,7 @@ type Patient struct {
 	IsMigrated             bool                    `json:"isMigrated"`
 	InvitedBy              *string                 `json:"invitedBy"`
 	LastUploadReminderTime *cdc.Date               `json:"lastUploadReminderTime"`
-	Summary                *patientsummary.Summary `json:"summary"`
+	Summary                *clinics.PatientSummary `json:"summary"`
 }
 
 func (p Patient) IsCustodial() bool {
