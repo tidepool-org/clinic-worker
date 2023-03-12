@@ -180,6 +180,10 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 			destPeriods[period].TimeInVeryLowPercent = sourcePeriods[period].TimeInVeryLowPercent
 			destPeriods[period].HasTimeInVeryLowPercent = sourcePeriods[period].HasTimeInVeryLowPercent
 			destPeriods[period].TimeInVeryLowRecords = sourcePeriods[period].TimeInVeryLowRecords
+
+			destPeriods[period].AverageDailyRecords = sourcePeriods[period].AverageDailyRecords
+			destPeriods[period].TotalRecords = sourcePeriods[period].TotalRecords
+
 		}
 	}
 
@@ -241,6 +245,9 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 			destPeriods[period].TimeInVeryLowPercent = sourcePeriods[period].TimeInVeryLowPercent
 			destPeriods[period].HasTimeInVeryLowPercent = sourcePeriods[period].HasTimeInVeryLowPercent
 			destPeriods[period].TimeInVeryLowRecords = sourcePeriods[period].TimeInVeryLowRecords
+
+			destPeriods[period].AverageDailyRecords = sourcePeriods[period].AverageDailyRecords
+			destPeriods[period].TotalRecords = sourcePeriods[period].TotalRecords
 		}
 	}
 

@@ -237,8 +237,12 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/tidepool-org/clinic/client v0.0.0-20230306163523-0b24c632ab14 h1:HhhY05ijtcSrDl/bie8BY3g73/gtQGxKRh2QxtHwq68=
 github.com/tidepool-org/clinic/client v0.0.0-20230306163523-0b24c632ab14/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
+github.com/tidepool-org/clinic/client v0.0.0-20230312220012-77182c2f60ac h1:CHT9geBUR136T2DJVkJt3+D+BkX61V1k7QcsClGkYBM=
+github.com/tidepool-org/clinic/client v0.0.0-20230312220012-77182c2f60ac/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/go-common v0.10.1-0.20230307034230-b3622fc9add9 h1:PYO6taOdDRyzFAqrtMq99TkXJKv42NZVVwREG7pKgBo=
 github.com/tidepool-org/go-common v0.10.1-0.20230307034230-b3622fc9add9/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
+github.com/tidepool-org/go-common v0.10.1-0.20230310003253-1900d28a6c9f h1:YZ8+Hv+YmAHLa4kYtUgOiNUYEI6f0QEAkNG+O5TqQ4o=
+github.com/tidepool-org/go-common v0.10.1-0.20230310003253-1900d28a6c9f/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
 github.com/ugorji/go v1.1.7/go.mod h1:kZn38zHttfInRq0xu/PH0az30d+z6vm202qpg1oXVMw=
 github.com/ugorji/go v1.2.6/go.mod h1:anCg0y61KIhDlPZmnH+so+RQbysYVyDko0IMgJv0Nn0=
 github.com/ugorji/go v1.2.7/go.mod h1:nF9osbDWLy6bDVv/Rtoh6QgnvNDpmCalQV5urGCCS6M=
