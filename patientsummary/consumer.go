@@ -89,6 +89,7 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 		p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
 		return err
 	}
+	p.logger.Debugw("handling document:", staticEvent.FullDocument)
 	if staticEvent.FullDocument.Type == nil {
 		p.logger.Warnw("unable to get type of unmarshalled message", "offset", cm.Offset)
 		return errors.New("unable to get type of unmarshalled message, summary without type")
