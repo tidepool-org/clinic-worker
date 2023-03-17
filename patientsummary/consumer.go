@@ -89,7 +89,7 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 		p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
 		return err
 	}
-	p.logger.Debugw("handling document:", staticEvent.FullDocument)
+	p.logger.Debugw("handling document:", staticEvent)
 	if staticEvent.FullDocument.Type == nil {
 		p.logger.Warnw("unable to get type of unmarshalled message", "offset", cm.Offset)
 		return errors.New("unable to get type of unmarshalled message, summary without type")
@@ -101,7 +101,7 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 		event := CDCEvent[CGMStats]{
 			Offset: cm.Offset,
 		}
-		if err := p.unmarshalEvent(cm.Value, &staticEvent); err != nil {
+		if err := p.unmarshalEvent(cm.Value, &event); err != nil {
 			p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
 			return err
 		}
@@ -113,7 +113,7 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 		event := CDCEvent[BGMStats]{
 			Offset: cm.Offset,
 		}
-		if err := p.unmarshalEvent(cm.Value, &staticEvent); err != nil {
+		if err := p.unmarshalEvent(cm.Value, &event); err != nil {
 			p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
 			return err
 		}
