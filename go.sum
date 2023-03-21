@@ -239,6 +239,8 @@ github.com/tidepool-org/clinic/client v0.0.0-20230306163523-0b24c632ab14 h1:HhhY
 github.com/tidepool-org/clinic/client v0.0.0-20230306163523-0b24c632ab14/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/clinic/client v0.0.0-20230312220012-77182c2f60ac h1:CHT9geBUR136T2DJVkJt3+D+BkX61V1k7QcsClGkYBM=
 github.com/tidepool-org/clinic/client v0.0.0-20230312220012-77182c2f60ac/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
+github.com/tidepool-org/clinic/client v0.0.0-20230321150021-4c13d8b96240 h1:SdQ/9zuw+fXtzP1rH3pyLynlSP4/cUO1JUBz/Tlx2Bc=
+github.com/tidepool-org/clinic/client v0.0.0-20230321150021-4c13d8b96240/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/go-common v0.10.1-0.20230307034230-b3622fc9add9 h1:PYO6taOdDRyzFAqrtMq99TkXJKv42NZVVwREG7pKgBo=
 github.com/tidepool-org/go-common v0.10.1-0.20230307034230-b3622fc9add9/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
 github.com/tidepool-org/go-common v0.10.1-0.20230310003253-1900d28a6c9f h1:YZ8+Hv+YmAHLa4kYtUgOiNUYEI6f0QEAkNG+O5TqQ4o=
