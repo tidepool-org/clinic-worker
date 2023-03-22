@@ -92,6 +92,11 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 
 	p.logger.Debugw("event being processed", "event", staticEvent)
 
+	if !staticEvent.ShouldApplyUpdates() {
+		p.logger.Debugw("skipping handling of event", "offset", staticEvent.Offset)
+		return nil
+	}
+
 	if staticEvent.FullDocument.Type == nil {
 		p.logger.Warnw("unable to get type of unmarshalled message", "offset", cm.Offset)
 		return errors.New("unable to get type of unmarshalled message, summary without type")
@@ -107,7 +112,7 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 			p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
 			return err
 		}
-		if err := handleCDCEvent(p, event); err != nil {
+		if err := applyPatientSummaryUpdate(p, event); err != nil {
 			p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
 			return err
 		}
@@ -119,7 +124,7 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 			p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
 			return err
 		}
-		if err := handleCDCEvent(p, event); err != nil {
+		if err := applyPatientSummaryUpdate(p, event); err != nil {
 			p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
 			return err
 		}
@@ -137,20 +142,6 @@ func (p *CDCConsumer) unmarshalEvent(value []byte, event interface{}) error {
 		return err
 	}
 	return json.Unmarshal([]byte(message), event)
-}
-
-func handleCDCEvent[T Stats](p *CDCConsumer, event CDCEvent[T]) error {
-	if !event.ShouldApplyUpdates() {
-		p.logger.Debugw("skipping handling of event", "offset", event.Offset)
-		return nil
-	}
-
-	p.logger.Infow("processing summary event for user", "userid", event.FullDocument.UserID)
-
-	// The following is so noisy, that even debug is not a high enough level for it.
-	//p.logger.Debugw("event being processed", "event", event)
-
-	return applyPatientSummaryUpdate(p, event)
 }
 
 func applyPatientSummaryUpdate[T Stats](p *CDCConsumer, event CDCEvent[T]) error {

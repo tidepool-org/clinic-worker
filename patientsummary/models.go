@@ -18,7 +18,7 @@ type StaticCDCEvent struct {
 	OperationType string        `json:"operationType"`
 }
 
-func (p CDCEvent[T]) ShouldApplyUpdates() bool {
+func (p StaticCDCEvent) ShouldApplyUpdates() bool {
 	if p.OperationType != cdc.OperationTypeInsert &&
 		p.OperationType != cdc.OperationTypeUpdate &&
 		p.OperationType != cdc.OperationTypeReplace {
