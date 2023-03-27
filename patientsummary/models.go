@@ -140,45 +140,54 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{}
 	if *p.FullDocument.Type == "cgm" {
-		patientUpdate.CgmStats = &clinics.PatientCGMStats{
-			Dates: &clinics.PatientSummaryDates{
-				HasLastUploadDate: p.FullDocument.Dates.HasLastUploadDate,
-				LastUploadDate:    lastUploadDate,
-				LastUpdatedDate:   lastUpdatedDate,
-				FirstData:         firstData,
-				LastData:          lastData,
-				OutdatedSince:     outdatedSince,
-			},
-			Config: &clinics.PatientSummaryConfig{
+		patientUpdate.CgmStats = &clinics.PatientCGMStats{}
+
+		patientUpdate.CgmStats.Dates = &clinics.PatientSummaryDates{
+			HasLastUploadDate: p.FullDocument.Dates.HasLastUploadDate,
+			LastUploadDate:    lastUploadDate,
+			LastUpdatedDate:   lastUpdatedDate,
+			FirstData:         firstData,
+			LastData:          lastData,
+			OutdatedSince:     outdatedSince,
+		}
+
+		if p.FullDocument.Config != nil {
+			patientUpdate.CgmStats.Config = &clinics.PatientSummaryConfig{
 				HighGlucoseThreshold:     p.FullDocument.Config.HighGlucoseThreshold,
 				LowGlucoseThreshold:      p.FullDocument.Config.LowGlucoseThreshold,
 				SchemaVersion:            p.FullDocument.Config.SchemaVersion,
 				VeryHighGlucoseThreshold: p.FullDocument.Config.VeryHighGlucoseThreshold,
 				VeryLowGlucoseThreshold:  p.FullDocument.Config.VeryLowGlucoseThreshold,
-			},
+			}
 		}
+
 		if p.FullDocument.Stats != nil {
 			patientUpdate.CgmStats.TotalHours = (*p.FullDocument.Stats).GetTotalHours()
 			(*p.FullDocument.Stats).ExportPeriods(patientUpdate.CgmStats)
 		}
+
 	} else if *p.FullDocument.Type == "bgm" {
-		patientUpdate.BgmStats = &clinics.PatientBGMStats{
-			Dates: &clinics.PatientSummaryDates{
-				HasLastUploadDate: p.FullDocument.Dates.HasLastUploadDate,
-				LastUploadDate:    lastUploadDate,
-				LastUpdatedDate:   lastUpdatedDate,
-				FirstData:         firstData,
-				LastData:          lastData,
-				OutdatedSince:     outdatedSince,
-			},
-			Config: &clinics.PatientSummaryConfig{
+		patientUpdate.BgmStats = &clinics.PatientBGMStats{}
+
+		patientUpdate.BgmStats.Dates = &clinics.PatientSummaryDates{
+			HasLastUploadDate: p.FullDocument.Dates.HasLastUploadDate,
+			LastUploadDate:    lastUploadDate,
+			LastUpdatedDate:   lastUpdatedDate,
+			FirstData:         firstData,
+			LastData:          lastData,
+			OutdatedSince:     outdatedSince,
+		}
+
+		if p.FullDocument.Config != nil {
+			patientUpdate.BgmStats.Config = &clinics.PatientSummaryConfig{
 				HighGlucoseThreshold:     p.FullDocument.Config.HighGlucoseThreshold,
 				LowGlucoseThreshold:      p.FullDocument.Config.LowGlucoseThreshold,
 				SchemaVersion:            p.FullDocument.Config.SchemaVersion,
 				VeryHighGlucoseThreshold: p.FullDocument.Config.VeryHighGlucoseThreshold,
 				VeryLowGlucoseThreshold:  p.FullDocument.Config.VeryLowGlucoseThreshold,
-			},
+			}
 		}
+
 		if p.FullDocument.Stats != nil {
 			patientUpdate.BgmStats.TotalHours = (*p.FullDocument.Stats).GetTotalHours()
 			(*p.FullDocument.Stats).ExportPeriods(patientUpdate.BgmStats)
