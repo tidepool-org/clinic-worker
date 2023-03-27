@@ -149,7 +149,6 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 				LastData:          lastData,
 				OutdatedSince:     outdatedSince,
 			},
-			TotalHours: (*p.FullDocument.Stats).GetTotalHours(),
 			Config: &clinics.PatientSummaryConfig{
 				HighGlucoseThreshold:     p.FullDocument.Config.HighGlucoseThreshold,
 				LowGlucoseThreshold:      p.FullDocument.Config.LowGlucoseThreshold,
@@ -158,7 +157,10 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 				VeryLowGlucoseThreshold:  p.FullDocument.Config.VeryLowGlucoseThreshold,
 			},
 		}
-		(*p.FullDocument.Stats).ExportPeriods(patientUpdate.CgmStats)
+		if p.FullDocument.Stats != nil {
+			patientUpdate.CgmStats.TotalHours = (*p.FullDocument.Stats).GetTotalHours()
+			(*p.FullDocument.Stats).ExportPeriods(patientUpdate.CgmStats)
+		}
 	} else if *p.FullDocument.Type == "bgm" {
 		patientUpdate.BgmStats = &clinics.PatientBGMStats{
 			Dates: &clinics.PatientSummaryDates{
@@ -169,7 +171,6 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 				LastData:          lastData,
 				OutdatedSince:     outdatedSince,
 			},
-			TotalHours: (*p.FullDocument.Stats).GetTotalHours(),
 			Config: &clinics.PatientSummaryConfig{
 				HighGlucoseThreshold:     p.FullDocument.Config.HighGlucoseThreshold,
 				LowGlucoseThreshold:      p.FullDocument.Config.LowGlucoseThreshold,
@@ -178,7 +179,10 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 				VeryLowGlucoseThreshold:  p.FullDocument.Config.VeryLowGlucoseThreshold,
 			},
 		}
-		(*p.FullDocument.Stats).ExportPeriods(patientUpdate.BgmStats)
+		if p.FullDocument.Stats != nil {
+			patientUpdate.BgmStats.TotalHours = (*p.FullDocument.Stats).GetTotalHours()
+			(*p.FullDocument.Stats).ExportPeriods(patientUpdate.BgmStats)
+		}
 	}
 
 	return patientUpdate
