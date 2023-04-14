@@ -1,10 +1,12 @@
 package worker
 
 import (
+	"net/http"
+
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/clinicians"
 	"github.com/tidepool-org/clinic-worker/clinics"
-	"github.com/tidepool-org/clinic-worker/confirmation"
+	"github.com/tidepool-org/clinic-worker/datasources"
 	"github.com/tidepool-org/clinic-worker/marketo"
 	"github.com/tidepool-org/clinic-worker/migration"
 	"github.com/tidepool-org/clinic-worker/patients"
@@ -12,7 +14,6 @@ import (
 	"github.com/tidepool-org/clinic-worker/users"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
-	"net/http"
 )
 
 var dependencies = fx.Provide(
@@ -24,13 +25,16 @@ var dependencies = fx.Provide(
 	shorelineProvider,
 	gatekeeperProvider,
 	summariesProvider,
+	confirmationsProvider,
+	datasourcesProvider,
+	authProvider,
 	clinicProvider,
 	mailerProvider,
 )
 
 var Modules = []fx.Option{
 	dependencies,
-	confirmation.Module,
+	datasources.Module,
 	patients.Module,
 	patientsummary.Module,
 	clinics.Module,

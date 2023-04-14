@@ -1,9 +1,13 @@
 package patients
 
 import (
+	"time"
+
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/patientsummary"
+	api "github.com/tidepool-org/clinic/client"
 	clinics "github.com/tidepool-org/clinic/client"
+	"github.com/tidepool-org/go-common/clients"
 )
 
 type PatientCDCEvent struct {
@@ -25,6 +29,16 @@ func (p PatientCDCEvent) IsUploadReminderEvent() bool {
 	return lastUploadReminderTime != nil && lastUploadReminderTime.Value > 0
 }
 
+func (p PatientCDCEvent) IsRequestDexcomConnectEvent() bool {
+	if p.OperationType != cdc.OperationTypeUpdate && p.OperationType != cdc.OperationTypeReplace {
+		return false
+	}
+	if p.FullDocument.UserId == nil || p.UpdateDescription.UpdatedFields.LastRequestedDexcomConnectTime == nil {
+		return false
+	}
+	return p.UpdateDescription.UpdatedFields.LastRequestedDexcomConnectTime.Value > 0
+}
+
 func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
 	if p.OperationType != cdc.OperationTypeInsert && p.OperationType != cdc.OperationTypeUpdate && p.OperationType != cdc.OperationTypeReplace {
 		return false
@@ -34,6 +48,21 @@ func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
 	}
 	// We want to apply profile updates and send invites only to custodial accounts.
 	return p.FullDocument.IsCustodial()
+}
+
+func (p PatientCDCEvent) IsPatientCreateFromExistingUserEvent() bool {
+	return p.OperationType == cdc.OperationTypeInsert && !p.FullDocument.IsCustodial()
+}
+
+func (p PatientCDCEvent) PatientHasPendingDexcomConnection() bool {
+	if p.FullDocument.DataSources != nil {
+		for _, dataSource := range *p.FullDocument.DataSources {
+			if *dataSource.ProviderName == DexcomDataSourceProviderName && *dataSource.State == string(clinics.DataSourceStatePending) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (p PatientCDCEvent) PatientNeedsSummary() bool {
@@ -78,19 +107,42 @@ type CDCSummary struct {
 }
 
 type Patient struct {
-	Id                     *cdc.ObjectId `json:"_id"`
-	ClinicId               *cdc.ObjectId `json:"clinicId"`
-	UserId                 *string       `json:"userId"`
-	BirthDate              *string       `json:"birthDate"`
-	Email                  *string       `json:"email"`
-	FullName               *string       `json:"fullName"`
-	Mrn                    *string       `json:"mrn"`
-	TargetDevices          *[]string     `json:"targetDevices"`
-	Permissions            *Permissions  `json:"permissions"`
-	IsMigrated             bool          `json:"isMigrated"`
-	InvitedBy              *string       `json:"invitedBy"`
-	LastUploadReminderTime *cdc.Date     `json:"lastUploadReminderTime"`
-	Summary                *CDCSummary   `json:"summary"`
+	Id                             *cdc.ObjectId        `json:"_id"`
+	ClinicId                       *cdc.ObjectId        `json:"clinicId"`
+	UserId                         *string              `json:"userId"`
+	BirthDate                      *string              `json:"birthDate"`
+	Email                          *string              `json:"email"`
+	FullName                       *string              `json:"fullName"`
+	Mrn                            *string              `json:"mrn"`
+	TargetDevices                  *[]string            `json:"targetDevices"`
+	DataSources                    *[]PatientDataSource `json:"dataSources"`
+	Permissions                    *Permissions         `json:"permissions"`
+	IsMigrated                     bool                 `json:"isMigrated"`
+	InvitedBy                      *string              `json:"invitedBy"`
+	LastRequestedDexcomConnectTime *cdc.Date            `json:"lastRequestedDexcomConnectTime"`
+	LastUploadReminderTime         *cdc.Date            `json:"lastUploadReminderTime"`
+	Summary                        *CDCSummary          `json:"summary"`
+}
+
+func (p PatientCDCEvent) CreateDataSourceBody(source clients.DataSource) clinics.DataSource {
+	dataSource := clinics.DataSource{
+		ProviderName: *source.ProviderName,
+		State:        api.DataSourceState(*source.State),
+	}
+
+	if source.ModifiedTime != nil {
+		modifiedTimeVal := clinics.DateTime(source.ModifiedTime.Format(time.RFC3339))
+		dataSource.ModifiedTime = &modifiedTimeVal
+	}
+
+	return dataSource
+}
+
+type PatientDataSource struct {
+	DataSourceId *cdc.ObjectId `json:"dataSourceId,omitempty"`
+	ModifiedTime *cdc.Date     `json:"modifiedTime,omitempty"`
+	ProviderName *string       `json:"providerName"`
+	State        *string       `json:"state"`
 }
 
 func (p Patient) IsCustodial() bool {

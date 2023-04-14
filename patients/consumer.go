@@ -5,25 +5,31 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"reflect"
+	"strconv"
+	"time"
+
 	"github.com/Shopify/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
-	"github.com/tidepool-org/clinic-worker/confirmation"
+
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"github.com/tidepool-org/go-common/events"
+	confirmations "github.com/tidepool-org/hydrophone/client"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 const (
-	patientsTopic  = "clinic.patients"
-	defaultTimeout = 30 * time.Second
+	patientsTopic                     = "clinic.patients"
+	defaultClinicianName              = "Clinic administrator"
+	defaultTimeout                    = 30 * time.Second
+	restrictedTokenExpirationDuration = time.Hour * 24 * 30
+	DexcomDataSourceProviderName      = "dexcom"
 )
 
 var Module = fx.Provide(fx.Annotated{
@@ -34,12 +40,14 @@ var Module = fx.Provide(fx.Annotated{
 type PatientCDCConsumer struct {
 	logger *zap.SugaredLogger
 
-	hydrophone confirmation.Service
-	mailer     clients.MailerClient
-	shoreline  shoreline.Client
-	seagull    clients.Seagull
-	clinics    clinics.ClientWithResponsesInterface
-	summaries  summaries.ClientWithResponsesInterface
+	confirmations confirmations.ClientWithResponsesInterface
+	mailer        clients.MailerClient
+	auth          clients.AuthClient
+	shoreline     shoreline.Client
+	seagull       clients.Seagull
+	clinics       clinics.ClientWithResponsesInterface
+	summaries     summaries.ClientWithResponsesInterface
+	data          clients.DataClient
 }
 
 type Params struct {
@@ -47,12 +55,14 @@ type Params struct {
 
 	Logger *zap.SugaredLogger
 
-	Hydrophone confirmation.Service
-	Mailer     clients.MailerClient
-	Shoreline  shoreline.Client
-	Seagull    clients.Seagull
-	Clinics    clinics.ClientWithResponsesInterface
-	Summaries  summaries.ClientWithResponsesInterface
+	Confirmations confirmations.ClientWithResponsesInterface
+	Mailer        clients.MailerClient
+	Auth          clients.AuthClient
+	Shoreline     shoreline.Client
+	Seagull       clients.Seagull
+	Clinics       clinics.ClientWithResponsesInterface
+	Summaries     summaries.ClientWithResponsesInterface
+	Data          clients.DataClient
 }
 
 func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
@@ -78,13 +88,15 @@ func CreateConsumer(p Params) events.ConsumerFactory {
 
 func NewPatientCDCConsumer(p Params) (events.MessageConsumer, error) {
 	return &PatientCDCConsumer{
-		logger:     p.Logger,
-		hydrophone: p.Hydrophone,
-		mailer:     p.Mailer,
-		seagull:    p.Seagull,
-		shoreline:  p.Shoreline,
-		clinics:    p.Clinics,
-		summaries:  p.Summaries,
+		logger:        p.Logger,
+		confirmations: p.Confirmations,
+		mailer:        p.Mailer,
+		auth:          p.Auth,
+		seagull:       p.Seagull,
+		shoreline:     p.Shoreline,
+		clinics:       p.Clinics,
+		summaries:     p.Summaries,
+		data:          p.Data,
 	}, nil
 }
 
@@ -126,13 +138,28 @@ func (p *PatientCDCConsumer) unmarshalEvent(value []byte, event *PatientCDCEvent
 }
 
 func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
 	if event.IsProfileUpdateEvent() {
 		p.logger.Infow("processing profile update", "event", event)
 		if err := p.applyProfileUpdate(event); err != nil {
 			return err
 		}
 
-		if err := p.applyInviteUpdate(event); err != nil {
+		// Only send invite email if patient does not have a pending dexcom connect request, which also
+		// sends an email that provides a pathway towards claiming the account
+		if !event.PatientHasPendingDexcomConnection() {
+			if err := p.applyInviteUpdate(event); err != nil {
+				return err
+			}
+		}
+	}
+
+	if event.IsPatientCreateFromExistingUserEvent() {
+		p.logger.Infow("processing patient create from existing user", "event", event)
+		// Add existing user data sources to patient
+		if err := p.addPatientDataSources(event); err != nil {
 			return err
 		}
 	}
@@ -148,6 +175,49 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 	if event.IsUploadReminderEvent() {
 		p.logger.Infow("processing upload reminder", "event", event)
 		return p.sendUploadReminder(*event.FullDocument.UserId)
+	}
+
+	if event.IsRequestDexcomConnectEvent() {
+		p.logger.Infow("processing dexcom connect email", "event", event)
+
+		if event.FullDocument.IsCustodial() {
+			invite := confirmations.UpsertAccountSignupConfirmationJSONRequestBody{
+				ClinicId:  (*confirmations.ClinicId)(&event.FullDocument.ClinicId.Value),
+				InvitedBy: (*confirmations.TidepoolUserId)(event.FullDocument.InvitedBy),
+			}
+
+			response, err := p.confirmations.UpsertAccountSignupConfirmationWithResponse(ctx, confirmations.UserId(*event.FullDocument.UserId), invite)
+			if err != nil {
+				return fmt.Errorf("unable to upsert confirmation: %v", err)
+			}
+
+			// Hydrophone returns 403 when there's an existing invite, or 404 if not found, as in the case of
+			// deleted users, so those are expected responses
+			if response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusForbidden && response.StatusCode() != http.StatusNotFound {
+				return fmt.Errorf("unexpected status code %v when upserting confirmation", response.StatusCode())
+			}
+		}
+
+		templateName := "request_dexcom_connect"
+
+		if event.FullDocument.IsCustodial() {
+			templateName = "request_dexcom_connect_custodial"
+		}
+
+		if event.FullDocument.DataSources != nil {
+			for _, source := range *event.FullDocument.DataSources {
+				if *source.ProviderName == DexcomDataSourceProviderName && *source.State == string(clinics.DataSourceStatePendingReconnect) {
+					templateName = "request_dexcom_reconnect"
+				}
+			}
+		}
+
+		return p.sendDexcomConnectEmail(
+			*event.FullDocument.UserId,
+			event.FullDocument.ClinicId.Value,
+			*event.FullDocument.FullName,
+			templateName,
+		)
 	}
 
 	return nil
@@ -220,6 +290,80 @@ func (p *PatientCDCConsumer) sendUploadReminder(userId string) error {
 	return p.mailer.SendEmailTemplate(ctx, template)
 }
 
+func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, patientName, templateName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	email, err := p.getUserEmail(userId)
+	if err != nil {
+		return err
+	}
+
+	if email == "" {
+		p.logger.Infow("Abort sending Dexcom connect email - empty email",
+			"userId", userId,
+			"clinicId", clinicId,
+		)
+		return nil
+	}
+
+	clinicName, err := p.getClinicName(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+
+	restrictedTokenPaths := []string{"/v1/oauth/dexcom"}
+	restrictedTokenExpirationTime := time.Now().Add(restrictedTokenExpirationDuration)
+
+	// Create new or update existing restricted token for this path and user
+	currentRestrictedTokens, err := p.getUserRestrictedTokens(userId)
+	if err != nil {
+		return err
+	}
+
+	var currentRestrictedTokenId string
+	for _, token := range currentRestrictedTokens {
+		if reflect.DeepEqual(token.Paths, &restrictedTokenPaths) {
+			currentRestrictedTokenId = token.ID
+			break
+		}
+	}
+
+	var restrictedToken clients.RestrictedToken
+	if currentRestrictedTokenId != "" {
+		updatedRestrictedToken, err := p.auth.UpdateRestrictedToken(currentRestrictedTokenId, restrictedTokenExpirationTime, restrictedTokenPaths, p.shoreline.TokenProvide())
+		if err != nil {
+			return err
+		}
+		restrictedToken = *updatedRestrictedToken
+	} else {
+		createdRestrictedToken, err := p.auth.CreateRestrictedToken(userId, restrictedTokenExpirationTime, restrictedTokenPaths, p.shoreline.TokenProvide())
+		if err != nil {
+			return err
+		}
+		restrictedToken = *createdRestrictedToken
+	}
+
+	// Send the email with restricted token ID
+	p.logger.Infow("Sending Dexcom connect email",
+		"userId", userId,
+		"email", email,
+		"clinicId", clinicId,
+	)
+
+	template := events.SendEmailTemplateEvent{
+		Recipient: email,
+		Template:  templateName,
+		Variables: map[string]string{
+			"ClinicName":        clinicName,
+			"RestrictedTokenId": restrictedToken.ID,
+			"PatientName":       patientName,
+		},
+	}
+
+	return p.mailer.SendEmailTemplate(ctx, template)
+}
+
 func (p *PatientCDCConsumer) getUserEmail(userId string) (string, error) {
 	p.logger.Debugw("Fetching user by id", "userId", userId)
 	user, err := p.shoreline.GetUser(userId, p.shoreline.TokenProvide())
@@ -231,6 +375,48 @@ func (p *PatientCDCConsumer) getUserEmail(userId string) (string, error) {
 		return "", fmt.Errorf("unexpected error when fetching user: %w", err)
 	}
 	return user.Username, nil
+}
+
+func (p *PatientCDCConsumer) getUserRestrictedTokens(userId string) (clients.RestrictedTokens, error) {
+	p.logger.Debugw("Fetching restricted tokens by user id", "userId", userId)
+
+	restrictedTokens, err := p.auth.ListUserRestrictedTokens(userId, p.shoreline.TokenProvide())
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error when fetching user: %w", err)
+	}
+	return restrictedTokens, nil
+}
+
+func (p *PatientCDCConsumer) getClinicianName(ctx context.Context, clinicId, clinicianId string) (string, error) {
+	p.logger.Debugw("Fetching clinician by id", "clinicId", clinicId, "clinicianId", clinicianId)
+	response, err := p.clinics.GetClinicianWithResponse(ctx, clinics.ClinicId(clinicId), clinics.ClinicianId(clinicianId))
+	if err != nil {
+		return defaultClinicianName, err
+	}
+
+	if response.StatusCode() == http.StatusOK {
+		if response.JSON200.Name != nil && len(*response.JSON200.Name) > 0 {
+			return *response.JSON200.Name, nil
+		}
+	} else if response.StatusCode() != http.StatusNotFound {
+		return defaultClinicianName, fmt.Errorf("unexpected status code when fetching clinician %v", response.StatusCode())
+	}
+
+	return defaultClinicianName, nil
+}
+
+func (p *PatientCDCConsumer) getClinicName(ctx context.Context, clinicId string) (string, error) {
+	p.logger.Debugw("Fetching clinic by id", "clinicId", clinicId)
+	response, err := p.clinics.GetClinicWithResponse(ctx, clinics.ClinicId(clinicId))
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode() != http.StatusOK {
+		return "", fmt.Errorf("unexpected status code when fetching clinic %v", response.StatusCode())
+	}
+
+	return response.JSON200.Name, nil
 }
 
 func (p *PatientCDCConsumer) applyProfileUpdate(event PatientCDCEvent) error {
@@ -262,14 +448,58 @@ func (p *PatientCDCConsumer) applyInviteUpdate(event PatientCDCEvent) error {
 		return errors.New("expected patient id to be defined")
 	}
 
-	invite := confirmation.SignUpInvite{
-		UserId:    *event.FullDocument.UserId,
-		ClinicId:  event.FullDocument.ClinicId.Value,
-		InvitedBy: event.FullDocument.InvitedBy,
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	invite := confirmations.SendAccountSignupConfirmationJSONRequestBody{
+		ClinicId:  (*confirmations.ClinicId)(&event.FullDocument.ClinicId.Value),
+		InvitedBy: (*confirmations.TidepoolUserId)(event.FullDocument.InvitedBy),
 	}
-	if err := p.hydrophone.UpsertSignUpInvite(invite); err != nil {
-		p.logger.Warnw("unable to upsert sign up invite", "offset", event.Offset, zap.Error(err))
-		return err
+
+	response, err := p.confirmations.SendAccountSignupConfirmationWithResponse(ctx, confirmations.UserId(*event.FullDocument.UserId), invite)
+	if err != nil {
+		return fmt.Errorf("unable to upsert confirmation: %w", err)
+	}
+
+	// Hydrophone returns 403 when there's an existing invite, or 404 if not found, as in the case of
+	// deleted users, so those are expected responses
+	if response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusForbidden && response.StatusCode() != http.StatusNotFound {
+		return fmt.Errorf("unexpected status code %v when upserting confirmation", response.StatusCode())
+	}
+
+	return nil
+}
+
+func (p *PatientCDCConsumer) addPatientDataSources(event PatientCDCEvent) error {
+	p.logger.Debugw("adding patient data sources", "offset", event.Offset)
+	if event.FullDocument.UserId == nil {
+		return errors.New("expected user id to be defined")
+	}
+
+	userId := clinics.UserId(*event.FullDocument.UserId)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	sources, err := p.data.ListSources(string(userId))
+	if err != nil {
+		return fmt.Errorf("unexpected error when fetching user data sources %w", err)
+	}
+
+	if len(sources) > 0 {
+		var updateBody clinics.UpdatePatientDataSourcesJSONRequestBody
+
+		for _, source := range sources {
+			updateBody = append(updateBody, event.CreateDataSourceBody(*source))
+		}
+
+		response, err := p.clinics.UpdatePatientDataSourcesWithResponse(ctx, userId, updateBody)
+		if err != nil {
+			return err
+		}
+
+		if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNotFound) {
+			return fmt.Errorf("unexpected status code when adding patient data sources %v", response.StatusCode())
+		}
 	}
 
 	return nil
