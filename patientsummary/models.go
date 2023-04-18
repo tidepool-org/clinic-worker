@@ -48,13 +48,19 @@ type Config struct {
 }
 
 type Dates struct {
-	// date tracking
+	LastUpdatedDate *cdc.Date `json:"lastUpdatedDate"`
+
 	HasLastUploadDate *bool     `json:"hasLastUploadDate"`
 	LastUploadDate    *cdc.Date `json:"lastUploadDate"`
-	LastUpdatedDate   *cdc.Date `json:"lastUpdatedDate"`
-	FirstData         *cdc.Date `json:"firstData"`
-	LastData          *cdc.Date `json:"lastData"`
-	OutdatedSince     *cdc.Date `json:"outdatedSince"`
+
+	HasFirstData *bool     `json:"hasFirstData"`
+	FirstData    *cdc.Date `json:"firstData"`
+
+	HasLastData *bool     `json:"hasLastData"`
+	LastData    *cdc.Date `json:"lastData"`
+
+	HasOutdatedSince *bool     `json:"hasOutdatedSince"`
+	OutdatedSince    *cdc.Date `json:"outdatedSince"`
 }
 
 // BGMPeriods
@@ -143,12 +149,19 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 		patientUpdate.CgmStats = &clinics.PatientCGMStats{}
 
 		patientUpdate.CgmStats.Dates = &clinics.PatientSummaryDates{
+			LastUpdatedDate: lastUpdatedDate,
+
 			HasLastUploadDate: p.FullDocument.Dates.HasLastUploadDate,
 			LastUploadDate:    lastUploadDate,
-			LastUpdatedDate:   lastUpdatedDate,
-			FirstData:         firstData,
-			LastData:          lastData,
-			OutdatedSince:     outdatedSince,
+
+			HasFirstData: p.FullDocument.Dates.HasFirstData,
+			FirstData:    firstData,
+
+			HasLastData: p.FullDocument.Dates.HasLastData,
+			LastData:    lastData,
+
+			HasOutdatedSince: p.FullDocument.Dates.HasOutdatedSince,
+			OutdatedSince:    outdatedSince,
 		}
 
 		if p.FullDocument.Config != nil {
@@ -170,12 +183,19 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 		patientUpdate.BgmStats = &clinics.PatientBGMStats{}
 
 		patientUpdate.BgmStats.Dates = &clinics.PatientSummaryDates{
+			LastUpdatedDate: lastUpdatedDate,
+
 			HasLastUploadDate: p.FullDocument.Dates.HasLastUploadDate,
 			LastUploadDate:    lastUploadDate,
-			LastUpdatedDate:   lastUpdatedDate,
-			FirstData:         firstData,
-			LastData:          lastData,
-			OutdatedSince:     outdatedSince,
+
+			HasFirstData: p.FullDocument.Dates.HasFirstData,
+			FirstData:    firstData,
+
+			HasLastData: p.FullDocument.Dates.HasLastData,
+			LastData:    lastData,
+
+			HasOutdatedSince: p.FullDocument.Dates.HasOutdatedSince,
+			OutdatedSince:    outdatedSince,
 		}
 
 		if p.FullDocument.Config != nil {
