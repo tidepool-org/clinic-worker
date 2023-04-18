@@ -81,8 +81,11 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 				HasFirstData: cgmSummary.Dates.HasFirstData,
 				FirstData:    cgmSummary.Dates.FirstData,
 
-				LastData:      cgmSummary.Dates.LastData,
-				OutdatedSince: cgmSummary.Dates.OutdatedSince,
+				HasLastData: cgmSummary.Dates.HasLastData,
+				LastData:    cgmSummary.Dates.LastData,
+
+				HasOutdatedSince: cgmSummary.Dates.HasOutdatedSince,
+				OutdatedSince:    cgmSummary.Dates.OutdatedSince,
 			},
 			TotalHours: cgmStats.TotalHours,
 			Config: &clinics.PatientSummaryConfig{
@@ -103,8 +106,11 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 				HasFirstData: bgmSummary.Dates.HasFirstData,
 				FirstData:    bgmSummary.Dates.FirstData,
 
-				LastData:      bgmSummary.Dates.LastData,
-				OutdatedSince: bgmSummary.Dates.OutdatedSince,
+				HasLastData: bgmSummary.Dates.HasLastData,
+				LastData:    bgmSummary.Dates.LastData,
+
+				HasOutdatedSince: bgmSummary.Dates.HasOutdatedSince,
+				OutdatedSince:    bgmSummary.Dates.OutdatedSince,
 			},
 			TotalHours: bgmStats.TotalHours,
 			Config: &clinics.PatientSummaryConfig{
