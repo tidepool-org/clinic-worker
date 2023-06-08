@@ -6,13 +6,19 @@ import (
 	"time"
 )
 
-type CDCEvent struct {
-	Offset        int64   `json:"-"`
-	FullDocument  Summary `json:"fullDocument"`
-	OperationType string  `json:"operationType"`
+type CDCEvent[T Stats] struct {
+	Offset        int64      `json:"-"`
+	FullDocument  Summary[T] `json:"fullDocument"`
+	OperationType string     `json:"operationType"`
 }
 
-func (p CDCEvent) ShouldApplyUpdates() bool {
+type StaticCDCEvent struct {
+	Offset        int64         `json:"-"`
+	FullDocument  StaticSummary `json:"fullDocument"`
+	OperationType string        `json:"operationType"`
+}
+
+func (p StaticCDCEvent) ShouldApplyUpdates() bool {
 	if p.OperationType != cdc.OperationTypeInsert &&
 		p.OperationType != cdc.OperationTypeUpdate &&
 		p.OperationType != cdc.OperationTypeReplace {
@@ -26,76 +32,13 @@ func (p CDCEvent) ShouldApplyUpdates() bool {
 	return true
 }
 
-type Stats struct {
-	DeviceID string    `json:"deviceId"`
-	Date     *cdc.Date `json:"date"`
-
-	TargetMinutes int `json:"targetMinutes"`
-	TargetRecords int `json:"targetRecords"`
-
-	LowMinutes int `json:"LowMinutes"`
-	LowRecords int `json:"LowRecords"`
-
-	VeryLowMinutes int `json:"veryLowMinutes"`
-	VeryLowRecords int `json:"veryLowRecords"`
-
-	HighMinutes int `json:"highMinutes"`
-	HighRecords int `json:"highRecords"`
-
-	VeryHighMinutes int `json:"veryHighMinutes"`
-	VeryHighRecords int `json:"veryHighRecords"`
-
-	TotalGlucose    float64   `json:"totalGlucose"`
-	TotalCGMMinutes int       `json:"totalCGMMinutes"`
-	TotalCGMRecords int       `json:"totalCGMRecords"`
-	LastRecordTime  *cdc.Date `json:"lastRecordTime"`
+type Glucose struct {
+	Units *string  `json:"units"`
+	Value *float64 `json:"value"`
 }
 
-type Period struct {
-	TimeCGMUsePercent *float64 `json:"timeCGMUsePercent"`
-	TimeCGMUseMinutes *int     `json:"timeCGMUseMinutes"`
-	TimeCGMUseRecords *int     `json:"timeCGMUseRecords"`
-
-	// actual values
-	AverageGlucose             *clinics.AverageGlucose `json:"avgGlucose"`
-	GlucoseManagementIndicator *float64                `json:"glucoseManagementIndicator"`
-
-	TimeInTargetPercent *float64 `json:"timeInTargetPercent"`
-	TimeInTargetMinutes *int     `json:"timeInTargetMinutes"`
-	TimeInTargetRecords *int     `json:"timeInTargetRecords"`
-
-	TimeInLowPercent *float64 `json:"timeInLowPercent"`
-	TimeInLowMinutes *int     `json:"timeInLowMinutes"`
-	TimeInLowRecords *int     `json:"timeInLowRecords"`
-
-	TimeInVeryLowPercent *float64 `json:"timeInVeryLowPercent"`
-	TimeInVeryLowMinutes *int     `json:"timeInVeryLowMinutes"`
-	TimeInVeryLowRecords *int     `json:"timeInVeryLowRecords"`
-
-	TimeInHighPercent *float64 `json:"timeInHighPercent"`
-	TimeInHighMinutes *int     `json:"timeInHighMinutes"`
-	TimeInHighRecords *int     `json:"timeInHighRecords"`
-
-	TimeInVeryHighPercent *float64 `json:"timeInVeryHighPercent"`
-	TimeInVeryHighMinutes *int     `json:"timeInVeryHighMinutes"`
-	TimeInVeryHighRecords *int     `json:"timeInVeryHighRecords"`
-}
-
-type Summary struct {
-	ID     *cdc.ObjectId `json:"_id"`
-	UserID *string       `json:"userId"`
-
-	DailyStats []*Stats           `json:"dailyStats"`
-	Periods    map[string]*Period `json:"periods"`
-
-	// date tracking
-	LastUpdatedDate *cdc.Date `json:"lastUpdatedDate"`
-	FirstData       *cdc.Date `json:"firstData"`
-	LastData        *cdc.Date `json:"lastData"`
-	LastUploadDate  *cdc.Date `json:"lastUploadDate"`
-	OutdatedSince   *cdc.Date `json:"outdatedSince"`
-
-	TotalDays *int `json:"totalDays"`
+type Config struct {
+	SchemaVersion *int `json:"schemaVersion"`
 
 	// these are just constants right now.
 	HighGlucoseThreshold     *float64 `json:"highGlucoseThreshold"`
@@ -104,83 +47,216 @@ type Summary struct {
 	VeryLowGlucoseThreshold  *float64 `json:"VeryLowGlucoseThreshold"`
 }
 
-func (p CDCEvent) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody {
+type Dates struct {
+	LastUpdatedDate *cdc.Date `json:"lastUpdatedDate"`
+
+	HasLastUploadDate *bool     `json:"hasLastUploadDate"`
+	LastUploadDate    *cdc.Date `json:"lastUploadDate"`
+
+	HasFirstData *bool     `json:"hasFirstData"`
+	FirstData    *cdc.Date `json:"firstData"`
+
+	HasLastData *bool     `json:"hasLastData"`
+	LastData    *cdc.Date `json:"lastData"`
+
+	HasOutdatedSince *bool     `json:"hasOutdatedSince"`
+	OutdatedSince    *cdc.Date `json:"outdatedSince"`
+}
+
+// BGMPeriods
+// For the moment, the period structure matches between the clinic and data service. We don't need to repeat these here.
+// we use the clinic side instead of the summary side to guard against any additional fields the clinic service isn't
+// ready to handle.
+type BGMPeriods map[string]clinics.PatientBGMPeriod
+type CGMPeriods map[string]clinics.PatientCGMPeriod
+
+type CGMStats struct {
+	Periods    *CGMPeriods `json:"periods"`
+	TotalHours *int        `json:"totalHours"`
+}
+
+type BGMStats struct {
+	Periods    *BGMPeriods `json:"periods"`
+	TotalHours *int        `json:"totalHours"`
+}
+
+func (s BGMStats) GetTotalHours() *int {
+	return s.TotalHours
+}
+
+func (s CGMStats) GetTotalHours() *int {
+	return s.TotalHours
+}
+
+type Stats interface {
+	CGMStats | BGMStats
+
+	ExportPeriods(stats interface{})
+	GetTotalHours() *int
+}
+
+type Summary[T Stats] struct {
+	ID     cdc.ObjectId `json:"_id"`
+	Type   *string      `json:"type"`
+	UserID *string      `json:"userId"`
+
+	Config *Config `json:"config"`
+
+	Dates *Dates `json:"dates"`
+	Stats *T     `json:"stats"`
+}
+
+type StaticSummary struct {
+	ID     cdc.ObjectId `json:"_id"`
+	Type   *string      `json:"type"`
+	UserID *string      `json:"userId"`
+
+	Config *Config `json:"config"`
+
+	Dates *Dates `json:"dates"`
+}
+
+func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody {
 	var firstData *time.Time
 	var lastData *time.Time
 	var lastUpdatedDate *time.Time
 	var lastUploadDate *time.Time
 	var outdatedSince *time.Time
 
-	if p.FullDocument.FirstData != nil {
-		firstDataVal := time.UnixMilli(p.FullDocument.FirstData.Value)
+	if p.FullDocument.Dates.FirstData != nil {
+		firstDataVal := time.UnixMilli(p.FullDocument.Dates.FirstData.Value)
 		firstData = &firstDataVal
 	}
-	if p.FullDocument.LastData != nil {
-		lastDataVal := time.UnixMilli(p.FullDocument.LastData.Value)
+	if p.FullDocument.Dates.LastData != nil {
+		lastDataVal := time.UnixMilli(p.FullDocument.Dates.LastData.Value)
 		lastData = &lastDataVal
 	}
-	if p.FullDocument.LastUpdatedDate != nil {
-		lastUpdatedDateVal := time.UnixMilli(p.FullDocument.LastUpdatedDate.Value)
+	if p.FullDocument.Dates.LastUpdatedDate != nil {
+		lastUpdatedDateVal := time.UnixMilli(p.FullDocument.Dates.LastUpdatedDate.Value)
 		lastUpdatedDate = &lastUpdatedDateVal
 	}
-	if p.FullDocument.LastUploadDate != nil {
-		lastUploadDateVal := time.UnixMilli(p.FullDocument.LastUploadDate.Value)
+	if p.FullDocument.Dates.LastUploadDate != nil {
+		lastUploadDateVal := time.UnixMilli(p.FullDocument.Dates.LastUploadDate.Value)
 		lastUploadDate = &lastUploadDateVal
 	}
-	if p.FullDocument.OutdatedSince != nil {
-		outdatedSinceVal := time.UnixMilli(p.FullDocument.OutdatedSince.Value)
+	if p.FullDocument.Dates.OutdatedSince != nil {
+		outdatedSinceVal := time.UnixMilli(p.FullDocument.Dates.OutdatedSince.Value)
 		outdatedSince = &outdatedSinceVal
 	}
 
-	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{
-		FirstData:                firstData,
-		LastData:                 lastData,
-		LastUpdatedDate:          lastUpdatedDate,
-		LastUploadDate:           lastUploadDate,
-		OutdatedSince:            outdatedSince,
-		TotalDays:                p.FullDocument.TotalDays,
-		LowGlucoseThreshold:      p.FullDocument.LowGlucoseThreshold,
-		VeryLowGlucoseThreshold:  p.FullDocument.VeryLowGlucoseThreshold,
-		HighGlucoseThreshold:     p.FullDocument.HighGlucoseThreshold,
-		VeryHighGlucoseThreshold: p.FullDocument.VeryHighGlucoseThreshold,
+	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{}
+	if *p.FullDocument.Type == "cgm" {
+		patientUpdate.CgmStats = &clinics.PatientCGMStats{}
+
+		patientUpdate.CgmStats.Dates = &clinics.PatientSummaryDates{
+			LastUpdatedDate: lastUpdatedDate,
+
+			HasLastUploadDate: p.FullDocument.Dates.HasLastUploadDate,
+			LastUploadDate:    lastUploadDate,
+
+			HasFirstData: p.FullDocument.Dates.HasFirstData,
+			FirstData:    firstData,
+
+			HasLastData: p.FullDocument.Dates.HasLastData,
+			LastData:    lastData,
+
+			HasOutdatedSince: p.FullDocument.Dates.HasOutdatedSince,
+			OutdatedSince:    outdatedSince,
+		}
+
+		if p.FullDocument.Config != nil {
+			patientUpdate.CgmStats.Config = &clinics.PatientSummaryConfig{
+				HighGlucoseThreshold:     p.FullDocument.Config.HighGlucoseThreshold,
+				LowGlucoseThreshold:      p.FullDocument.Config.LowGlucoseThreshold,
+				SchemaVersion:            p.FullDocument.Config.SchemaVersion,
+				VeryHighGlucoseThreshold: p.FullDocument.Config.VeryHighGlucoseThreshold,
+				VeryLowGlucoseThreshold:  p.FullDocument.Config.VeryLowGlucoseThreshold,
+			}
+		}
+
+		if p.FullDocument.Stats != nil {
+			patientUpdate.CgmStats.TotalHours = (*p.FullDocument.Stats).GetTotalHours()
+			(*p.FullDocument.Stats).ExportPeriods(patientUpdate.CgmStats)
+		}
+
+	} else if *p.FullDocument.Type == "bgm" {
+		patientUpdate.BgmStats = &clinics.PatientBGMStats{}
+
+		patientUpdate.BgmStats.Dates = &clinics.PatientSummaryDates{
+			LastUpdatedDate: lastUpdatedDate,
+
+			HasLastUploadDate: p.FullDocument.Dates.HasLastUploadDate,
+			LastUploadDate:    lastUploadDate,
+
+			HasFirstData: p.FullDocument.Dates.HasFirstData,
+			FirstData:    firstData,
+
+			HasLastData: p.FullDocument.Dates.HasLastData,
+			LastData:    lastData,
+
+			HasOutdatedSince: p.FullDocument.Dates.HasOutdatedSince,
+			OutdatedSince:    outdatedSince,
+		}
+
+		if p.FullDocument.Config != nil {
+			patientUpdate.BgmStats.Config = &clinics.PatientSummaryConfig{
+				HighGlucoseThreshold:     p.FullDocument.Config.HighGlucoseThreshold,
+				LowGlucoseThreshold:      p.FullDocument.Config.LowGlucoseThreshold,
+				SchemaVersion:            p.FullDocument.Config.SchemaVersion,
+				VeryHighGlucoseThreshold: p.FullDocument.Config.VeryHighGlucoseThreshold,
+				VeryLowGlucoseThreshold:  p.FullDocument.Config.VeryLowGlucoseThreshold,
+			}
+		}
+
+		if p.FullDocument.Stats != nil {
+			patientUpdate.BgmStats.TotalHours = (*p.FullDocument.Stats).GetTotalHours()
+			(*p.FullDocument.Stats).ExportPeriods(patientUpdate.BgmStats)
+		}
 	}
 
-	var periodExists = false
-	var period14dExists = false
-	if p.FullDocument.Periods != nil {
-		periodExists = true
-		_, period14dExists = p.FullDocument.Periods["14d"]
-	}
-
-	if periodExists && period14dExists {
-		patientUpdate.Periods = &clinics.PatientSummaryPeriods{N14d: &clinics.PatientSummaryPeriod{
-			AverageGlucose:             p.FullDocument.Periods["14d"].AverageGlucose,
-			GlucoseManagementIndicator: p.FullDocument.Periods["14d"].GlucoseManagementIndicator,
-
-			TimeCGMUseMinutes: p.FullDocument.Periods["14d"].TimeCGMUseMinutes,
-			TimeCGMUsePercent: p.FullDocument.Periods["14d"].TimeCGMUsePercent,
-			TimeCGMUseRecords: p.FullDocument.Periods["14d"].TimeCGMUseRecords,
-
-			TimeInHighMinutes: p.FullDocument.Periods["14d"].TimeInHighMinutes,
-			TimeInHighPercent: p.FullDocument.Periods["14d"].TimeInHighPercent,
-			TimeInHighRecords: p.FullDocument.Periods["14d"].TimeInHighRecords,
-
-			TimeInLowMinutes: p.FullDocument.Periods["14d"].TimeInLowMinutes,
-			TimeInLowPercent: p.FullDocument.Periods["14d"].TimeInLowPercent,
-			TimeInLowRecords: p.FullDocument.Periods["14d"].TimeInLowRecords,
-
-			TimeInTargetMinutes: p.FullDocument.Periods["14d"].TimeInTargetMinutes,
-			TimeInTargetPercent: p.FullDocument.Periods["14d"].TimeInTargetPercent,
-			TimeInTargetRecords: p.FullDocument.Periods["14d"].TimeInTargetRecords,
-
-			TimeInVeryHighMinutes: p.FullDocument.Periods["14d"].TimeInVeryHighMinutes,
-			TimeInVeryHighPercent: p.FullDocument.Periods["14d"].TimeInVeryHighPercent,
-			TimeInVeryHighRecords: p.FullDocument.Periods["14d"].TimeInVeryHighRecords,
-
-			TimeInVeryLowMinutes: p.FullDocument.Periods["14d"].TimeInVeryLowMinutes,
-			TimeInVeryLowPercent: p.FullDocument.Periods["14d"].TimeInVeryLowPercent,
-			TimeInVeryLowRecords: p.FullDocument.Periods["14d"].TimeInVeryLowRecords,
-		}}
-	}
 	return patientUpdate
+}
+
+func (s CGMStats) ExportPeriods(destStatsInt interface{}) {
+	var destStats = destStatsInt.(*clinics.PatientCGMStats)
+
+	if s.Periods != nil {
+		destStats.Periods = &clinics.PatientCGMPeriods{}
+
+		// this is bad, but it's better than copy and pasting the copy code N times
+		if v, exists := (*s.Periods)["1d"]; exists {
+			destStats.Periods.N1d = &v
+		}
+		if v, exists := (*s.Periods)["7d"]; exists {
+			destStats.Periods.N7d = &v
+		}
+		if v, exists := (*s.Periods)["14d"]; exists {
+			destStats.Periods.N14d = &v
+		}
+		if v, exists := (*s.Periods)["30d"]; exists {
+			destStats.Periods.N30d = &v
+		}
+	}
+}
+
+func (s BGMStats) ExportPeriods(destStatsInt interface{}) {
+	var destStats = destStatsInt.(*clinics.PatientBGMStats)
+
+	if s.Periods != nil {
+		destStats.Periods = &clinics.PatientBGMPeriods{}
+
+		// this is bad, but it's better than copy and pasting the copy code N times
+		if v, exists := (*s.Periods)["1d"]; exists {
+			destStats.Periods.N1d = &v
+		}
+		if v, exists := (*s.Periods)["7d"]; exists {
+			destStats.Periods.N7d = &v
+		}
+		if v, exists := (*s.Periods)["14d"]; exists {
+			destStats.Periods.N14d = &v
+		}
+		if v, exists := (*s.Periods)["30d"]; exists {
+			destStats.Periods.N30d = &v
+		}
+	}
 }

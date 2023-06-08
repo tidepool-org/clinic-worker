@@ -81,22 +81,62 @@ func (p *CDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) error {
 
 func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 	p.logger.Debugw("handling kafka message", "offset", cm.Offset)
-	event := CDCEvent{
+	// we have to unmarshal twice, once to get the type out
+	staticEvent := StaticCDCEvent{
 		Offset: cm.Offset,
 	}
-	if err := p.unmarshalEvent(cm.Value, &event); err != nil {
+	if err := p.unmarshalEvent(cm.Value, &staticEvent); err != nil {
 		p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
 		return err
 	}
 
-	if err := p.handleCDCEvent(event); err != nil {
-		p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
-		return err
+	p.logger.Debugw("event being processed", "event", staticEvent)
+
+	if !staticEvent.ShouldApplyUpdates() {
+		p.logger.Debugw("skipping handling of event", "offset", staticEvent.Offset)
+		return nil
 	}
+
+	if staticEvent.FullDocument.Type == nil {
+		p.logger.Warnw("unable to get type of unmarshalled message", "offset", cm.Offset)
+		return errors.New("unable to get type of unmarshalled message, summary without type")
+	}
+
+	// the flow get pretty ugly from here on, we need to jump out of methods as generic params
+	// are not yet possible on methods, and we don't want to deviate too much from other event handlers
+	if *staticEvent.FullDocument.Type == "cgm" {
+		event := CDCEvent[CGMStats]{
+			Offset: cm.Offset,
+		}
+		if err := p.unmarshalEvent(cm.Value, &event); err != nil {
+			p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
+			return err
+		}
+		if err := applyPatientSummaryUpdate(p, event); err != nil {
+			p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
+			return err
+		}
+	} else if *staticEvent.FullDocument.Type == "bgm" {
+		event := CDCEvent[BGMStats]{
+			Offset: cm.Offset,
+		}
+		if err := p.unmarshalEvent(cm.Value, &event); err != nil {
+			p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
+			return err
+		}
+		if err := applyPatientSummaryUpdate(p, event); err != nil {
+			p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
+			return err
+		}
+	} else {
+		p.logger.Warnw("unsupported type of unmarshalled message", "offset", cm.Offset, "type", *staticEvent.FullDocument.Type)
+		return fmt.Errorf("unsupported type of unmarshalled message, type: %s", *staticEvent.FullDocument.Type)
+	}
+
 	return nil
 }
 
-func (p *CDCConsumer) unmarshalEvent(value []byte, event *CDCEvent) error {
+func (p *CDCConsumer) unmarshalEvent(value []byte, event interface{}) error {
 	message, err := strconv.Unquote(string(value))
 	if err != nil {
 		return err
@@ -104,19 +144,7 @@ func (p *CDCConsumer) unmarshalEvent(value []byte, event *CDCEvent) error {
 	return json.Unmarshal([]byte(message), event)
 }
 
-func (p *CDCConsumer) handleCDCEvent(event CDCEvent) error {
-	if !event.ShouldApplyUpdates() {
-		p.logger.Debugw("skipping handling of event", "offset", event.Offset)
-		return nil
-	}
-
-	p.logger.Infow("processing summary event for user", "userid", event.FullDocument.UserID)
-	p.logger.Debugw("event being processed", "event", event)
-
-	return p.applyPatientSummaryUpdate(event)
-}
-
-func (p *CDCConsumer) applyPatientSummaryUpdate(event CDCEvent) error {
+func applyPatientSummaryUpdate[T Stats](p *CDCConsumer, event CDCEvent[T]) error {
 	p.logger.Debugw("applying patient summary update", "offset", event.Offset)
 	if event.FullDocument.UserID == nil {
 		return errors.New("expected user id to be defined")

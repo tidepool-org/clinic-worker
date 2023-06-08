@@ -1,18 +1,18 @@
 module github.com/tidepool-org/clinic-worker
 
-go 1.17
+go 1.19
 
 require (
 	github.com/Shopify/sarama v1.28.0
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/cloudevents/sdk-go/v2 v2.2.0
-	github.com/deepmap/oapi-codegen v1.11.0
-	github.com/golang/mock v1.5.0
+	github.com/deepmap/oapi-codegen v1.12.4
+	github.com/golang/mock v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.16.0
-	github.com/tidepool-org/clinic/client v0.0.0-20230113204812-acb7b3592df1
-	github.com/tidepool-org/go-common v0.10.1-0.20221213195046-9cf40867443c
+	github.com/tidepool-org/clinic/client v0.0.0-20230418230111-975c62aec700
+	github.com/tidepool-org/go-common v0.10.1-0.20230418230217-25894f5a9a79
 	github.com/tidepool-org/hydrophone/client v0.0.0-20221219223301-92bd47a8a11c
 	go.uber.org/fx v1.13.1
 	go.uber.org/ratelimit v0.2.0
@@ -22,6 +22,7 @@ require (
 
 require (
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
+	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.2.0 // indirect
@@ -48,10 +49,10 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/dig v1.10.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/crypto v0.0.0-20220513210258-46612604a0f9 // indirect
-	golang.org/x/net v0.0.0-20220513224357-95641704303c // indirect
-	golang.org/x/sys v0.0.0-20220513210249-45d2b4557a2a // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/crypto v0.1.0 // indirect
+	golang.org/x/net v0.2.0 // indirect
+	golang.org/x/sys v0.2.0 // indirect
+	golang.org/x/text v0.4.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

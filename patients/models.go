@@ -87,6 +87,43 @@ func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interf
 	}
 }
 
+type BGMStats struct {
+	Config     clinics.PatientSummaryConfig          `json:"config" bson:"config"`
+	Dates      patientsummary.Dates                  `json:"dates" bson:"dates"`
+	Periods    map[string]*clinics.PatientBGMPeriods `json:"periods" bson:"periods"`
+	TotalHours *int                                  `json:"totalHours" bson:"totalHours"`
+}
+
+type CGMStats struct {
+	Config     clinics.PatientSummaryConfig          `json:"config" bson:"config"`
+	Dates      patientsummary.Dates                  `json:"dates" bson:"dates"`
+	Periods    map[string]*clinics.PatientCGMPeriods `json:"periods" bson:"periods"`
+	TotalHours *int                                  `json:"totalHours" bson:"totalHours"`
+}
+
+type CDCSummary struct {
+	CGM *CGMStats `json:"cgmStats" bson:"cgmStats"`
+	BGM *BGMStats `json:"bgmStats" bson:"bgmStats"`
+}
+
+type Patient struct {
+	Id                             *cdc.ObjectId        `json:"_id"`
+	ClinicId                       *cdc.ObjectId        `json:"clinicId"`
+	UserId                         *string              `json:"userId"`
+	BirthDate                      *string              `json:"birthDate"`
+	Email                          *string              `json:"email"`
+	FullName                       *string              `json:"fullName"`
+	Mrn                            *string              `json:"mrn"`
+	TargetDevices                  *[]string            `json:"targetDevices"`
+	DataSources                    *[]PatientDataSource `json:"dataSources"`
+	Permissions                    *Permissions         `json:"permissions"`
+	IsMigrated                     bool                 `json:"isMigrated"`
+	InvitedBy                      *string              `json:"invitedBy"`
+	LastRequestedDexcomConnectTime *cdc.Date            `json:"lastRequestedDexcomConnectTime"`
+	LastUploadReminderTime         *cdc.Date            `json:"lastUploadReminderTime"`
+	Summary                        *CDCSummary          `json:"summary"`
+}
+
 func (p PatientCDCEvent) CreateDataSourceBody(source clients.DataSource) clinics.DataSource {
 	dataSource := clinics.DataSource{
 		ProviderName: *source.ProviderName,
@@ -106,24 +143,6 @@ type PatientDataSource struct {
 	ModifiedTime *cdc.Date     `json:"modifiedTime,omitempty"`
 	ProviderName *string       `json:"providerName"`
 	State        *string       `json:"state"`
-}
-
-type Patient struct {
-	Id                             *cdc.ObjectId           `json:"_id"`
-	ClinicId                       *cdc.ObjectId           `json:"clinicId"`
-	UserId                         *string                 `json:"userId"`
-	BirthDate                      *string                 `json:"birthDate"`
-	Email                          *string                 `json:"email"`
-	FullName                       *string                 `json:"fullName"`
-	Mrn                            *string                 `json:"mrn"`
-	TargetDevices                  *[]string               `json:"targetDevices"`
-	DataSources                    *[]PatientDataSource    `json:"dataSources"`
-	Permissions                    *Permissions            `json:"permissions"`
-	IsMigrated                     bool                    `json:"isMigrated"`
-	InvitedBy                      *string                 `json:"invitedBy"`
-	LastRequestedDexcomConnectTime *cdc.Date               `json:"lastRequestedDexcomConnectTime"`
-	LastUploadReminderTime         *cdc.Date               `json:"lastUploadReminderTime"`
-	Summary                        *patientsummary.Summary `json:"summary"`
 }
 
 func (p Patient) IsCustodial() bool {

@@ -223,25 +223,39 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 	return nil
 }
 
+/*
+Here we populate summaries for all supported types, this is different from the patientsummary
+functions, as with new patients, we don't know which summaries a user has, and should pull all.
+*/
 func (p *PatientCDCConsumer) populateSummary(userId string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
-	summaryResponse, err := p.summaries.GetSummaryWithResponse(ctx, summaries.UserId(userId))
+	cgmSummaryResponse, err := p.summaries.GetSummaryWithResponse(ctx, summaries.UserId(userId), "cgm")
 	if err != nil {
 		return err
 	}
 
-	if !(summaryResponse.StatusCode() == http.StatusOK || summaryResponse.StatusCode() == http.StatusNotFound) {
-		return fmt.Errorf("unexpected status code when retrieving patient summary %v", summaryResponse.StatusCode())
+	bgmSummaryResponse, err := p.summaries.GetSummaryWithResponse(ctx, summaries.UserId(userId), "bgm")
+	if err != nil {
+		return err
 	}
 
-	userSummary := summaryResponse.JSON200
+	if !(cgmSummaryResponse.StatusCode() == http.StatusOK || cgmSummaryResponse.StatusCode() == http.StatusNotFound) {
+		return fmt.Errorf("unexpected status code when retrieving patient summary %v", cgmSummaryResponse.StatusCode())
+	}
+
+	if !(bgmSummaryResponse.StatusCode() == http.StatusOK || bgmSummaryResponse.StatusCode() == http.StatusNotFound) {
+		return fmt.Errorf("unexpected status code when retrieving patient summary %v", bgmSummaryResponse.StatusCode())
+	}
+
+	cgmUserSummary := cgmSummaryResponse.JSON200
+	bgmUserSummary := bgmSummaryResponse.JSON200
 	// user has no summary, do nothing
-	if userSummary == nil {
+	if cgmUserSummary == nil && bgmUserSummary == nil {
 		return nil
 	}
 
-	updateBody := CreateSummaryUpdateBody(userSummary)
+	updateBody := CreateSummaryUpdateBody(cgmUserSummary, bgmUserSummary)
 
 	response, err := p.clinics.UpdatePatientSummaryWithResponse(ctx, clinics.PatientId(userId), updateBody)
 	if err != nil {
