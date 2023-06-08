@@ -98,8 +98,10 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 	}
 
 	if staticEvent.FullDocument.Type == nil {
+		// we only log this for now to skip any pre-bgmstats events
 		p.logger.Warnw("unable to get type of unmarshalled message", "offset", cm.Offset)
-		return errors.New("unable to get type of unmarshalled message, summary without type")
+		return nil
+		//return errors.New("unable to get type of unmarshalled message, summary without type")
 	}
 
 	// the flow get pretty ugly from here on, we need to jump out of methods as generic params
