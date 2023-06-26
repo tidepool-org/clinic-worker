@@ -3,14 +3,15 @@ package migration
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"net/http"
-	"time"
 
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -180,7 +181,7 @@ func (m *migrator) updateMigrationsStatus(ctx context.Context, migration *Migrat
 	body := clinics.UpdateMigrationJSONRequestBody{
 		Status: clinics.MigrationStatus(status),
 	}
-	resp, err := m.clinics.UpdateMigrationWithResponse(ctx, migration.clinic.Id, clinics.UserId(migration.legacyClinicianUserId), body)
+	resp, err := m.clinics.UpdateMigrationWithResponse(ctx, *migration.clinic.Id, clinics.UserId(migration.legacyClinicianUserId), body)
 	if err != nil {
 		return err
 	}
@@ -206,7 +207,7 @@ func (m *migrator) migratePatient(ctx context.Context, migration *Migration, pat
 	if patient == nil {
 		m.logger.Infow(
 			"Patient couldn't be migrated, because the user doesn't exist anymore",
-			"clinicId", string(migration.clinic.Id), "userId", patientId,
+			"clinicId", string(*migration.clinic.Id), "userId", patientId,
 		)
 		return nil
 	}
@@ -220,7 +221,7 @@ func (m *migrator) migratePatient(ctx context.Context, migration *Migration, pat
 }
 
 func (m *migrator) createPatient(ctx context.Context, migration *Migration, patientId string, permissions clients.Permissions) (*clinics.Patient, error) {
-	clinicId := string(migration.clinic.Id)
+	clinicId := string(*migration.clinic.Id)
 	m.logger.Infof("Migrating patient %v to clinic %v", patientId, clinicId)
 	var patient *clinics.Patient
 	var err error
@@ -275,11 +276,11 @@ func (m *migrator) removeSharingConnection(userId, patientId string) error {
 
 func (m *migrator) sendMigrationEmail(ctx context.Context, migrationContext *Migration, patient *clinics.Patient) error {
 	if patient.Email == nil || *patient.Email == "" {
-		m.logger.Infof("Skipping sending of migration email to user %s because email address is empty", string(patient.Id))
+		m.logger.Infof("Skipping sending of migration email to user %s because email address is empty", string(*patient.Id))
 		return nil
 	}
 
-	m.logger.Infof("Sending migration email to user %s", string(patient.Id))
+	m.logger.Infof("Sending migration email to user %s", string(*patient.Id))
 	email := events.SendEmailTemplateEvent{
 		Recipient: *patient.Email,
 		Template:  patientMigrationTemplate,
