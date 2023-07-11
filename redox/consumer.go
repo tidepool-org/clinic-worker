@@ -2,7 +2,6 @@ package redox
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Shopify/sarama"
@@ -108,7 +107,7 @@ func (p *RedoxCDCConsumer) unmarshalEvent(value []byte, event *cdc.Event[models.
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal([]byte(message), event)
+	return bson.UnmarshalExtJSON([]byte(message), true, event)
 }
 
 func (p *RedoxCDCConsumer) handleCDCEvent(event cdc.Event[models.MessageEnvelope]) error {
