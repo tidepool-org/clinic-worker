@@ -11,13 +11,15 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.16.0
-	github.com/tidepool-org/clinic/client v0.0.0-20230418230111-975c62aec700
+	github.com/tidepool-org/clinic/client v0.0.0-20230711114505-94176afb424f
+	github.com/tidepool-org/clinic/redox/models v0.0.0-20230711114505-94176afb424f
 	github.com/tidepool-org/go-common v0.10.1-0.20230418230217-25894f5a9a79
 	github.com/tidepool-org/hydrophone/client v0.0.0-20221219223301-92bd47a8a11c
+	go.mongodb.org/mongo-driver v1.12.0
 	go.uber.org/fx v1.13.1
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.16.0
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 )
 
 require (
@@ -52,7 +54,7 @@ require (
 	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/net v0.2.0 // indirect
 	golang.org/x/sys v0.2.0 // indirect
-	golang.org/x/text v0.4.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
