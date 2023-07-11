@@ -237,7 +237,12 @@ github.com/stretchr/testify v1.6.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
+<<<<<<< HEAD
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
+=======
+github.com/tidepool-org/clinic/client v0.0.0-20220805005056-b799d3d573bc h1:lejSCe8rUzmTZ8era94/3Dxmapb4hxxHVIUe4P4ILd0=
+github.com/tidepool-org/clinic/client v0.0.0-20220805005056-b799d3d573bc/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
+>>>>>>> 5455cd6 (Add matching logic for orders)
 github.com/tidepool-org/clinic/client v0.0.0-20230711114505-94176afb424f h1:qCHqeHIleVeAjqs85XK38nldVfxz/yQkcr7hWwZw0/s=
 github.com/tidepool-org/clinic/client v0.0.0-20230711114505-94176afb424f/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/clinic/redox/models v0.0.0-20230711114505-94176afb424f h1:sHLKTISGQCk1ACUaTDqcdfBhCrH4L6w3TFtG348T620=
