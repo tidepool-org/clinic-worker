@@ -74,6 +74,46 @@ func (m *MockClientInterface) EXPECT() *MockClientInterfaceMockRecorder {
 	return m.recorder
 }
 
+// AssignPatientTagToClinicPatients mocks base method.
+func (m *MockClientInterface) AssignPatientTagToClinicPatients(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body AssignPatientTagToClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, patientTagId, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AssignPatientTagToClinicPatients", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AssignPatientTagToClinicPatients indicates an expected call of AssignPatientTagToClinicPatients.
+func (mr *MockClientInterfaceMockRecorder) AssignPatientTagToClinicPatients(ctx, clinicId, patientTagId, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, patientTagId, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatients", reflect.TypeOf((*MockClientInterface)(nil).AssignPatientTagToClinicPatients), varargs...)
+}
+
+// AssignPatientTagToClinicPatientsWithBody mocks base method.
+func (m *MockClientInterface) AssignPatientTagToClinicPatientsWithBody(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, patientTagId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AssignPatientTagToClinicPatientsWithBody", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AssignPatientTagToClinicPatientsWithBody indicates an expected call of AssignPatientTagToClinicPatientsWithBody.
+func (mr *MockClientInterfaceMockRecorder) AssignPatientTagToClinicPatientsWithBody(ctx, clinicId, patientTagId, contentType, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, patientTagId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatientsWithBody", reflect.TypeOf((*MockClientInterface)(nil).AssignPatientTagToClinicPatientsWithBody), varargs...)
+}
+
 // AssociateClinicianToUser mocks base method.
 func (m *MockClientInterface) AssociateClinicianToUser(ctx context.Context, clinicId ClinicId, inviteId InviteId, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -314,6 +354,26 @@ func (mr *MockClientInterfaceMockRecorder) CreatePatientTagWithBody(ctx, clinicI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePatientTagWithBody", reflect.TypeOf((*MockClientInterface)(nil).CreatePatientTagWithBody), varargs...)
 }
 
+// DeleteClinic mocks base method.
+func (m *MockClientInterface) DeleteClinic(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteClinic", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteClinic indicates an expected call of DeleteClinic.
+func (mr *MockClientInterfaceMockRecorder) DeleteClinic(ctx, clinicId interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteClinic", reflect.TypeOf((*MockClientInterface)(nil).DeleteClinic), varargs...)
+}
+
 // DeleteClinician mocks base method.
 func (m *MockClientInterface) DeleteClinician(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -415,9 +475,9 @@ func (mr *MockClientInterfaceMockRecorder) DeletePatientTag(ctx, clinicId, patie
 }
 
 // DeletePatientTagFromClinicPatients mocks base method.
-func (m *MockClientInterface) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body DeletePatientTagFromClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, clinicId, patientTagId}
+	varargs := []interface{}{ctx, clinicId, patientTagId, body}
 	for _, a := range reqEditors {
 		varargs = append(varargs, a)
 	}
@@ -428,10 +488,30 @@ func (m *MockClientInterface) DeletePatientTagFromClinicPatients(ctx context.Con
 }
 
 // DeletePatientTagFromClinicPatients indicates an expected call of DeletePatientTagFromClinicPatients.
-func (mr *MockClientInterfaceMockRecorder) DeletePatientTagFromClinicPatients(ctx, clinicId, patientTagId interface{}, reqEditors ...interface{}) *gomock.Call {
+func (mr *MockClientInterfaceMockRecorder) DeletePatientTagFromClinicPatients(ctx, clinicId, patientTagId, body interface{}, reqEditors ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, clinicId, patientTagId}, reqEditors...)
+	varargs := append([]interface{}{ctx, clinicId, patientTagId, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientTagFromClinicPatients", reflect.TypeOf((*MockClientInterface)(nil).DeletePatientTagFromClinicPatients), varargs...)
+}
+
+// DeletePatientTagFromClinicPatientsWithBody mocks base method.
+func (m *MockClientInterface) DeletePatientTagFromClinicPatientsWithBody(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, patientTagId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeletePatientTagFromClinicPatientsWithBody", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeletePatientTagFromClinicPatientsWithBody indicates an expected call of DeletePatientTagFromClinicPatientsWithBody.
+func (mr *MockClientInterfaceMockRecorder) DeletePatientTagFromClinicPatientsWithBody(ctx, clinicId, patientTagId, contentType, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, patientTagId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientTagFromClinicPatientsWithBody", reflect.TypeOf((*MockClientInterface)(nil).DeletePatientTagFromClinicPatientsWithBody), varargs...)
 }
 
 // DeleteUserFromClinics mocks base method.
@@ -692,6 +772,26 @@ func (mr *MockClientInterfaceMockRecorder) ListClinicsForPatient(ctx, userId, pa
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, userId, params}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListClinicsForPatient", reflect.TypeOf((*MockClientInterface)(nil).ListClinicsForPatient), varargs...)
+}
+
+// ListMembershipRestrictions mocks base method.
+func (m *MockClientInterface) ListMembershipRestrictions(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListMembershipRestrictions", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListMembershipRestrictions indicates an expected call of ListMembershipRestrictions.
+func (mr *MockClientInterfaceMockRecorder) ListMembershipRestrictions(ctx, clinicId interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListMembershipRestrictions", reflect.TypeOf((*MockClientInterface)(nil).ListMembershipRestrictions), varargs...)
 }
 
 // ListMigrations mocks base method.
@@ -974,6 +1074,46 @@ func (mr *MockClientInterfaceMockRecorder) UpdateClinicianWithBody(ctx, clinicId
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClinicianWithBody", reflect.TypeOf((*MockClientInterface)(nil).UpdateClinicianWithBody), varargs...)
 }
 
+// UpdateMembershipRestrictions mocks base method.
+func (m *MockClientInterface) UpdateMembershipRestrictions(ctx context.Context, clinicId ClinicId, body UpdateMembershipRestrictionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateMembershipRestrictions", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateMembershipRestrictions indicates an expected call of UpdateMembershipRestrictions.
+func (mr *MockClientInterfaceMockRecorder) UpdateMembershipRestrictions(ctx, clinicId, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMembershipRestrictions", reflect.TypeOf((*MockClientInterface)(nil).UpdateMembershipRestrictions), varargs...)
+}
+
+// UpdateMembershipRestrictionsWithBody mocks base method.
+func (m *MockClientInterface) UpdateMembershipRestrictionsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateMembershipRestrictionsWithBody", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateMembershipRestrictionsWithBody indicates an expected call of UpdateMembershipRestrictionsWithBody.
+func (mr *MockClientInterfaceMockRecorder) UpdateMembershipRestrictionsWithBody(ctx, clinicId, contentType, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMembershipRestrictionsWithBody", reflect.TypeOf((*MockClientInterface)(nil).UpdateMembershipRestrictionsWithBody), varargs...)
+}
+
 // UpdateMigration mocks base method.
 func (m *MockClientInterface) UpdateMigration(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -1214,6 +1354,46 @@ func (mr *MockClientInterfaceMockRecorder) UpdatePatientWithBody(ctx, clinicId, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePatientWithBody", reflect.TypeOf((*MockClientInterface)(nil).UpdatePatientWithBody), varargs...)
 }
 
+// UpdateSuppressedNotifications mocks base method.
+func (m *MockClientInterface) UpdateSuppressedNotifications(ctx context.Context, clinicId ClinicId, body UpdateSuppressedNotificationsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateSuppressedNotifications", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateSuppressedNotifications indicates an expected call of UpdateSuppressedNotifications.
+func (mr *MockClientInterfaceMockRecorder) UpdateSuppressedNotifications(ctx, clinicId, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSuppressedNotifications", reflect.TypeOf((*MockClientInterface)(nil).UpdateSuppressedNotifications), varargs...)
+}
+
+// UpdateSuppressedNotificationsWithBody mocks base method.
+func (m *MockClientInterface) UpdateSuppressedNotificationsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateSuppressedNotificationsWithBody", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateSuppressedNotificationsWithBody indicates an expected call of UpdateSuppressedNotificationsWithBody.
+func (mr *MockClientInterfaceMockRecorder) UpdateSuppressedNotificationsWithBody(ctx, clinicId, contentType, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSuppressedNotificationsWithBody", reflect.TypeOf((*MockClientInterface)(nil).UpdateSuppressedNotificationsWithBody), varargs...)
+}
+
 // UpdateTier mocks base method.
 func (m *MockClientInterface) UpdateTier(ctx context.Context, clinicId ClinicId, body UpdateTierJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -1275,6 +1455,46 @@ func NewMockClientWithResponsesInterface(ctrl *gomock.Controller) *MockClientWit
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockClientWithResponsesInterface) EXPECT() *MockClientWithResponsesInterfaceMockRecorder {
 	return m.recorder
+}
+
+// AssignPatientTagToClinicPatientsWithBodyWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) AssignPatientTagToClinicPatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AssignPatientTagToClinicPatientsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, patientTagId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AssignPatientTagToClinicPatientsWithBodyWithResponse", varargs...)
+	ret0, _ := ret[0].(*AssignPatientTagToClinicPatientsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AssignPatientTagToClinicPatientsWithBodyWithResponse indicates an expected call of AssignPatientTagToClinicPatientsWithBodyWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) AssignPatientTagToClinicPatientsWithBodyWithResponse(ctx, clinicId, patientTagId, contentType, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, patientTagId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatientsWithBodyWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).AssignPatientTagToClinicPatientsWithBodyWithResponse), varargs...)
+}
+
+// AssignPatientTagToClinicPatientsWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) AssignPatientTagToClinicPatientsWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body AssignPatientTagToClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignPatientTagToClinicPatientsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, patientTagId, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AssignPatientTagToClinicPatientsWithResponse", varargs...)
+	ret0, _ := ret[0].(*AssignPatientTagToClinicPatientsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AssignPatientTagToClinicPatientsWithResponse indicates an expected call of AssignPatientTagToClinicPatientsWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) AssignPatientTagToClinicPatientsWithResponse(ctx, clinicId, patientTagId, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, patientTagId, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatientsWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).AssignPatientTagToClinicPatientsWithResponse), varargs...)
 }
 
 // AssociateClinicianToUserWithBodyWithResponse mocks base method.
@@ -1517,6 +1737,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) CreatePatientTagWithResp
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePatientTagWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).CreatePatientTagWithResponse), varargs...)
 }
 
+// DeleteClinicWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) DeleteClinicWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*DeleteClinicResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteClinicWithResponse", varargs...)
+	ret0, _ := ret[0].(*DeleteClinicResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteClinicWithResponse indicates an expected call of DeleteClinicWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) DeleteClinicWithResponse(ctx, clinicId interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteClinicWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).DeleteClinicWithResponse), varargs...)
+}
+
 // DeleteClinicianWithResponse mocks base method.
 func (m *MockClientWithResponsesInterface) DeleteClinicianWithResponse(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, reqEditors ...RequestEditorFn) (*DeleteClinicianResponse, error) {
 	m.ctrl.T.Helper()
@@ -1577,10 +1817,30 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) DeletePatientPermissionW
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientPermissionWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).DeletePatientPermissionWithResponse), varargs...)
 }
 
-// DeletePatientTagFromClinicPatientsWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) DeletePatientTagFromClinicPatientsWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*DeletePatientTagFromClinicPatientsResponse, error) {
+// DeletePatientTagFromClinicPatientsWithBodyWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) DeletePatientTagFromClinicPatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeletePatientTagFromClinicPatientsResponse, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, clinicId, patientTagId}
+	varargs := []interface{}{ctx, clinicId, patientTagId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeletePatientTagFromClinicPatientsWithBodyWithResponse", varargs...)
+	ret0, _ := ret[0].(*DeletePatientTagFromClinicPatientsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeletePatientTagFromClinicPatientsWithBodyWithResponse indicates an expected call of DeletePatientTagFromClinicPatientsWithBodyWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) DeletePatientTagFromClinicPatientsWithBodyWithResponse(ctx, clinicId, patientTagId, contentType, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, patientTagId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientTagFromClinicPatientsWithBodyWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).DeletePatientTagFromClinicPatientsWithBodyWithResponse), varargs...)
+}
+
+// DeletePatientTagFromClinicPatientsWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) DeletePatientTagFromClinicPatientsWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body DeletePatientTagFromClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*DeletePatientTagFromClinicPatientsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, patientTagId, body}
 	for _, a := range reqEditors {
 		varargs = append(varargs, a)
 	}
@@ -1591,9 +1851,9 @@ func (m *MockClientWithResponsesInterface) DeletePatientTagFromClinicPatientsWit
 }
 
 // DeletePatientTagFromClinicPatientsWithResponse indicates an expected call of DeletePatientTagFromClinicPatientsWithResponse.
-func (mr *MockClientWithResponsesInterfaceMockRecorder) DeletePatientTagFromClinicPatientsWithResponse(ctx, clinicId, patientTagId interface{}, reqEditors ...interface{}) *gomock.Call {
+func (mr *MockClientWithResponsesInterfaceMockRecorder) DeletePatientTagFromClinicPatientsWithResponse(ctx, clinicId, patientTagId, body interface{}, reqEditors ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, clinicId, patientTagId}, reqEditors...)
+	varargs := append([]interface{}{ctx, clinicId, patientTagId, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientTagFromClinicPatientsWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).DeletePatientTagFromClinicPatientsWithResponse), varargs...)
 }
 
@@ -1897,6 +2157,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) ListClinicsWithResponse(
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListClinicsWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ListClinicsWithResponse), varargs...)
 }
 
+// ListMembershipRestrictionsWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) ListMembershipRestrictionsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*ListMembershipRestrictionsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListMembershipRestrictionsWithResponse", varargs...)
+	ret0, _ := ret[0].(*ListMembershipRestrictionsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListMembershipRestrictionsWithResponse indicates an expected call of ListMembershipRestrictionsWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) ListMembershipRestrictionsWithResponse(ctx, clinicId interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListMembershipRestrictionsWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ListMembershipRestrictionsWithResponse), varargs...)
+}
+
 // ListMigrationsWithResponse mocks base method.
 func (m *MockClientWithResponsesInterface) ListMigrationsWithResponse(ctx context.Context, clinicId string, reqEditors ...RequestEditorFn) (*ListMigrationsResponse, error) {
 	m.ctrl.T.Helper()
@@ -2177,6 +2457,46 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateClinicianWithRespo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClinicianWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdateClinicianWithResponse), varargs...)
 }
 
+// UpdateMembershipRestrictionsWithBodyWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) UpdateMembershipRestrictionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMembershipRestrictionsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateMembershipRestrictionsWithBodyWithResponse", varargs...)
+	ret0, _ := ret[0].(*UpdateMembershipRestrictionsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateMembershipRestrictionsWithBodyWithResponse indicates an expected call of UpdateMembershipRestrictionsWithBodyWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateMembershipRestrictionsWithBodyWithResponse(ctx, clinicId, contentType, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMembershipRestrictionsWithBodyWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdateMembershipRestrictionsWithBodyWithResponse), varargs...)
+}
+
+// UpdateMembershipRestrictionsWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) UpdateMembershipRestrictionsWithResponse(ctx context.Context, clinicId ClinicId, body UpdateMembershipRestrictionsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMembershipRestrictionsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateMembershipRestrictionsWithResponse", varargs...)
+	ret0, _ := ret[0].(*UpdateMembershipRestrictionsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateMembershipRestrictionsWithResponse indicates an expected call of UpdateMembershipRestrictionsWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateMembershipRestrictionsWithResponse(ctx, clinicId, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMembershipRestrictionsWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdateMembershipRestrictionsWithResponse), varargs...)
+}
+
 // UpdateMigrationWithBodyWithResponse mocks base method.
 func (m *MockClientWithResponsesInterface) UpdateMigrationWithBodyWithResponse(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error) {
 	m.ctrl.T.Helper()
@@ -2415,6 +2735,46 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdatePatientWithRespons
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, clinicId, patientId, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePatientWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdatePatientWithResponse), varargs...)
+}
+
+// UpdateSuppressedNotificationsWithBodyWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) UpdateSuppressedNotificationsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSuppressedNotificationsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateSuppressedNotificationsWithBodyWithResponse", varargs...)
+	ret0, _ := ret[0].(*UpdateSuppressedNotificationsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateSuppressedNotificationsWithBodyWithResponse indicates an expected call of UpdateSuppressedNotificationsWithBodyWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateSuppressedNotificationsWithBodyWithResponse(ctx, clinicId, contentType, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSuppressedNotificationsWithBodyWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdateSuppressedNotificationsWithBodyWithResponse), varargs...)
+}
+
+// UpdateSuppressedNotificationsWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) UpdateSuppressedNotificationsWithResponse(ctx context.Context, clinicId ClinicId, body UpdateSuppressedNotificationsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSuppressedNotificationsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateSuppressedNotificationsWithResponse", varargs...)
+	ret0, _ := ret[0].(*UpdateSuppressedNotificationsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateSuppressedNotificationsWithResponse indicates an expected call of UpdateSuppressedNotificationsWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateSuppressedNotificationsWithResponse(ctx, clinicId, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSuppressedNotificationsWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdateSuppressedNotificationsWithResponse), varargs...)
 }
 
 // UpdateTierWithBodyWithResponse mocks base method.
