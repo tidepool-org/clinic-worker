@@ -7,6 +7,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/kelseyhightower/envconfig"
 	"sync"
 	"time"
 )
@@ -36,8 +37,7 @@ type ClientConfig struct {
 
 func NewClientConfig() (ClientConfig, error) {
 	config := ClientConfig{}
-	//err := envconfig.Process("", &config)
-	var err error
+	err := envconfig.Process("", &config)
 	return config, err
 }
 
