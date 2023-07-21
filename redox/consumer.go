@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Shopify/sarama"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/clinic/redox/models"
@@ -24,7 +25,7 @@ const (
 )
 
 var Module = fx.Provide(
-	NewClientConfig,
+	NewModuleConfig,
 	NewClient,
 	fx.Annotated{
 		Group:  "consumers",
@@ -32,9 +33,20 @@ var Module = fx.Provide(
 	},
 )
 
+type ModuleConfig struct {
+	Enabled bool `envconfig:"TIDEPOOL_REDOX_ENABLED" default:"false"`
+}
+
+func NewModuleConfig() (ModuleConfig, error) {
+	config := ModuleConfig{}
+	err := envconfig.Process("", &config)
+	return config, err
+}
+
 type CDCConsumer struct {
 	logger *zap.SugaredLogger
 
+	config    ModuleConfig
 	clinics   clinics.ClientWithResponsesInterface
 	shoreline shoreline.Client
 	client    *Client
@@ -43,12 +55,19 @@ type CDCConsumer struct {
 type Params struct {
 	fx.In
 
+	Config ModuleConfig
+
+	Client    *Client
 	Clinics   clinics.ClientWithResponsesInterface
 	Logger    *zap.SugaredLogger
 	Shoreline shoreline.Client
 }
 
 func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
+	if !p.Config.Enabled {
+		return &cdc.DisabledEventConsumer{}, nil
+	}
+
 	config, err := cdc.GetConfig()
 	if err != nil {
 		return nil, err
@@ -74,6 +93,8 @@ func NewCDCConsumer(p Params) (events.MessageConsumer, error) {
 		clinics:   p.Clinics,
 		logger:    p.Logger,
 		shoreline: p.Shoreline,
+		config:    p.Config,
+		client:    p.Client,
 	}, nil
 }
 

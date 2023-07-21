@@ -35,23 +35,25 @@ type ClientConfig struct {
 	TestMode      bool   `envconfig:"TIDEPOOL_REDOX_TEST_MODE"`
 }
 
-func NewClientConfig() (ClientConfig, error) {
-	config := ClientConfig{}
-	err := envconfig.Process("", &config)
-	return config, err
-}
+func NewClient(moduleConfig ModuleConfig) (*Client, error) {
+	client := &Client{}
 
-func NewClient(config ClientConfig) (*Client, error) {
-	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(config.PrivateKeyPem))
-	if err != nil {
-		return nil, err
+	if moduleConfig.Enabled {
+		config := ClientConfig{}
+		err := envconfig.Process("", &config)
+		if err != nil {
+			return nil, err
+		}
+
+		client.restyClient = resty.New()
+		client.config = config
+		client.privateKey, err = jwt.ParseRSAPrivateKeyFromPEM([]byte(config.PrivateKeyPem))
+		if err != nil {
+			return nil, err
+		}
 	}
-
-	return &Client{
-		config:      config,
-		restyClient: resty.New(),
-		privateKey:  privateKey,
-	}, nil
+	
+	return client, nil
 }
 
 func (c *Client) GetSource() (source struct {
