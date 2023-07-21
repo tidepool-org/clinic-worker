@@ -7,7 +7,10 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/cloudevents/sdk-go/v2 v2.2.0
 	github.com/deepmap/oapi-codegen v1.12.4
+	github.com/go-resty/resty/v2 v2.7.0
+	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/golang/mock v1.6.0
+	github.com/google/uuid v1.3.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.16.0
@@ -32,7 +35,6 @@ require (
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect

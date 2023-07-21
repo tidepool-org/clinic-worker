@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"github.com/tidepool-org/clinic-worker/redox"
 	"net/http"
 
 	"github.com/tidepool-org/clinic-worker/cdc"
@@ -11,7 +12,6 @@ import (
 	"github.com/tidepool-org/clinic-worker/migration"
 	"github.com/tidepool-org/clinic-worker/patients"
 	"github.com/tidepool-org/clinic-worker/patientsummary"
-	"github.com/tidepool-org/clinic-worker/redox"
 	"github.com/tidepool-org/clinic-worker/users"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"

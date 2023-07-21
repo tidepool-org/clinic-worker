@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	MockBrokerAddress = "localhost:5432"
+	MockBrokerAddress = "localhost:8432"
 )
 
 var _ = Describe("Boostrap", func() {
@@ -62,7 +62,7 @@ var _ = Describe("Boostrap", func() {
 		})
 
 		It("instantiates workers", func() {
-			// clinic, clinicians, migration, patients, patientsummary, users, datasources
+			// clinic, clinicians, migration, patients, patientsummary, users, datasources, redox
 			expectedCount := 8
 			Expect(components.Consumers).To(HaveLen(expectedCount))
 		})
@@ -79,6 +79,11 @@ func SetRequiredEnvVariables() {
 	Expect(os.Setenv("KAFKA_TOPIC_PREFIX", "local")).ToNot(HaveOccurred())
 	Expect(os.Setenv("KAFKA_REQUIRE_SSL", "false")).ToNot(HaveOccurred())
 	Expect(os.Setenv("KAFKA_VERSION", "2.6.0")).ToNot(HaveOccurred())
+	Expect(os.Setenv("TIDEPOOL_REDOX_CLIENT_ID", "1234567890")).ToNot(HaveOccurred())
+	Expect(os.Setenv("TIDEPOOL_REDOX_KEY_ID", "k-123")).ToNot(HaveOccurred())
+	Expect(os.Setenv("TIDEPOOL_REDOX_PRIVATE_KEY", "PK")).ToNot(HaveOccurred())
+	Expect(os.Setenv("TIDEPOOL_REDOX_SOURCE_ID", "Tidepool-Test-123")).ToNot(HaveOccurred())
+	Expect(os.Setenv("TIDEPOOL_REDOX_SOURCE_NAME", "Tidepool-Test")).ToNot(HaveOccurred())
 }
 
 func ClearRequiredEnvVariables() {
@@ -87,4 +92,9 @@ func ClearRequiredEnvVariables() {
 	Expect(os.Unsetenv("KAFKA_TOPIC_PREFIX")).ToNot(HaveOccurred())
 	Expect(os.Unsetenv("KAFKA_REQUIRE_SSL")).ToNot(HaveOccurred())
 	Expect(os.Unsetenv("KAFKA_VERSION")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("TIDEPOOL_REDOX_CLIENT_ID")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("TIDEPOOL_REDOX_KEY_ID")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("TIDEPOOL_REDOX_PRIVATE_KEY")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("TIDEPOOL_REDOX_SOURCE_ID")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("TIDEPOOL_REDOX_SOURCE_NAME")).ToNot(HaveOccurred())
 }

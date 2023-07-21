@@ -23,16 +23,21 @@ const (
 	defaultTimeout = 30 * time.Second
 )
 
-var Module = fx.Provide(fx.Annotated{
-	Group:  "consumers",
-	Target: CreateConsumerGroup,
-})
+var Module = fx.Provide(
+	NewClientConfig,
+	NewClient,
+	fx.Annotated{
+		Group:  "consumers",
+		Target: CreateConsumerGroup,
+	},
+)
 
-type RedoxCDCConsumer struct {
+type CDCConsumer struct {
 	logger *zap.SugaredLogger
 
 	clinics   clinics.ClientWithResponsesInterface
 	shoreline shoreline.Client
+	client    *Client
 }
 
 type Params struct {
@@ -56,7 +61,7 @@ func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
 
 func CreateConsumer(p Params) events.ConsumerFactory {
 	return func() (events.MessageConsumer, error) {
-		delegate, err := NewRedoxCDCConsumer(p)
+		delegate, err := NewCDCConsumer(p)
 		if err != nil {
 			return nil, err
 		}
@@ -64,19 +69,19 @@ func CreateConsumer(p Params) events.ConsumerFactory {
 	}
 }
 
-func NewRedoxCDCConsumer(p Params) (events.MessageConsumer, error) {
-	return &RedoxCDCConsumer{
+func NewCDCConsumer(p Params) (events.MessageConsumer, error) {
+	return &CDCConsumer{
 		clinics:   p.Clinics,
 		logger:    p.Logger,
 		shoreline: p.Shoreline,
 	}, nil
 }
 
-func (p *RedoxCDCConsumer) Initialize(config *events.CloudEventsConfig) error {
+func (p *CDCConsumer) Initialize(config *events.CloudEventsConfig) error {
 	return nil
 }
 
-func (p *RedoxCDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) error {
+func (p *CDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) error {
 	if cm == nil {
 		return nil
 	}
@@ -84,7 +89,7 @@ func (p *RedoxCDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) error 
 	return p.handleMessage(cm)
 }
 
-func (p *RedoxCDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
+func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 	p.logger.Debugw("handling kafka message", "offset", cm.Offset)
 	event := cdc.Event[models.MessageEnvelope]{
 		Offset: cm.Offset,
@@ -102,7 +107,7 @@ func (p *RedoxCDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 	return nil
 }
 
-func (p *RedoxCDCConsumer) unmarshalEvent(value []byte, event *cdc.Event[models.MessageEnvelope]) error {
+func (p *CDCConsumer) unmarshalEvent(value []byte, event *cdc.Event[models.MessageEnvelope]) error {
 	message, err := strconv.Unquote(string(value))
 	if err != nil {
 		return err
@@ -110,7 +115,7 @@ func (p *RedoxCDCConsumer) unmarshalEvent(value []byte, event *cdc.Event[models.
 	return bson.UnmarshalExtJSON([]byte(message), true, event)
 }
 
-func (p *RedoxCDCConsumer) handleCDCEvent(event cdc.Event[models.MessageEnvelope]) error {
+func (p *CDCConsumer) handleCDCEvent(event cdc.Event[models.MessageEnvelope]) error {
 	if event.FullDocument == nil {
 		p.logger.Infow("skipping event with no full document", "offset", event.Offset)
 	}
@@ -136,7 +141,7 @@ func (p *RedoxCDCConsumer) handleCDCEvent(event cdc.Event[models.MessageEnvelope
 	return nil
 }
 
-func (p *RedoxCDCConsumer) handleOrder(order models.NewOrder) error {
+func (p *CDCConsumer) handleOrder(order models.NewOrder) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
@@ -150,12 +155,11 @@ func (p *RedoxCDCConsumer) handleOrder(order models.NewOrder) error {
 		criteria.Clinic.FacilityName = order.Order.OrderingFacility.Name
 	}
 
-	for _, identifier := range order.Patient.Identifiers {
-		if identifier.IDType == "MR" {
-			criteria.Patient.Mrn = identifier.ID
-			break
-		}
+	mrn := GetMRNFromOrder(order)
+	if mrn != nil {
+		criteria.Patient.Mrn = *mrn
 	}
+
 	if criteria.Patient.Mrn == "" {
 		p.logger.Warnw("unable to find MRN for order", "order", order.Meta)
 		return nil
@@ -194,15 +198,50 @@ func (p *RedoxCDCConsumer) handleOrder(order models.NewOrder) error {
 	if response.JSON200 == nil {
 		return fmt.Errorf("unable to match clinic and patient: %d", errors.New("response body is nil"))
 	}
+
 	match := response.JSON200
 	if match.Patients == nil || len(*match.Patients) == 0 {
 		p.logger.Warnw("no matching patients were found", "order", order.Meta, "clinicId", match.Clinic.Id)
+		return nil
 	} else if len(*match.Patients) > 1 {
 		p.logger.Warnw(fmt.Sprintf("%v patients were found matching the order", len(*match.Patients)), "order", order.Meta, "clinicId", match.Clinic.Id)
+		return nil
 	}
 
 	patient := (*match.Patients)[0]
 	p.logger.Infow("successfully matched clinic and patient", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", patient.Id)
 
+	if err := p.sendFlowsheet(ctx, order, patient, match.Clinic); err != nil {
+		p.logger.Errorw("unable to send flowsheet", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", patient.Id, zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
+func (p *CDCConsumer) sendFlowsheet(ctx context.Context, order models.NewOrder, patient clinics.Patient, clinic clinics.Clinic) error {
+	source := p.client.GetSource()
+	destinations := []struct {
+		ID   *string `json:"ID"`
+		Name *string `json:"Name"`
+	}{{
+		ID:   order.Meta.Source.ID,
+		Name: order.Meta.Source.Name,
+	}}
+
+	flowsheet := NewFlowsheet()
+	flowsheet.Meta.Source = &source
+	flowsheet.Meta.Destinations = &destinations
+	flowsheet.Patient.Identifiers = order.Patient.Identifiers
+	flowsheet.Patient.Demographics = order.Patient.Demographics
+
+	PopulateSummaryStatistics(patient, &flowsheet)
+
+	p.logger.Infow("sending flowsheet", "order", order.Meta, "clinicId", clinic.Id, "patientId", patient.Id)
+	return p.client.Send(ctx, flowsheet)
+}
+
+func (p *CDCConsumer) acknowledgeOrder(ctx context.Context, order models.NewOrder, message string) error {
+	// TODO: send results back to EHR
 	return nil
 }
