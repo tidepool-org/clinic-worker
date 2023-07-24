@@ -115,7 +115,7 @@ func PopulateBGMObservations(stats *clinics.PatientBGMStats, f *models.NewFlowsh
 	reportingTime := formatTime(&now)
 
 	var firstData, periodEnd, periodStart *time.Time
-	if stats.Dates != nil {
+	if stats != nil && stats.Dates != nil {
 		reportingTime = formatTime(stats.Dates.LastUpdatedDate)
 		if stats.Periods != nil {
 			period = stats.Periods.N14d
