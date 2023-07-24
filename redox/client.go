@@ -122,6 +122,7 @@ func (c *Client) obtainFreshToken(ctx context.Context) error {
 		"client_assertion":      assertion,
 	}
 
+	c.logger.Debugw("obtaining token", "data", data)
 	resp, err := c.getRequest(ctx).
 		SetFormData(data).
 		SetResult(token).
@@ -132,7 +133,7 @@ func (c *Client) obtainFreshToken(ctx context.Context) error {
 		return fmt.Errorf("error obtaining token: %w", err)
 	}
 	if resp.IsError() {
-		return fmt.Errorf("error obtaining token: %w", authErr)
+		return fmt.Errorf("error response when obtaining token: %w", authErr)
 	}
 
 	token.SetExpirationTime()
@@ -186,10 +187,11 @@ func (c *Token) IsExpired(delta time.Duration) bool {
 type AuthError struct {
 	Err              string `json:"error"`
 	ErrorDescription string `json:"error_description"`
+	ErrorUri         string `json:"error_uri"`
 }
 
 func (a AuthError) Error() string {
-	return fmt.Sprintf("%v: %v", a.Err, a.ErrorDescription)
+	return fmt.Sprintf("%v: %v. URI: %v", a.Err, a.ErrorDescription, a.ErrorUri)
 }
 
 type ErrorResponse struct {
