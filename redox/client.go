@@ -161,9 +161,8 @@ func (c *Client) getSignedAssertion() (string, error) {
 	assertion.Claims = jwt.MapClaims{
 		"iss": c.config.ClientId,
 		"sub": c.config.ClientId,
-		"aud": "https://api.redoxengine.com/v2/auth/token",
-		"iat": now.Format(time.RFC3339),
-		"exp": now.Add(time.Minute * 5).Format(time.RFC3339),
+		"iat": now.Unix(),
+		"exp": now.Add(time.Minute * 5).Unix(),
 		"jti": nonce.String(),
 	}
 
