@@ -8,6 +8,9 @@ import (
 )
 
 const (
+	EventTypeNewFlowsheet = "New"
+	DataModelFlowsheet    = "Flowsheet"
+
 	missingValue = "NOT AVAILABLE"
 	days14       = 14 * 24 * time.Hour
 )
@@ -16,8 +19,8 @@ func NewFlowsheet() models.NewFlowsheet {
 	flowsheet := models.NewFlowsheet{}
 	now := time.Now().Format(time.RFC3339)
 
-	flowsheet.Meta.EventType = "New"
-	flowsheet.Meta.DataModel = "Flowsheet"
+	flowsheet.Meta.EventType = EventTypeNewFlowsheet
+	flowsheet.Meta.DataModel = DataModelFlowsheet
 	flowsheet.Meta.EventDateTime = &now
 	return flowsheet
 }

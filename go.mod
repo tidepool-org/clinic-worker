@@ -14,8 +14,8 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.16.0
-	github.com/tidepool-org/clinic/client v0.0.0-20230711114505-94176afb424f
-	github.com/tidepool-org/clinic/redox/models v0.0.0-20230711114505-94176afb424f
+	github.com/tidepool-org/clinic/client v0.0.0-20230724093700-1462d839890c
+	github.com/tidepool-org/clinic/redox/models v0.0.0-20230724093700-1462d839890c
 	github.com/tidepool-org/go-common v0.10.1-0.20230418230217-25894f5a9a79
 	github.com/tidepool-org/hydrophone/client v0.0.0-20221219223301-92bd47a8a11c
 	go.mongodb.org/mongo-driver v1.12.0

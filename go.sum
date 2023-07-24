@@ -244,8 +244,12 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/tidepool-org/clinic/client v0.0.0-20230711114505-94176afb424f h1:qCHqeHIleVeAjqs85XK38nldVfxz/yQkcr7hWwZw0/s=
 github.com/tidepool-org/clinic/client v0.0.0-20230711114505-94176afb424f/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
+github.com/tidepool-org/clinic/client v0.0.0-20230724093700-1462d839890c h1:iwFYu6XvmRm979SiRJI+a/gW4RTfDrV+IRnSLP8Zwt4=
+github.com/tidepool-org/clinic/client v0.0.0-20230724093700-1462d839890c/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/clinic/redox/models v0.0.0-20230711114505-94176afb424f h1:sHLKTISGQCk1ACUaTDqcdfBhCrH4L6w3TFtG348T620=
 github.com/tidepool-org/clinic/redox/models v0.0.0-20230711114505-94176afb424f/go.mod h1:qOmREI6fhbzywU4kBETJ8CGI9yRM+IUiEt9JixFM+Tg=
+github.com/tidepool-org/clinic/redox/models v0.0.0-20230724093700-1462d839890c h1:w4eyI6AXy+IiXjeaHfnmqADb4meEmo0NLfHfiqCpZwI=
+github.com/tidepool-org/clinic/redox/models v0.0.0-20230724093700-1462d839890c/go.mod h1:wqRmIA7q1tamcj7xhWvlWS0CSYfCuVtsOyup2LVKabw=
 github.com/tidepool-org/go-common v0.10.1-0.20230418230217-25894f5a9a79 h1:RQETk/J76c09MwKgdxFJqXP7tyFU/sPEAUXMWIK6ubs=
 github.com/tidepool-org/go-common v0.10.1-0.20230418230217-25894f5a9a79/go.mod h1:hJ7gk9U6QhIJsVspA8EHN8YuKZuCd/HCP25II+D63w0=
 github.com/tidepool-org/hydrophone/client v0.0.0-20221219223301-92bd47a8a11c h1:7FZ29OLyLOd7OqhfXA6/Ew/3JYjIip9QePG92C3IE2s=
