@@ -89,6 +89,7 @@ func (c *Client) Send(ctx context.Context, payload interface{}) error {
 	if resp.IsError() {
 		return fmt.Errorf("received error response when sending payload to redox: %w", httpErr)
 	}
+
 	return nil
 }
 
@@ -128,7 +129,8 @@ func (c *Client) obtainFreshToken(ctx context.Context) error {
 		"client_assertion":      assertion,
 	}
 
-	c.logger.Debugw("obtaining token", "data", data)
+	c.logger.Debugw("obtaining a fresh token from redox")
+
 	resp, err := c.getRequest(ctx).
 		SetFormData(data).
 		SetResult(token).
@@ -142,12 +144,13 @@ func (c *Client) obtainFreshToken(ctx context.Context) error {
 		return fmt.Errorf("error response when obtaining token: %w", authErr)
 	}
 
-	token.SetExpirationTime()
-
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	token.SetExpirationTime()
 	c.token = token
+
+	c.logger.Debugw("successfully obtained a fresh token from redox")
 	return nil
 }
 
