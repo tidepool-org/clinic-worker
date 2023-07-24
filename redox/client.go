@@ -25,7 +25,7 @@ type Client struct {
 	privateKey  *rsa.PrivateKey
 
 	token *Token
-	mu    sync.Mutex
+	mu    *sync.RWMutex
 }
 
 type ClientConfig struct {
@@ -40,6 +40,7 @@ type ClientConfig struct {
 func NewClient(moduleConfig ModuleConfig, logger *zap.SugaredLogger) (*Client, error) {
 	client := &Client{
 		logger: logger,
+		mu:     &sync.RWMutex{},
 	}
 
 	if moduleConfig.Enabled {
@@ -78,14 +79,15 @@ func (c *Client) Send(ctx context.Context, payload interface{}) error {
 	httpErr := &ErrorResponse{}
 	resp, err := req.
 		SetBody(payload).
+		SetHeader("Content-Type", "application/json").
 		SetError(httpErr).
 		Post("https://api.redoxengine.com/endpoint")
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error sending payload to redox: %w", err)
 	}
 	if resp.IsError() {
-		return httpErr
+		return fmt.Errorf("received error response when sending payload to redox: %w", httpErr)
 	}
 	return nil
 }
@@ -100,10 +102,14 @@ func (c *Client) getRequestWithFreshToken(ctx context.Context) (*resty.Request, 
 			return nil, err
 		}
 	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.getRequest(ctx).SetAuthToken(c.token.AccessToken), nil
 }
 
 func (c *Client) shouldRefreshToken() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.token == nil || c.token.IsExpired(expirationDelta)
 }
 
