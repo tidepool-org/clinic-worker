@@ -122,9 +122,7 @@ func (c *Client) obtainFreshToken(ctx context.Context) error {
 		"client_assertion":      assertion,
 	}
 
-	c.logger.Debugw("obtaining token", "data", data)
 	resp, err := c.getRequest(ctx).
-		SetHeader("Content-Type", "application/x-www-form-urlencoded").
 		SetFormData(data).
 		SetResult(token).
 		SetError(authErr).
