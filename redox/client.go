@@ -87,7 +87,7 @@ func (c *Client) Send(ctx context.Context, payload interface{}) error {
 		return fmt.Errorf("error sending payload to redox: %w", err)
 	}
 	if resp.IsError() {
-		return fmt.Errorf("received error response when sending payload to redox: %w", httpErr)
+		return fmt.Errorf("received %s error response when sending payload to redox: %w", resp.Status(), httpErr)
 	}
 
 	return nil
