@@ -138,7 +138,7 @@ func (o *orderProcessor) handleUnknownProcedure(ctx context.Context, order model
 }
 
 func (o *orderProcessor) handleNoMatchingPatients(ctx context.Context, order models.NewOrder, match *clinics.EHRMatchResponse) error {
-	o.logger.Infow("No patients matched. Ignoring order.", "order", order.Meta)
+	o.logger.Infow("No patients matched.", "order", order.Meta)
 	return o.sendMatchingResultsNotification(ctx, MatchingResult{
 		IsSuccess: false,
 		Message:   NoMatchingPatientsMessage,
@@ -146,7 +146,7 @@ func (o *orderProcessor) handleNoMatchingPatients(ctx context.Context, order mod
 }
 
 func (o *orderProcessor) handleMultipleMatchingPatients(ctx context.Context, order models.NewOrder, match *clinics.EHRMatchResponse) error {
-	o.logger.Infow("Multiple patients matched. Ignoring order.", "order", order.Meta)
+	o.logger.Infow("Multiple patients matched.", "order", order.Meta)
 	return o.sendMatchingResultsNotification(ctx, MatchingResult{
 		IsSuccess: false,
 		Message:   MultipleMatchingPatientsMessage,
@@ -154,7 +154,7 @@ func (o *orderProcessor) handleMultipleMatchingPatients(ctx context.Context, ord
 }
 
 func (o *orderProcessor) handleSuccessfulPatientMatch(ctx context.Context, order models.NewOrder, match *clinics.EHRMatchResponse) error {
-	o.logger.Infow("No patients matched. Ignoring order.", "order", order.Meta)
+	o.logger.Infow("No patients matched.", "order", order.Meta)
 	return o.sendMatchingResultsNotification(ctx, MatchingResult{
 		IsSuccess: true,
 		Message:   SuccessfulMatchingMessage,

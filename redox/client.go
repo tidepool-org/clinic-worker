@@ -8,6 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
+	"go.uber.org/zap"
 	"sync"
 	"time"
 )
@@ -20,6 +21,7 @@ const (
 type Client struct {
 	config      ClientConfig
 	restyClient *resty.Client
+	logger      *zap.SugaredLogger
 	privateKey  *rsa.PrivateKey
 
 	token *Token
@@ -35,8 +37,10 @@ type ClientConfig struct {
 	TestMode      bool   `envconfig:"TIDEPOOL_REDOX_TEST_MODE"`
 }
 
-func NewClient(moduleConfig ModuleConfig) (*Client, error) {
-	client := &Client{}
+func NewClient(moduleConfig ModuleConfig, logger *zap.SugaredLogger) (*Client, error) {
+	client := &Client{
+		logger: logger,
+	}
 
 	if moduleConfig.Enabled {
 		config := ClientConfig{}
@@ -52,7 +56,7 @@ func NewClient(moduleConfig ModuleConfig) (*Client, error) {
 			return nil, err
 		}
 	}
-	
+
 	return client, nil
 }
 
@@ -111,13 +115,17 @@ func (c *Client) obtainFreshToken(ctx context.Context) error {
 
 	token := &Token{}
 	authErr := &AuthError{}
+
+	data := map[string]string{
+		"grant_type":            "client_credentials",
+		"client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+		"client_assertion":      assertion,
+	}
+
+	c.logger.Debugw("obtaining token", "data", data)
 	resp, err := c.getRequest(ctx).
 		SetHeader("Content-Type", "application/x-www-form-urlencoded").
-		SetFormData(map[string]string{
-			"grant_type":            "client_credentials",
-			"client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-			"client_assertion":      assertion,
-		}).
+		SetFormData(data).
 		SetResult(token).
 		SetError(authErr).
 		Post("https://api.redoxengine.com/v2/auth/token")
