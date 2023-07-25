@@ -1,6 +1,7 @@
 package redox
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -98,10 +99,22 @@ func (o *orderProcessor) handleSummaryReportsSubscription(ctx context.Context, o
 	}
 
 	flowsheet := o.createSummaryStatisticsFlowsheet(order, patient, match)
+	report, err := o.createReportNote(order, patient, match)
+	if err != nil {
+		// return the error so we can retry the request
+		return err
+	}
+
 	o.logger.Infow("sending flowsheet", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", patient.Id)
 	if err := o.client.Send(ctx, flowsheet); err != nil {
 		// Return an error so we can retry the request
 		return fmt.Errorf("unable to send flowsheet: %w", err)
+	}
+
+	o.logger.Infow("sending report", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", patient.Id)
+	if err := o.client.Send(ctx, report); err != nil {
+		// Return an error so we can retry the request
+		return fmt.Errorf("unable to send report: %w", err)
 	}
 
 	return nil
@@ -130,6 +143,35 @@ func (o *orderProcessor) createSummaryStatisticsFlowsheet(order models.NewOrder,
 	PopulateSummaryStatistics(patient, &flowsheet)
 
 	return flowsheet
+}
+
+func (o *orderProcessor) createReportNote(order models.NewOrder, patient clinics.Patient, match *clinics.EHRMatchResponse) (*models.NewNotes, error) {
+	source := o.client.GetSource()
+	destinationId := match.Settings.DestinationIds.Default
+	if match.Settings.DestinationIds.Flowsheet != nil && *match.Settings.DestinationIds.Flowsheet != "" {
+		destinationId = *match.Settings.DestinationIds.Flowsheet
+	}
+
+	destinations := []struct {
+		ID   *string `json:"ID"`
+		Name *string `json:"Name"`
+	}{{
+		ID: &destinationId,
+	}}
+
+	notes := NewNotes()
+	notes.Meta.Source = &source
+	notes.Meta.Destinations = &destinations
+
+	SetNotesPatientFromOrder(order, &notes)
+	SetReportMetadata(match.Clinic, patient, &notes)
+
+	err := EmbedFileInNotes("sample-report.pdf", NoteReportFileType, bytes.NewReader(sampleReport), &notes)
+	if err != nil {
+		return nil, fmt.Errorf("unable to embed report in notes: %w", err)
+	}
+
+	return &notes, nil
 }
 
 func (o *orderProcessor) handleUnknownProcedure(ctx context.Context, order models.NewOrder) error {
@@ -179,8 +221,8 @@ func (o *orderProcessor) sendMatchingResultsNotification(ctx context.Context, ma
 	results := NewResults()
 	results.Meta.Source = &source
 	results.Meta.Destinations = &destinations
-	SetPatientFromOrder(order, results)
-	SetMatchingResult(matchingResult, order, results)
+	SetResultsPatientFromOrder(order, &results)
+	SetMatchingResult(matchingResult, order, &results)
 
 	if err := o.client.Send(ctx, results); err != nil {
 		// Return an error so we can retry the request

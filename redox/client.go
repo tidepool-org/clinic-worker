@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"go.uber.org/zap"
+	"io"
 	"sync"
 	"time"
 )
@@ -91,6 +92,33 @@ func (c *Client) Send(ctx context.Context, payload interface{}) error {
 	}
 
 	return nil
+}
+
+func (c *Client) UploadFile(ctx context.Context, fileName string, reader io.Reader) (*UploadResult, error) {
+	req, err := c.getRequestWithFreshToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if fileName == "" {
+		return nil, fmt.Errorf("file name is required")
+	}
+
+	httpErr := &ErrorResponse{}
+	uploadResult := &UploadResult{}
+	resp, err := req.
+		SetFileReader("file", fileName, reader).
+		SetResult(uploadResult).
+		SetError(httpErr).
+		Post("https://blob.redoxengine.com/upload")
+
+	if err != nil {
+		return nil, fmt.Errorf("error uploading redox: %w", err)
+	}
+	if resp.IsError() {
+		return nil, fmt.Errorf("received %s error response when uploading to redox: %w", resp.Status(), httpErr)
+	}
+
+	return uploadResult, nil
 }
 
 func (c *Client) getRequest(ctx context.Context) *resty.Request {
@@ -190,6 +218,10 @@ func (c *Token) SetExpirationTime() {
 
 func (c *Token) IsExpired(delta time.Duration) bool {
 	return time.Now().After(c.ExpirationTime.Add(-delta))
+}
+
+type UploadResult struct {
+	URI string `json:"URI"`
 }
 
 type AuthError struct {

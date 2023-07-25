@@ -24,8 +24,8 @@ type MatchingResult struct {
 	Message   string
 }
 
-func NewResults() *models.NewResults {
-	res := &models.NewResults{}
+func NewResults() models.NewResults {
+	res := models.NewResults{}
 	now := time.Now().Format(time.RFC3339)
 
 	res.Meta.EventType = EventTypeNewResults
@@ -35,7 +35,7 @@ func NewResults() *models.NewResults {
 	return res
 }
 
-func SetPatientFromOrder(order models.NewOrder, results *models.NewResults) {
+func SetResultsPatientFromOrder(order models.NewOrder, results *models.NewResults) {
 	results.Patient.Identifiers = order.Patient.Identifiers
 	results.Patient.Demographics = order.Patient.Demographics
 }
