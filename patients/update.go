@@ -80,21 +80,7 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{
 		CgmStats: &clinics.PatientCGMStats{
-			Dates: &clinics.PatientSummaryDates{
-				LastUpdatedDate: cgmSummary.Dates.LastUpdatedDate,
-
-				HasLastUploadDate: cgmSummary.Dates.HasLastUploadDate,
-				LastUploadDate:    cgmSummary.Dates.LastUploadDate,
-
-				HasFirstData: cgmSummary.Dates.HasFirstData,
-				FirstData:    cgmSummary.Dates.FirstData,
-
-				HasLastData: cgmSummary.Dates.HasLastData,
-				LastData:    cgmSummary.Dates.LastData,
-
-				HasOutdatedSince: cgmSummary.Dates.HasOutdatedSince,
-				OutdatedSince:    cgmSummary.Dates.OutdatedSince,
-			},
+			Dates:      (*clinics.PatientSummaryDates)(cgmSummary.Dates),
 			TotalHours: cgmStats.TotalHours,
 			Config: &clinics.PatientSummaryConfig{
 				HighGlucoseThreshold:     cgmSummary.Config.HighGlucoseThreshold,

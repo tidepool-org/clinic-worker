@@ -254,7 +254,10 @@ func (p *PatientCDCConsumer) populateSummary(userId string) error {
 		return nil
 	}
 
-	updateBody := CreateSummaryUpdateBody(cgmSummaryResponse.JSON200, bgmSummaryResponse.JSON200)
+	updateBody, err := CreateSummaryUpdateBody(cgmSummaryResponse.JSON200, bgmSummaryResponse.JSON200)
+	if err != nil {
+		return err
+	}
 
 	response, err := p.clinics.UpdatePatientSummaryWithResponse(ctx, userId, updateBody)
 	if err != nil {
