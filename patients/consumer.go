@@ -248,16 +248,15 @@ func (p *PatientCDCConsumer) populateSummary(userId string) error {
 		return fmt.Errorf("unexpected status code when retrieving patient summary %v", bgmSummaryResponse.StatusCode())
 	}
 
-	cgmUserSummary := cgmSummaryResponse.JSON200
-	bgmUserSummary := bgmSummaryResponse.JSON200
 	// user has no summary, do nothing
-	if cgmUserSummary == nil && bgmUserSummary == nil {
+	if cgmSummaryResponse.JSON200 == nil && bgmSummaryResponse.JSON200 == nil {
+		p.logger.Warnw("No existing BGM or CGM summary to copy for user", "userId", userId)
 		return nil
 	}
 
-	updateBody := CreateSummaryUpdateBody(cgmUserSummary, bgmUserSummary)
+	updateBody := CreateSummaryUpdateBody(cgmSummaryResponse.JSON200, bgmSummaryResponse.JSON200)
 
-	response, err := p.clinics.UpdatePatientSummaryWithResponse(ctx, clinics.PatientId(userId), updateBody)
+	response, err := p.clinics.UpdatePatientSummaryWithResponse(ctx, userId, updateBody)
 	if err != nil {
 		return err
 	}
