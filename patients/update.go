@@ -3,6 +3,7 @@ package patients
 import (
 	clinics "github.com/tidepool-org/clinic/client"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
+	"github.com/tidepool-org/go-common/errors"
 )
 
 func ApplyPatientChangesToProfile(patient Patient, profile map[string]interface{}) {
@@ -61,14 +62,21 @@ func EnsurePatientProfileExists(profile map[string]interface{}) map[string]inter
 	}
 }
 
-func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summaries.Summary) clinics.UpdatePatientSummaryJSONRequestBody {
+func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summaries.Summary) (clinics.UpdatePatientSummaryJSONRequestBody, error) {
 	// summaries don't exist, return empty body
 	if cgmSummary == nil && bgmSummary == nil {
-		return clinics.UpdatePatientSummaryJSONRequestBody{}
+		return clinics.UpdatePatientSummaryJSONRequestBody{}, nil
 	}
 
-	cgmStats := (*cgmSummary.Stats).(summaries.CGMStats)
-	bgmStats := (*bgmSummary.Stats).(summaries.BGMStats)
+	cgmStats, err := cgmSummary.Stats.AsCGMStats()
+	if err != nil {
+		return clinics.UpdatePatientSummaryJSONRequestBody{}, errors.Wrapf(err, "unable to unserialize CGM summary stats for userId %s", cgmSummary.UserId)
+	}
+
+	bgmStats, err := bgmSummary.Stats.AsBGMStats()
+	if err != nil {
+		return clinics.UpdatePatientSummaryJSONRequestBody{}, errors.Wrapf(err, "unable to unserialize BGM summary stats for userId %s", bgmSummary.UserId)
+	}
 
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{
 		CgmStats: &clinics.PatientCGMStats{
@@ -305,5 +313,5 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 		}
 	}
 
-	return patientUpdate
+	return patientUpdate, nil
 }
