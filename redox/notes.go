@@ -21,6 +21,7 @@ const (
 
 	NoteAvailabilityAvailable  = "Available"
 	NoteContentTypeBase64      = "Base64 Encoded"
+	NoteContentTypePlainText   = "Plain Text"
 	NoteReportDocumentIdPrefix = "Report"
 	NoteReportDocumentType     = "Tidepool Report"
 	NoteReportFileType         = "PDF"
@@ -81,5 +82,24 @@ func EmbedFileInNotes(fileName string, fileType string, reader io.Reader, notes 
 
 	fileContents := base64.StdEncoding.EncodeToString(buffer.Bytes())
 	notes.Note.FileContents = &fileContents
+	return nil
+}
+
+func SetUploadReferenceInNote(fileName string, fileType string, result UploadResult, notes *models.NewNotes) error {
+	if fileName == "" {
+		return fmt.Errorf("file name is required")
+	}
+	if fileType == "" {
+		return fmt.Errorf("file type is required")
+	}
+	if result.URI == "" {
+		return fmt.Errorf("upload result URI is required")
+	}
+
+	notes.Note.ContentType = NoteContentTypePlainText
+	notes.Note.FileName = &fileName
+	notes.Note.FileType = &fileType
+	notes.Note.FileContents = &result.URI
+
 	return nil
 }

@@ -99,7 +99,7 @@ func (o *orderProcessor) handleSummaryReportsSubscription(ctx context.Context, o
 	}
 
 	flowsheet := o.createSummaryStatisticsFlowsheet(order, patient, match)
-	report, err := o.createReportNote(order, patient, match)
+	report, err := o.createReportNote(ctx, order, patient, match)
 	if err != nil {
 		// return the error so we can retry the request
 		return err
@@ -145,7 +145,7 @@ func (o *orderProcessor) createSummaryStatisticsFlowsheet(order models.NewOrder,
 	return flowsheet
 }
 
-func (o *orderProcessor) createReportNote(order models.NewOrder, patient clinics.Patient, match *clinics.EHRMatchResponse) (*models.NewNotes, error) {
+func (o *orderProcessor) createReportNote(ctx context.Context, order models.NewOrder, patient clinics.Patient, match *clinics.EHRMatchResponse) (*models.NewNotes, error) {
 	source := o.client.GetSource()
 	destinationId := match.Settings.DestinationIds.Default
 	if match.Settings.DestinationIds.Flowsheet != nil && *match.Settings.DestinationIds.Flowsheet != "" {
@@ -166,9 +166,18 @@ func (o *orderProcessor) createReportNote(order models.NewOrder, patient clinics
 	SetNotesPatientFromOrder(order, &notes)
 	SetReportMetadata(match.Clinic, patient, &notes)
 
-	err := EmbedFileInNotes("sample-report.pdf", NoteReportFileType, bytes.NewReader(sampleReport), &notes)
+	//err := EmbedFileInNotes("sample-report.pdf", NoteReportFileType, bytes.NewReader(sampleReport), &notes)
+	//if err != nil {
+	//	return nil, fmt.Errorf("unable to embed report in notes: %w", err)
+	//}
+
+	fileName := "sample-report.pdf"
+	upload, err := o.client.UploadFile(ctx, fileName, bytes.NewReader(sampleReport))
 	if err != nil {
-		return nil, fmt.Errorf("unable to embed report in notes: %w", err)
+		return nil, fmt.Errorf("unable to upload report: %w", err)
+	}
+	if err := SetUploadReferenceInNote(fileName, NoteReportFileType, *upload, &notes); err != nil {
+		return nil, fmt.Errorf("unable to set upload reference in notes: %w", err)
 	}
 
 	return &notes, nil
