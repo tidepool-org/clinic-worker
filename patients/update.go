@@ -70,12 +70,12 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 
 	cgmStats, err := cgmSummary.Stats.AsCGMStats()
 	if err != nil {
-		return clinics.UpdatePatientSummaryJSONRequestBody{}, errors.Wrapf(err, "unable to unserialize CGM summary stats for userId %s", cgmSummary.UserId)
+		return clinics.UpdatePatientSummaryJSONRequestBody{}, errors.Wrapf(err, "unable to unserialize CGM summary stats for userId %s", *cgmSummary.UserId)
 	}
 
 	bgmStats, err := bgmSummary.Stats.AsBGMStats()
 	if err != nil {
-		return clinics.UpdatePatientSummaryJSONRequestBody{}, errors.Wrapf(err, "unable to unserialize BGM summary stats for userId %s", bgmSummary.UserId)
+		return clinics.UpdatePatientSummaryJSONRequestBody{}, errors.Wrapf(err, "unable to unserialize BGM summary stats for userId %s", *bgmSummary.UserId)
 	}
 
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{
