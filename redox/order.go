@@ -166,19 +166,19 @@ func (o *orderProcessor) createReportNote(ctx context.Context, order models.NewO
 	SetNotesPatientFromOrder(order, &notes)
 	SetReportMetadata(match.Clinic, patient, &notes)
 
-	//err := EmbedFileInNotes("sample-report.pdf", NoteReportFileType, bytes.NewReader(sampleReport), &notes)
-	//if err != nil {
-	//	return nil, fmt.Errorf("unable to embed report in notes: %w", err)
-	//}
-
-	fileName := "sample-report.pdf"
-	upload, err := o.client.UploadFile(ctx, fileName, bytes.NewReader(sampleReport))
+	err := EmbedFileInNotes("sample-report.pdf", NoteReportFileType, bytes.NewReader(sampleReport), &notes)
 	if err != nil {
-		return nil, fmt.Errorf("unable to upload report: %w", err)
+		return nil, fmt.Errorf("unable to embed report in notes: %w", err)
 	}
-	if err := SetUploadReferenceInNote(fileName, NoteReportFileType, *upload, &notes); err != nil {
-		return nil, fmt.Errorf("unable to set upload reference in notes: %w", err)
-	}
+
+	//fileName := "sample-report.pdf"
+	//upload, err := o.client.UploadFile(ctx, fileName, bytes.NewReader(sampleReport))
+	//if err != nil {
+	//	return nil, fmt.Errorf("unable to upload report: %w", err)
+	//}
+	//if err := SetUploadReferenceInNote(fileName, NoteReportFileType, *upload, &notes); err != nil {
+	//	return nil, fmt.Errorf("unable to set upload reference in notes: %w", err)
+	//}
 
 	return &notes, nil
 }
