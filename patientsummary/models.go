@@ -37,16 +37,6 @@ type Glucose struct {
 	Value *float64 `json:"value"`
 }
 
-type Config struct {
-	SchemaVersion *int `json:"schemaVersion"`
-
-	// these are just constants right now.
-	HighGlucoseThreshold     *float64 `json:"highGlucoseThreshold"`
-	VeryHighGlucoseThreshold *float64 `json:"veryHighGlucoseThreshold"`
-	LowGlucoseThreshold      *float64 `json:"lowGlucoseThreshold"`
-	VeryLowGlucoseThreshold  *float64 `json:"VeryLowGlucoseThreshold"`
-}
-
 type Dates struct {
 	LastUpdatedDate *cdc.Date `json:"lastUpdatedDate"`
 
@@ -100,7 +90,7 @@ type Summary[T Stats] struct {
 	Type   *string      `json:"type"`
 	UserID *string      `json:"userId"`
 
-	Config *Config `json:"config"`
+	Config *clinics.PatientSummaryConfig `json:"config"`
 
 	Dates *Dates `json:"dates"`
 	Stats *T     `json:"stats"`
@@ -111,7 +101,7 @@ type StaticSummary struct {
 	Type   *string      `json:"type"`
 	UserID *string      `json:"userId"`
 
-	Config *Config `json:"config"`
+	Config *clinics.PatientSummaryConfig `json:"config"`
 
 	Dates *Dates `json:"dates"`
 }
@@ -164,15 +154,7 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 			OutdatedSince:    outdatedSince,
 		}
 
-		if p.FullDocument.Config != nil {
-			patientUpdate.CgmStats.Config = &clinics.PatientSummaryConfig{
-				HighGlucoseThreshold:     p.FullDocument.Config.HighGlucoseThreshold,
-				LowGlucoseThreshold:      p.FullDocument.Config.LowGlucoseThreshold,
-				SchemaVersion:            p.FullDocument.Config.SchemaVersion,
-				VeryHighGlucoseThreshold: p.FullDocument.Config.VeryHighGlucoseThreshold,
-				VeryLowGlucoseThreshold:  p.FullDocument.Config.VeryLowGlucoseThreshold,
-			}
-		}
+		patientUpdate.CgmStats.Config = p.FullDocument.Config
 
 		if p.FullDocument.Stats != nil {
 			patientUpdate.CgmStats.TotalHours = (*p.FullDocument.Stats).GetTotalHours()
@@ -198,15 +180,7 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 			OutdatedSince:    outdatedSince,
 		}
 
-		if p.FullDocument.Config != nil {
-			patientUpdate.BgmStats.Config = &clinics.PatientSummaryConfig{
-				HighGlucoseThreshold:     p.FullDocument.Config.HighGlucoseThreshold,
-				LowGlucoseThreshold:      p.FullDocument.Config.LowGlucoseThreshold,
-				SchemaVersion:            p.FullDocument.Config.SchemaVersion,
-				VeryHighGlucoseThreshold: p.FullDocument.Config.VeryHighGlucoseThreshold,
-				VeryLowGlucoseThreshold:  p.FullDocument.Config.VeryLowGlucoseThreshold,
-			}
-		}
+		patientUpdate.BgmStats.Config = p.FullDocument.Config
 
 		if p.FullDocument.Stats != nil {
 			patientUpdate.BgmStats.TotalHours = (*p.FullDocument.Stats).GetTotalHours()

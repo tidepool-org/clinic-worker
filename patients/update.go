@@ -82,38 +82,12 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 		CgmStats: &clinics.PatientCGMStats{
 			Dates:      (*clinics.PatientSummaryDates)(cgmSummary.Dates),
 			TotalHours: cgmStats.TotalHours,
-			Config: &clinics.PatientSummaryConfig{
-				HighGlucoseThreshold:     cgmSummary.Config.HighGlucoseThreshold,
-				LowGlucoseThreshold:      cgmSummary.Config.LowGlucoseThreshold,
-				SchemaVersion:            cgmSummary.Config.SchemaVersion,
-				VeryHighGlucoseThreshold: cgmSummary.Config.VeryHighGlucoseThreshold,
-				VeryLowGlucoseThreshold:  cgmSummary.Config.VeryLowGlucoseThreshold,
-			},
+			Config:     (*clinics.PatientSummaryConfig)(cgmSummary.Config),
 		},
 		BgmStats: &clinics.PatientBGMStats{
-			Dates: &clinics.PatientSummaryDates{
-				LastUpdatedDate: bgmSummary.Dates.LastUpdatedDate,
-
-				HasLastUploadDate: bgmSummary.Dates.HasLastUploadDate,
-				LastUploadDate:    bgmSummary.Dates.LastUploadDate,
-
-				HasFirstData: bgmSummary.Dates.HasFirstData,
-				FirstData:    bgmSummary.Dates.FirstData,
-
-				HasLastData: bgmSummary.Dates.HasLastData,
-				LastData:    bgmSummary.Dates.LastData,
-
-				HasOutdatedSince: bgmSummary.Dates.HasOutdatedSince,
-				OutdatedSince:    bgmSummary.Dates.OutdatedSince,
-			},
+			Dates:      (*clinics.PatientSummaryDates)(bgmSummary.Dates),
 			TotalHours: bgmStats.TotalHours,
-			Config: &clinics.PatientSummaryConfig{
-				HighGlucoseThreshold:     bgmSummary.Config.HighGlucoseThreshold,
-				LowGlucoseThreshold:      bgmSummary.Config.LowGlucoseThreshold,
-				SchemaVersion:            bgmSummary.Config.SchemaVersion,
-				VeryHighGlucoseThreshold: bgmSummary.Config.VeryHighGlucoseThreshold,
-				VeryLowGlucoseThreshold:  bgmSummary.Config.VeryLowGlucoseThreshold,
-			},
+			Config:     (*clinics.PatientSummaryConfig)(bgmSummary.Config),
 		},
 	}
 
