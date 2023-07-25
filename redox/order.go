@@ -111,10 +111,10 @@ func (o *orderProcessor) handleSummaryReportsSubscription(ctx context.Context, o
 		return fmt.Errorf("unable to send flowsheet: %w", err)
 	}
 
-	o.logger.Infow("sending report", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", patient.Id)
+	o.logger.Infow("sending note", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", patient.Id)
 	if err := o.client.Send(ctx, report); err != nil {
 		// Return an error so we can retry the request
-		return fmt.Errorf("unable to send report: %w", err)
+		return fmt.Errorf("unable to send notes: %w", err)
 	}
 
 	return nil
@@ -196,7 +196,7 @@ func (o *orderProcessor) handleMultipleMatchingPatients(ctx context.Context, ord
 }
 
 func (o *orderProcessor) handleSuccessfulPatientMatch(ctx context.Context, order models.NewOrder, match *clinics.EHRMatchResponse) error {
-	o.logger.Infow("No patients matched.", "order", order.Meta)
+	o.logger.Infow("Found matching patient.", "order", order.Meta)
 	return o.sendMatchingResultsNotification(ctx, MatchingResult{
 		IsSuccess: true,
 		Message:   SuccessfulMatchingMessage,
