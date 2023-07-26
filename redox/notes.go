@@ -16,8 +16,7 @@ const (
 	EventTypeNewNotes = "New"
 	DataModelNotes    = "Notes"
 
-	NoteProviderId   = "3012128418" // FEI Number
-	NoteProviderType = "FEI"
+	NoteProviderId = "Tidepool"
 
 	NoteAvailabilityAvailable  = "Available"
 	NoteContentTypeBase64      = "Base64 Encoded"
@@ -49,14 +48,12 @@ func SetNotesPatientFromOrder(order models.NewOrder, notes *models.NewNotes) {
 func SetReportMetadata(clinic clinics.Clinic, patient clinics.Patient, notes *models.NewNotes) {
 	now := time.Now().Format(time.RFC3339)
 	availability := NoteAvailabilityAvailable
-	providerIdType := NoteProviderType
 
 	notes.Note.Availability = &availability
 	notes.Note.DocumentationDateTime = &now
 	notes.Note.DocumentID = GenerateReportDocumentId(*clinic.Id, *patient.Id)
 	notes.Note.DocumentType = NoteReportDocumentType
 	notes.Note.Provider.ID = NoteProviderId
-	notes.Note.Provider.IDType = &providerIdType
 }
 
 func GenerateReportDocumentId(clinicId string, patientId string) string {
