@@ -15,6 +15,10 @@ const (
 	days14       = 14 * 24 * time.Hour
 )
 
+var (
+	unitsPercentage = "%"
+)
+
 func NewFlowsheet() models.NewFlowsheet {
 	flowsheet := models.NewFlowsheet{}
 	now := time.Now().Format(time.RFC3339)
@@ -34,6 +38,7 @@ func PopulateSummaryStatistics(patient clinics.Patient, flowsheet *models.NewFlo
 		cgmStats = patient.Summary.CgmStats
 		bgmStats = patient.Summary.BgmStats
 	}
+
 	PopulateCGMObservations(cgmStats, flowsheet)
 	PopulateBGMObservations(bgmStats, flowsheet)
 }
@@ -95,15 +100,15 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, f *models.NewFlowsh
 		CreateObservation("REPORTING_PERIOD_END_CGM", formatTime(periodEnd), "DateTime", nil, "CGM Reporting Period End", reportingTime),
 		CreateObservation("REPORTING_PERIOD_START_CGM_DATA", formatTime(firstData), "DateTime", nil, "CGM Reporting Period Start Date of actual Data", reportingTime),
 
-		CreateObservation("ACTIVE_WEAR_TIME_CGM", formatFloat(cgmUsePercent), "Number", nil, "Percentage of time CGM worn during reporting period", reportingTime),
-		CreateObservation("AVERAGE_CGM", formatFloat(averageGlucose), "Number", averageGlucoseUnits, "CGM Average Glucose during reporting period", reportingTime),
-		CreateObservation("GLUCOSE_MANAGEMENT_INDICATOR", formatFloat(gmi), "Number", nil, "CGM Glucose Management Indicator during reporting period", reportingTime),
+		CreateObservation("ACTIVE_WEAR_TIME_CGM", formatFloat(unitIntervalToPercent(cgmUsePercent)), "Numeric", &unitsPercentage, "Percentage of time CGM worn during reporting period", reportingTime),
+		CreateObservation("AVERAGE_CGM", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, "CGM Average Glucose during reporting period", reportingTime),
+		CreateObservation("GLUCOSE_MANAGEMENT_INDICATOR", formatFloat(gmi), "Numeric", nil, "CGM Glucose Management Indicator during reporting period", reportingTime),
 
-		CreateObservation("TIME_BELOW_RANGE_VERY_LOW_CGM", formatFloat(timeInVeryLow), "Number", nil, "CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)", reportingTime),
-		CreateObservation("TIME_BELOW_RANGE_LOW_CGM", formatFloat(timeInLow), "Number", nil, "CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time 54–69 mg/dL (3.0–3.8 mmol/L)", reportingTime),
-		CreateObservation("TIME_IN_RANGE_CGM", formatFloat(timeInTarget), "Number", nil, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)", reportingTime),
-		CreateObservation("TIME_ABOVE_RANGE_HIGH_CGM", formatFloat(timeInHigh), "Number", nil, "CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)", reportingTime),
-		CreateObservation("TIME_ABOVE_RANGE_VERY_HIGH_CGM", formatFloat(timeInVeryHigh), "Number", nil, "CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)", reportingTime),
+		CreateObservation("TIME_BELOW_RANGE_VERY_LOW_CGM", formatFloat(unitIntervalToPercent(timeInVeryLow)), "Numeric", &unitsPercentage, "CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)", reportingTime),
+		CreateObservation("TIME_BELOW_RANGE_LOW_CGM", formatFloat(unitIntervalToPercent(timeInLow)), "Numeric", &unitsPercentage, "CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time 54–69 mg/dL (3.0–3.8 mmol/L)", reportingTime),
+		CreateObservation("TIME_IN_RANGE_CGM", formatFloat(unitIntervalToPercent(timeInTarget)), "Numeric", &unitsPercentage, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)", reportingTime),
+		CreateObservation("TIME_ABOVE_RANGE_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInHigh)), "Numeric", &unitsPercentage, "CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)", reportingTime),
+		CreateObservation("TIME_ABOVE_RANGE_VERY_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInVeryHigh)), "Numeric", &unitsPercentage, "CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)", reportingTime),
 	)
 }
 
@@ -157,11 +162,11 @@ func PopulateBGMObservations(stats *clinics.PatientBGMStats, f *models.NewFlowsh
 		CreateObservation("REPORTING_PERIOD_END_SMBG", formatTime(periodEnd), "DateTime", nil, "SMBG Reporting Period End", reportingTime),
 		CreateObservation("REPORTING_PERIOD_START_SMBG_DATA", formatTime(firstData), "DateTime", nil, "SMBG Reporting Period Start Date of actual Data", reportingTime),
 
-		CreateObservation("CHECK_RATE_READINGS_DAY_SMBG", formatFloat(averageDailyRecords), "Number", nil, "Average number of SMBG readings per day during reporting period", reportingTime),
-		CreateObservation("AVERAGE_SMBG", formatFloat(averageGlucose), "Number", averageGlucoseUnits, "SMBG Average Glucose during reporting period", reportingTime),
+		CreateObservation("CHECK_RATE_READINGS_DAY_SMBG", formatFloat(averageDailyRecords), "Numeric", nil, "Average Numeric of SMBG readings per day during reporting period", reportingTime),
+		CreateObservation("AVERAGE_SMBG", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, "SMBG Average Glucose during reporting period", reportingTime),
 
-		CreateObservation("READINGS_BELOW_RANGE_VERY_LOW_SMBG", formatInt(timeInVeryLowRecords), "Number", nil, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)", reportingTime),
-		CreateObservation("READINGS_ABOVE_RANGE_VERY_HIGH_SMBG", formatInt(timeInVeryHighRecords), "Number", nil, "CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)", reportingTime),
+		CreateObservation("READINGS_BELOW_RANGE_VERY_LOW_SMBG", formatInt(timeInVeryLowRecords), "Numeric", nil, "SMBG Level 2 Hypoglycemia Events: Number of readings <54 mg/dL (<3.0 mmol/L) during reporting period", reportingTime),
+		CreateObservation("READINGS_ABOVE_RANGE_VERY_HIGH_SMBG", formatInt(timeInVeryHighRecords), "Numeric", nil, "SMBG Level 2 Hyperglycemia: Number of readings above range (TAR-VH) time >250 mg/dL (>13.9 mmol/L) during reporting period", reportingTime),
 	)
 }
 
@@ -216,4 +221,14 @@ func formatFloat(val *float64) string {
 		return missingValue
 	}
 	return fmt.Sprintf("%.4f", *val)
+}
+
+// unitIntervalToPercent converts a unit interval (0.0 - 1.0) to a percentage (0.0 - 100.0)
+func unitIntervalToPercent(val *float64) *float64 {
+	if val == nil {
+		return nil
+	}
+
+	res := *val * 100
+	return &res
 }
