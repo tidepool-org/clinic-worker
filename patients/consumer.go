@@ -230,12 +230,12 @@ functions, as with new patients, we don't know which summaries a user has, and s
 func (p *PatientCDCConsumer) populateSummary(userId string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
-	cgmSummaryResponse, err := p.summaries.GetSummaryWithResponse(ctx, summaries.UserId(userId), "cgm")
+	cgmSummaryResponse, err := p.summaries.GetSummaryWithResponse(ctx, "cgm", userId)
 	if err != nil {
 		return err
 	}
 
-	bgmSummaryResponse, err := p.summaries.GetSummaryWithResponse(ctx, summaries.UserId(userId), "bgm")
+	bgmSummaryResponse, err := p.summaries.GetSummaryWithResponse(ctx, "bgm", userId)
 	if err != nil {
 		return err
 	}
@@ -250,7 +250,7 @@ func (p *PatientCDCConsumer) populateSummary(userId string) error {
 
 	// user has no summary, do nothing
 	if cgmSummaryResponse.JSON200 == nil && bgmSummaryResponse.JSON200 == nil {
-		p.logger.Warnw("No existing BGM or CGM summary to copy for user", "userId", userId)
+		p.logger.Warnf("No existing BGM or CGM summary to copy for userId %s", userId)
 		return nil
 	}
 
