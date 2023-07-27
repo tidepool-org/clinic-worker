@@ -28,11 +28,11 @@ type OrderHandler = func(ctx context.Context, order models.NewOrder) error
 
 type orderProcessor struct {
 	clinics clinics.ClientWithResponsesInterface
-	client  *Client
+	client  Client
 	logger  *zap.SugaredLogger
 }
 
-func NewOrderProcessor(clinics clinics.ClientWithResponsesInterface, redox *Client, logger *zap.SugaredLogger) OrderProcessor {
+func NewOrderProcessor(clinics clinics.ClientWithResponsesInterface, redox Client, logger *zap.SugaredLogger) OrderProcessor {
 	return &orderProcessor{
 		clinics: clinics,
 		client:  redox,

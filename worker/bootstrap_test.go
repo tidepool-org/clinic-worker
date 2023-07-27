@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/Shopify/sarama"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic-worker/worker"
 	"go.uber.org/fx"

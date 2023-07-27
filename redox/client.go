@@ -19,7 +19,16 @@ const (
 	expirationDelta = 1 * time.Minute
 )
 
-type Client struct {
+type Client interface {
+	GetSource() (source struct {
+		ID   *string `json:"ID"`
+		Name *string `json:"Name"`
+	})
+	Send(ctx context.Context, payload interface{}) error
+	UploadFile(ctx context.Context, fileName string, reader io.Reader) (*UploadResult, error)
+}
+
+type client struct {
 	config      ClientConfig
 	restyClient *resty.Client
 	logger      *zap.SugaredLogger
@@ -38,8 +47,8 @@ type ClientConfig struct {
 	TestMode      bool   `envconfig:"TIDEPOOL_REDOX_TEST_MODE"`
 }
 
-func NewClient(moduleConfig ModuleConfig, logger *zap.SugaredLogger) (*Client, error) {
-	client := &Client{
+func NewClient(moduleConfig ModuleConfig, logger *zap.SugaredLogger) (Client, error) {
+	client := &client{
 		logger: logger,
 		mu:     &sync.RWMutex{},
 	}
@@ -62,7 +71,7 @@ func NewClient(moduleConfig ModuleConfig, logger *zap.SugaredLogger) (*Client, e
 	return client, nil
 }
 
-func (c *Client) GetSource() (source struct {
+func (c *client) GetSource() (source struct {
 	ID   *string `json:"ID"`
 	Name *string `json:"Name"`
 }) {
@@ -71,7 +80,7 @@ func (c *Client) GetSource() (source struct {
 	return
 }
 
-func (c *Client) Send(ctx context.Context, payload interface{}) error {
+func (c *client) Send(ctx context.Context, payload interface{}) error {
 	req, err := c.getRequestWithFreshToken(ctx)
 	if err != nil {
 		return err
@@ -94,7 +103,7 @@ func (c *Client) Send(ctx context.Context, payload interface{}) error {
 	return nil
 }
 
-func (c *Client) UploadFile(ctx context.Context, fileName string, reader io.Reader) (*UploadResult, error) {
+func (c *client) UploadFile(ctx context.Context, fileName string, reader io.Reader) (*UploadResult, error) {
 	req, err := c.getRequestWithFreshToken(ctx)
 	if err != nil {
 		return nil, err
@@ -121,11 +130,11 @@ func (c *Client) UploadFile(ctx context.Context, fileName string, reader io.Read
 	return uploadResult, nil
 }
 
-func (c *Client) getRequest(ctx context.Context) *resty.Request {
+func (c *client) getRequest(ctx context.Context) *resty.Request {
 	return c.restyClient.R().SetContext(ctx)
 }
 
-func (c *Client) getRequestWithFreshToken(ctx context.Context) (*resty.Request, error) {
+func (c *client) getRequestWithFreshToken(ctx context.Context) (*resty.Request, error) {
 	if c.shouldRefreshToken() {
 		if err := c.obtainFreshToken(ctx); err != nil {
 			return nil, err
@@ -136,13 +145,13 @@ func (c *Client) getRequestWithFreshToken(ctx context.Context) (*resty.Request, 
 	return c.getRequest(ctx).SetAuthToken(c.token.AccessToken), nil
 }
 
-func (c *Client) shouldRefreshToken() bool {
+func (c *client) shouldRefreshToken() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.token == nil || c.token.IsExpired(expirationDelta)
 }
 
-func (c *Client) obtainFreshToken(ctx context.Context) error {
+func (c *client) obtainFreshToken(ctx context.Context) error {
 	assertion, err := c.getSignedAssertion()
 	if err != nil {
 		return err
@@ -182,7 +191,7 @@ func (c *Client) obtainFreshToken(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) getSignedAssertion() (string, error) {
+func (c *client) getSignedAssertion() (string, error) {
 	now := time.Now()
 	nonce, err := uuid.NewRandom()
 	if err != nil {
