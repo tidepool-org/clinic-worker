@@ -46,6 +46,7 @@ func (r *reportGenerator) GenerateReport(ctx context.Context, params ReportParam
 			"userId": params.UserDetail.UserId,
 		}).
 		SetBody(params).
+		SetDoNotParseResponse(true).
 		Post("/export/report/{userId}")
 	if err != nil {
 		return nil, fmt.Errorf("error generating report: %w", err)
