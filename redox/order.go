@@ -147,7 +147,7 @@ func (o *orderProcessor) createSummaryStatisticsFlowsheet(order models.NewOrder,
 	flowsheet.Patient.Identifiers = order.Patient.Identifiers
 	flowsheet.Patient.Demographics = order.Patient.Demographics
 
-	PopulateSummaryStatistics(patient, &flowsheet)
+	PopulateSummaryStatistics(patient, match.Clinic, &flowsheet)
 
 	return flowsheet
 }

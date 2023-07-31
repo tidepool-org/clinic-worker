@@ -4,12 +4,16 @@ import (
 	"fmt"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/clinic/redox/models"
+	"strings"
 	"time"
 )
 
 const (
 	EventTypeNewFlowsheet = "New"
 	DataModelFlowsheet    = "Flowsheet"
+
+	MmolLToMgdLConversionFactor float64 = 18.01559
+	MmolLToMgdLPrecisionFactor  float64 = 100000.0
 
 	missingValue = "NOT AVAILABLE"
 	days14       = 14 * 24 * time.Hour
@@ -28,7 +32,7 @@ func NewFlowsheet() models.NewFlowsheet {
 
 // PopulateSummaryStatistics populates a flowsheet with patient summary statistics. If summary statistics are not available,
 // the flowsheet items will be populated with 'NOT AVAILABLE'.
-func PopulateSummaryStatistics(patient clinics.Patient, flowsheet *models.NewFlowsheet) {
+func PopulateSummaryStatistics(patient clinics.Patient, clinic clinics.Clinic, flowsheet *models.NewFlowsheet) {
 	var cgmStats *clinics.PatientCGMStats
 	var bgmStats *clinics.PatientBGMStats
 	if patient.Summary != nil {
@@ -36,11 +40,11 @@ func PopulateSummaryStatistics(patient clinics.Patient, flowsheet *models.NewFlo
 		bgmStats = patient.Summary.BgmStats
 	}
 
-	PopulateCGMObservations(cgmStats, flowsheet)
-	PopulateBGMObservations(bgmStats, flowsheet)
+	PopulateCGMObservations(cgmStats, clinic.PreferredBgUnits, flowsheet)
+	PopulateBGMObservations(bgmStats, clinic.PreferredBgUnits, flowsheet)
 }
 
-func PopulateCGMObservations(stats *clinics.PatientCGMStats, f *models.NewFlowsheet) {
+func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits clinics.ClinicPreferredBgUnits, f *models.NewFlowsheet) {
 	now := time.Now()
 
 	var period *clinics.PatientCGMPeriod
@@ -82,6 +86,9 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, f *models.NewFlowsh
 			val := float64(period.AverageGlucose.Value)
 			units := string(period.AverageGlucose.Units)
 
+			// Convert blood glucose to preferred units
+			val, units = bgInUnits(val, units, string(preferredBgUnits))
+
 			averageGlucose = &val
 			averageGlucoseUnits = &units
 		}
@@ -111,7 +118,7 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, f *models.NewFlowsh
 	)
 }
 
-func PopulateBGMObservations(stats *clinics.PatientBGMStats, f *models.NewFlowsheet) {
+func PopulateBGMObservations(stats *clinics.PatientBGMStats, preferredBgUnits clinics.ClinicPreferredBgUnits, f *models.NewFlowsheet) {
 	now := time.Now()
 
 	var period *clinics.PatientBGMPeriod
@@ -146,6 +153,9 @@ func PopulateBGMObservations(stats *clinics.PatientBGMStats, f *models.NewFlowsh
 		if period.AverageGlucose != nil {
 			val := float64(period.AverageGlucose.Value)
 			units := string(period.AverageGlucose.Units)
+
+			// Convert blood glucose to preferred units
+			val, units = bgInUnits(val, units, string(preferredBgUnits))
 
 			averageGlucose = &val
 			averageGlucoseUnits = &units
@@ -235,4 +245,14 @@ func unitIntervalToPercent(val *float64) *float64 {
 
 	res := *val * 100
 	return &res
+}
+
+func bgInUnits(val float64, sourceUnits string, targetUnits string) (float64, string) {
+	if strings.ToLower(sourceUnits) == "mmol/l" && strings.ToLower(targetUnits) == "mg/dl" {
+		intValue := int(val*MmolLToMgdLConversionFactor*MmolLToMgdLPrecisionFactor + 0.5)
+		floatValue := float64(intValue) / MmolLToMgdLPrecisionFactor
+		return floatValue, targetUnits
+	}
+
+	return val, sourceUnits
 }

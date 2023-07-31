@@ -46,7 +46,7 @@ var _ = Describe("Flowsheet", func() {
 				expectedBgUnits := "mmol/L"
 
 				flowsheet := redox.NewFlowsheet()
-				redox.PopulateSummaryStatistics((*response.Patients)[0], &flowsheet)
+				redox.PopulateSummaryStatistics((*response.Patients)[0], response.Clinic, &flowsheet)
 
 				Expect(flowsheet.Observations).To(ContainObservations(
 					Observation{"REPORTING_PERIOD_START_CGM", "2023-04-09T17:44:09Z", "DateTime", nil, "CGM Reporting Period Start"},
@@ -78,7 +78,7 @@ var _ = Describe("Flowsheet", func() {
 				patient.Summary.BgmStats = nil
 				patient.Summary.CgmStats = nil
 
-				redox.PopulateSummaryStatistics(patient, &flowsheet)
+				redox.PopulateSummaryStatistics(patient, response.Clinic, &flowsheet)
 
 				Expect(flowsheet.Observations).To(ContainObservations(
 					Observation{"REPORTING_PERIOD_START_CGM", "NOT AVAILABLE", "DateTime", nil, "CGM Reporting Period Start"},
@@ -99,6 +99,21 @@ var _ = Describe("Flowsheet", func() {
 					Observation{"AVERAGE_SMBG", "NOT AVAILABLE", "Numeric", nil, "SMBG Average Glucose during reporting period"},
 					Observation{"READINGS_BELOW_RANGE_VERY_LOW_SMBG", "NOT AVAILABLE", "Numeric", nil, "SMBG Level 2 Hypoglycemia Events: Number of readings <54 mg/dL (<3.0 mmol/L) during reporting period"},
 					Observation{"READINGS_ABOVE_RANGE_VERY_HIGH_SMBG", "NOT AVAILABLE", "Numeric", nil, "SMBG Level 2 Hyperglycemia: Number of readings above range (TAR-VH) time >250 mg/dL (>13.9 mmol/L) during reporting period"},
+				))
+			})
+
+			It("converts blood glucose units to mg/dL when set as preferred bg units", func() {
+				expectedBgUnits := "mg/dL"
+
+				flowsheet := redox.NewFlowsheet()
+				patient := (*response.Patients)[0]
+				response.Clinic.PreferredBgUnits = api.ClinicPreferredBgUnitsMgdL
+
+				redox.PopulateSummaryStatistics(patient, response.Clinic, &flowsheet)
+
+				Expect(flowsheet.Observations).To(ContainObservations(
+					Observation{"AVERAGE_CGM", "142.7052", "Numeric", &expectedBgUnits, "CGM Average Glucose during reporting period"},
+					Observation{"AVERAGE_SMBG", "172.2908", "Numeric", &expectedBgUnits, "SMBG Average Glucose during reporting period"},
 				))
 			})
 		})
