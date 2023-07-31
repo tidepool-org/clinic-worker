@@ -23,6 +23,7 @@ var Module = fx.Provide(
 	NewModuleConfig,
 	NewClient,
 	NewOrderProcessor,
+	NewReportGenerator,
 	fx.Annotated{
 		Group:  "consumers",
 		Target: CreateConsumerGroup,

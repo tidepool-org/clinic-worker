@@ -1,7 +1,6 @@
 package redox
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -9,6 +8,7 @@ import (
 	"github.com/tidepool-org/clinic/redox/models"
 	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
 
 const (
@@ -27,16 +27,19 @@ type OrderProcessor interface {
 type OrderHandler = func(ctx context.Context, order models.NewOrder) error
 
 type orderProcessor struct {
-	clinics clinics.ClientWithResponsesInterface
-	client  Client
-	logger  *zap.SugaredLogger
+	logger *zap.SugaredLogger
+
+	clinics         clinics.ClientWithResponsesInterface
+	client          Client
+	reportGenerator ReportGenerator
 }
 
-func NewOrderProcessor(clinics clinics.ClientWithResponsesInterface, redox Client, logger *zap.SugaredLogger) OrderProcessor {
+func NewOrderProcessor(clinics clinics.ClientWithResponsesInterface, redox Client, reportGenerator ReportGenerator, logger *zap.SugaredLogger) OrderProcessor {
 	return &orderProcessor{
-		clinics: clinics,
-		client:  redox,
-		logger:  logger,
+		logger:          logger,
+		clinics:         clinics,
+		client:          redox,
+		reportGenerator: reportGenerator,
 	}
 }
 
@@ -111,10 +114,14 @@ func (o *orderProcessor) handleSummaryReportsSubscription(ctx context.Context, o
 		return fmt.Errorf("unable to send flowsheet: %w", err)
 	}
 
-	o.logger.Infow("sending note", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", patient.Id)
-	if err := o.client.Send(ctx, report); err != nil {
-		// Return an error so we can retry the request
-		return fmt.Errorf("unable to send notes: %w", err)
+	if report != nil {
+		o.logger.Infow("sending note", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", patient.Id)
+		if err := o.client.Send(ctx, report); err != nil {
+			// Return an error so we can retry the request
+			return fmt.Errorf("unable to send notes: %w", err)
+		}
+	} else {
+		o.logger.Infow("the patient has no summary data", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", patient.Id)
 	}
 
 	return nil
@@ -146,6 +153,11 @@ func (o *orderProcessor) createSummaryStatisticsFlowsheet(order models.NewOrder,
 }
 
 func (o *orderProcessor) createReportNote(ctx context.Context, order models.NewOrder, patient clinics.Patient, match *clinics.EHRMatchResponse) (*models.NewNotes, error) {
+	reportingPeriod := GetReportingPeriodBounds(patient)
+	if reportingPeriod == nil {
+		return nil, nil
+	}
+
 	source := o.client.GetSource()
 	destinationId := match.Settings.DestinationIds.Default
 	if match.Settings.DestinationIds.Flowsheet != nil && *match.Settings.DestinationIds.Flowsheet != "" {
@@ -166,12 +178,41 @@ func (o *orderProcessor) createReportNote(ctx context.Context, order models.NewO
 	SetNotesPatientFromOrder(order, &notes)
 	SetReportMetadata(match.Clinic, patient, &notes)
 
-	err := EmbedFileInNotes("sample-report.pdf", NoteReportFileType, bytes.NewReader(sampleReport), &notes)
+	reportParameters := ReportParameters{
+		UserDetail: UserDetail{
+			UserId:      *patient.Id,
+			FullName:    patient.FullName,
+			DateOfBirth: patient.BirthDate.String(),
+		},
+		ReportDetail: ReportDetail{
+			Reports: []string{"all"},
+		},
+	}
+	if patient.Mrn != nil {
+		reportParameters.UserDetail.MRN = *patient.Mrn
+	}
+	if reportingPeriod != nil {
+		if !reportingPeriod.Start.IsZero() {
+			reportParameters.ReportDetail.StartDate = reportingPeriod.Start.Format(time.RFC3339)
+		}
+		if !reportingPeriod.End.IsZero() {
+			reportParameters.ReportDetail.EndDate = reportingPeriod.End.Format(time.RFC3339)
+		}
+	}
+	if match.Clinic.PreferredBgUnits != "" {
+		reportParameters.ReportDetail.BgUnits = string(match.Clinic.PreferredBgUnits)
+	}
+
+	report, err := o.reportGenerator.GenerateReport(ctx, reportParameters)
+	if err != nil {
+		return nil, fmt.Errorf("unable to generate report: %w", err)
+	}
+
+	err = EmbedFileInNotes(NoteReportFileName, NoteReportFileType, report.Document, &notes)
 	if err != nil {
 		return nil, fmt.Errorf("unable to embed report in notes: %w", err)
 	}
 
-	//fileName := "sample-report.pdf"
 	//upload, err := o.client.UploadFile(ctx, fileName, bytes.NewReader(sampleReport))
 	//if err != nil {
 	//	return nil, fmt.Errorf("unable to upload report: %w", err)

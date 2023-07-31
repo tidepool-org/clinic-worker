@@ -13,10 +13,7 @@ const (
 
 	missingValue = "NOT AVAILABLE"
 	days14       = 14 * 24 * time.Hour
-)
-
-var (
-	unitsPercentage = "%"
+	percentage   = "%"
 )
 
 func NewFlowsheet() models.NewFlowsheet {
@@ -67,6 +64,8 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, f *models.NewFlowsh
 			}
 		}
 	}
+
+	unitsPercentage := percentage
 
 	var cgmUsePercent *float64
 	var averageGlucose *float64
@@ -200,6 +199,11 @@ func CreateObservation(code, value, valueType string, units *string, description
 	res.Description = &description
 	res.DateTime = dateTime
 	return
+}
+
+type PeriodBounds struct {
+	Start time.Time
+	End   time.Time
 }
 
 func formatTime(t *time.Time) string {

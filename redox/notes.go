@@ -24,10 +24,8 @@ const (
 	NoteReportDocumentIdPrefix = "Report"
 	NoteReportDocumentType     = "Tidepool Report"
 	NoteReportFileType         = "PDF"
+	NoteReportFileName         = "report.pdf"
 )
-
-//go:embed test/sample-report.pdf
-var sampleReport []byte
 
 func NewNotes() models.NewNotes {
 	res := models.NewNotes{}
