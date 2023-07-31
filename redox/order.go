@@ -160,8 +160,8 @@ func (o *orderProcessor) createReportNote(ctx context.Context, order models.NewO
 
 	source := o.client.GetSource()
 	destinationId := match.Settings.DestinationIds.Default
-	if match.Settings.DestinationIds.Flowsheet != nil && *match.Settings.DestinationIds.Flowsheet != "" {
-		destinationId = *match.Settings.DestinationIds.Flowsheet
+	if match.Settings.DestinationIds.Notes != nil && *match.Settings.DestinationIds.Notes != "" {
+		destinationId = *match.Settings.DestinationIds.Notes
 	}
 
 	destinations := []struct {
@@ -257,8 +257,8 @@ func (o *orderProcessor) sendMatchingResultsNotification(ctx context.Context, ma
 	o.logger.Infow("Sending results notification", "order", order.Meta)
 	source := o.client.GetSource()
 	destinationId := match.Settings.DestinationIds.Default
-	if match.Settings.DestinationIds.Flowsheet != nil && *match.Settings.DestinationIds.Flowsheet != "" {
-		destinationId = *match.Settings.DestinationIds.Flowsheet
+	if match.Settings.DestinationIds.Results != nil && *match.Settings.DestinationIds.Results != "" {
+		destinationId = *match.Settings.DestinationIds.Results
 	}
 
 	destinations := []struct {

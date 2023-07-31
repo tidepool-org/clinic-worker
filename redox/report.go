@@ -9,6 +9,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients/shoreline"
+	"go.uber.org/zap"
 	"io"
 	"time"
 )
@@ -31,6 +32,7 @@ type ReportGenerator interface {
 type reportGenerator struct {
 	restyClient     *resty.Client
 	shorelineClient shoreline.Client
+	logger          *zap.SugaredLogger
 }
 
 func (r *reportGenerator) GenerateReport(ctx context.Context, params ReportParameters) (*Report, error) {
@@ -38,6 +40,8 @@ func (r *reportGenerator) GenerateReport(ctx context.Context, params ReportParam
 	if token == "" {
 		return nil, fmt.Errorf("unable to get token from shoreline client")
 	}
+
+	r.logger.Infow("generating report", "userId", params.UserDetail.UserId, "params", params)
 
 	resp, err := r.restyClient.R().
 		SetContext(ctx).
@@ -57,7 +61,7 @@ func (r *reportGenerator) GenerateReport(ctx context.Context, params ReportParam
 	return nil, fmt.Errorf("received unexected %s response when generating report: %s", resp.Status(), resp.Body())
 }
 
-func NewReportGenerator(shorelineClient shoreline.Client) (ReportGenerator, error) {
+func NewReportGenerator(shorelineClient shoreline.Client, logger *zap.SugaredLogger) (ReportGenerator, error) {
 	config := ReportGeneratorConfig{}
 	if err := envconfig.Process("", &config); err != nil {
 		return nil, err
@@ -66,6 +70,7 @@ func NewReportGenerator(shorelineClient shoreline.Client) (ReportGenerator, erro
 	return &reportGenerator{
 		restyClient:     resty.New().SetBaseURL(config.ExportServiceHost),
 		shorelineClient: shorelineClient,
+		logger:          logger,
 	}, nil
 }
 
