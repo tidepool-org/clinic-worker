@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("Results", func() {
 	Describe("NewResults", func() {
-		It("returns a correctly instantiated mode", func() {
+		It("returns a correctly instantiated result", func() {
 			results := redox.NewResults()
 			Expect(results.Meta.DataModel).To(Equal("Results"))
 			Expect(results.Meta.EventType).To(Equal("New"))
