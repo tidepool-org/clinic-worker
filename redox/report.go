@@ -46,7 +46,7 @@ func (r *reportGenerator) GenerateReport(ctx context.Context, params ReportParam
 			"userId": params.UserDetail.UserId,
 		}).
 		SetBody(params).
-		Post("/v1/users/{userId}/reports")
+		Post("/export/report/{userId}")
 	if err != nil {
 		return nil, fmt.Errorf("error generating report: %w", err)
 	}
