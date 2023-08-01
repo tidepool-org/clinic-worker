@@ -11,7 +11,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.16.0
-	github.com/tidepool-org/clinic/client v0.0.0-20230726171227-3548c71a6c41
+	github.com/tidepool-org/clinic/client v0.0.0-20230801180911-58deaaf2b370
 	github.com/tidepool-org/go-common v0.10.1-0.20230725004540-df00db4166b0
 	github.com/tidepool-org/hydrophone/client v0.0.0-20221219223301-92bd47a8a11c
 	go.uber.org/fx v1.13.1
