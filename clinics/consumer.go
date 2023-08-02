@@ -166,7 +166,7 @@ func (p *ClinicsCDCConsumer) getUserEmail(userId string) (string, error) {
 func (p *ClinicsCDCConsumer) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, patientTagId string) error {
 	p.logger.Debugw("Deleteing tag from clinic patients", "clinicId", clinicId, "patientTagId", patientTagId)
 
-	response, err := p.clinics.DeletePatientTagFromClinicPatientsWithResponse(ctx, clinics.ClinicId(clinicId), clinics.PatientTagId(patientTagId))
+	response, err := p.clinics.DeletePatientTagFromClinicPatientsWithResponse(ctx, clinics.ClinicId(clinicId), clinics.PatientTagId(patientTagId), nil)
 	if err != nil {
 		return err
 	} else if response.StatusCode() != http.StatusOK {
