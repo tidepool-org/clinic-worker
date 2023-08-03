@@ -24,7 +24,7 @@ type OrderProcessor interface {
 	ProcessOrder(ctx context.Context, order models.NewOrder) error
 }
 
-type OrderHandler = func(ctx context.Context, order models.NewOrder) error
+type OrderHandler = func(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error
 
 type orderProcessor struct {
 	logger *zap.SugaredLogger
@@ -44,25 +44,6 @@ func NewOrderProcessor(clinics clinics.ClientWithResponsesInterface, redox Clien
 }
 
 func (o *orderProcessor) ProcessOrder(ctx context.Context, order models.NewOrder) error {
-	var procedureCode string
-	if order.Order.Procedure != nil && order.Order.Procedure.Code != nil {
-		procedureCode = *order.Order.Procedure.Code
-	}
-
-	handler := o.GetHandlerForProcedure(procedureCode)
-	return handler(ctx, order)
-}
-
-func (o *orderProcessor) GetHandlerForProcedure(procedureCode string) OrderHandler {
-	switch procedureCode {
-	case ProcedureCodeSummaryReportsSubscription:
-		return o.handleSummaryReportsSubscription
-	default:
-		return o.handleUnknownProcedure
-	}
-}
-
-func (o *orderProcessor) handleSummaryReportsSubscription(ctx context.Context, order models.NewOrder) error {
 	criteria, err := GetMatchingCriteria(order)
 	if err != nil {
 		// Return nil because the retrieval of the matching was unsuccessful and retrying will not help
@@ -89,6 +70,38 @@ func (o *orderProcessor) handleSummaryReportsSubscription(ctx context.Context, o
 	}
 
 	match := response.JSON200
+
+	var clinicProcedureCode *string
+	if order.Order.Procedure != nil {
+		clinicProcedureCode = order.Order.Procedure.Code
+	}
+
+	internalProcedureCode := GetInternalProcedureCode(clinicProcedureCode, match.Settings)
+	handler := o.GetHandlerForProcedure(internalProcedureCode)
+	return handler(ctx, order, *match)
+}
+
+func GetInternalProcedureCode(procedureCode *string, settings clinics.EHRSettings) string {
+	if procedureCode == nil || *procedureCode == "" {
+		return ""
+	}
+
+	if settings.ProcedureCodes.SummaryReportsSubscription == *procedureCode {
+		return ProcedureCodeSummaryReportsSubscription
+	}
+	return ""
+}
+
+func (o *orderProcessor) GetHandlerForProcedure(procedureCode string) OrderHandler {
+	switch procedureCode {
+	case ProcedureCodeSummaryReportsSubscription:
+		return o.handleSummaryReportsSubscription
+	default:
+		return o.handleUnknownProcedure
+	}
+}
+
+func (o *orderProcessor) handleSummaryReportsSubscription(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
 	if match.Patients == nil || len(*match.Patients) == 0 {
 		return o.handleNoMatchingPatients(ctx, order, match)
 	} else if len(*match.Patients) > 1 {
@@ -127,7 +140,7 @@ func (o *orderProcessor) handleSummaryReportsSubscription(ctx context.Context, o
 	return nil
 }
 
-func (o *orderProcessor) createSummaryStatisticsFlowsheet(order models.NewOrder, patient clinics.Patient, match *clinics.EHRMatchResponse) models.NewFlowsheet {
+func (o *orderProcessor) createSummaryStatisticsFlowsheet(order models.NewOrder, patient clinics.Patient, match clinics.EHRMatchResponse) models.NewFlowsheet {
 	source := o.client.GetSource()
 	destinationId := match.Settings.DestinationIds.Default
 	if match.Settings.DestinationIds.Flowsheet != nil && *match.Settings.DestinationIds.Flowsheet != "" {
@@ -152,7 +165,7 @@ func (o *orderProcessor) createSummaryStatisticsFlowsheet(order models.NewOrder,
 	return flowsheet
 }
 
-func (o *orderProcessor) createReportNote(ctx context.Context, order models.NewOrder, patient clinics.Patient, match *clinics.EHRMatchResponse) (*models.NewNotes, error) {
+func (o *orderProcessor) createReportNote(ctx context.Context, order models.NewOrder, patient clinics.Patient, match clinics.EHRMatchResponse) (*models.NewNotes, error) {
 	reportingPeriod := GetReportingPeriodBounds(patient)
 	if reportingPeriod == nil {
 		return nil, nil
@@ -224,12 +237,12 @@ func (o *orderProcessor) createReportNote(ctx context.Context, order models.NewO
 	return &notes, nil
 }
 
-func (o *orderProcessor) handleUnknownProcedure(ctx context.Context, order models.NewOrder) error {
+func (o *orderProcessor) handleUnknownProcedure(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
 	o.logger.Infow("Unknown procedure code. Ignoring order.", "order", order.Meta)
 	return nil
 }
 
-func (o *orderProcessor) handleNoMatchingPatients(ctx context.Context, order models.NewOrder, match *clinics.EHRMatchResponse) error {
+func (o *orderProcessor) handleNoMatchingPatients(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
 	o.logger.Infow("No patients matched.", "order", order.Meta)
 	return o.sendMatchingResultsNotification(ctx, MatchingResult{
 		IsSuccess: false,
@@ -237,7 +250,7 @@ func (o *orderProcessor) handleNoMatchingPatients(ctx context.Context, order mod
 	}, order, match)
 }
 
-func (o *orderProcessor) handleMultipleMatchingPatients(ctx context.Context, order models.NewOrder, match *clinics.EHRMatchResponse) error {
+func (o *orderProcessor) handleMultipleMatchingPatients(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
 	o.logger.Infow("Multiple patients matched.", "order", order.Meta)
 	return o.sendMatchingResultsNotification(ctx, MatchingResult{
 		IsSuccess: false,
@@ -245,7 +258,7 @@ func (o *orderProcessor) handleMultipleMatchingPatients(ctx context.Context, ord
 	}, order, match)
 }
 
-func (o *orderProcessor) handleSuccessfulPatientMatch(ctx context.Context, order models.NewOrder, match *clinics.EHRMatchResponse) error {
+func (o *orderProcessor) handleSuccessfulPatientMatch(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
 	o.logger.Infow("Found matching patient.", "order", order.Meta)
 	return o.sendMatchingResultsNotification(ctx, MatchingResult{
 		IsSuccess: true,
@@ -253,7 +266,7 @@ func (o *orderProcessor) handleSuccessfulPatientMatch(ctx context.Context, order
 	}, order, match)
 }
 
-func (o *orderProcessor) sendMatchingResultsNotification(ctx context.Context, matchingResult MatchingResult, order models.NewOrder, match *clinics.EHRMatchResponse) error {
+func (o *orderProcessor) sendMatchingResultsNotification(ctx context.Context, matchingResult MatchingResult, order models.NewOrder, match clinics.EHRMatchResponse) error {
 	o.logger.Infow("Sending results notification", "order", order.Meta)
 	source := o.client.GetSource()
 	destinationId := match.Settings.DestinationIds.Default
