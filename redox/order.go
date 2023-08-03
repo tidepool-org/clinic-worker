@@ -17,7 +17,7 @@ const (
 
 	ProcedureCodeSummaryReportsSubscription = "TP_SUBSCRIBE_SUMMARY_REPORTS"
 
-	MrnIdentifierType = "MR"
+	MrnIdentifierType = "MRN"
 )
 
 type OrderProcessor interface {
@@ -86,10 +86,12 @@ func GetProcedureCode(order models.NewOrder) string {
 }
 
 func (o *orderProcessor) GetHandlerForProcedure(procedureCode string, settings clinics.EHRSettings) OrderHandler {
-	if settings.ProcedureCodes.SummaryReportsSubscription == procedureCode {
+	switch procedureCode {
+	case settings.ProcedureCodes.SummaryReportsSubscription:
 		return o.handleSummaryReportsSubscription
+	default:
+		return o.handleUnknownProcedure
 	}
-	return o.handleUnknownProcedure
 }
 
 func (o *orderProcessor) handleSummaryReportsSubscription(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
