@@ -71,34 +71,25 @@ func (o *orderProcessor) ProcessOrder(ctx context.Context, order models.NewOrder
 
 	match := response.JSON200
 
-	var clinicProcedureCode *string
-	if order.Order.Procedure != nil {
-		clinicProcedureCode = order.Order.Procedure.Code
-	}
+	procedureCode := GetProcedureCode(order)
+	handler := o.GetHandlerForProcedure(procedureCode, match.Settings)
 
-	internalProcedureCode := GetInternalProcedureCode(clinicProcedureCode, match.Settings)
-	handler := o.GetHandlerForProcedure(internalProcedureCode)
 	return handler(ctx, order, *match)
 }
 
-func GetInternalProcedureCode(procedureCode *string, settings clinics.EHRSettings) string {
-	if procedureCode == nil || *procedureCode == "" {
-		return ""
+func GetProcedureCode(order models.NewOrder) string {
+	var procedureCode string
+	if order.Order.Procedure != nil && order.Order.Procedure.Code != nil {
+		procedureCode = *order.Order.Procedure.Code
 	}
-
-	if settings.ProcedureCodes.SummaryReportsSubscription == *procedureCode {
-		return ProcedureCodeSummaryReportsSubscription
-	}
-	return ""
+	return procedureCode
 }
 
-func (o *orderProcessor) GetHandlerForProcedure(procedureCode string) OrderHandler {
-	switch procedureCode {
-	case ProcedureCodeSummaryReportsSubscription:
+func (o *orderProcessor) GetHandlerForProcedure(procedureCode string, settings clinics.EHRSettings) OrderHandler {
+	if settings.ProcedureCodes.SummaryReportsSubscription == procedureCode {
 		return o.handleSummaryReportsSubscription
-	default:
-		return o.handleUnknownProcedure
 	}
+	return o.handleUnknownProcedure
 }
 
 func (o *orderProcessor) handleSummaryReportsSubscription(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
@@ -238,7 +229,7 @@ func (o *orderProcessor) createReportNote(ctx context.Context, order models.NewO
 }
 
 func (o *orderProcessor) handleUnknownProcedure(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
-	o.logger.Infow("Unknown procedure code. Ignoring order.", "order", order.Meta)
+	o.logger.Infow("Unknown procedure code. Ignoring order.", "order", order.Meta, "settings", match.Settings)
 	return nil
 }
 
