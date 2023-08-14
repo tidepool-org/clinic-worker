@@ -10,6 +10,7 @@ import (
 	"github.com/tidepool-org/clinic-worker/redox"
 	"github.com/tidepool-org/clinic-worker/test"
 	api "github.com/tidepool-org/clinic/client"
+	models "github.com/tidepool-org/clinic/redox_models"
 	"time"
 )
 
