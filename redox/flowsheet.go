@@ -3,7 +3,7 @@ package redox
 import (
 	"fmt"
 	clinics "github.com/tidepool-org/clinic/client"
-	"github.com/tidepool-org/clinic/redox/models"
+	models "github.com/tidepool-org/clinic/redox_models"
 	"strings"
 	"time"
 )
