@@ -67,8 +67,10 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 
 	if cgmSummary != nil {
 		patientUpdate.CgmStats = &clinics.PatientCGMStats{
-			Dates:  (*clinics.PatientSummaryDates)(cgmSummary.Dates),
-			Config: (*clinics.PatientSummaryConfig)(cgmSummary.Config),
+			Dates:         (*clinics.PatientSummaryDates)(cgmSummary.Dates),
+			Config:        (*clinics.PatientSummaryConfig)(cgmSummary.Config),
+			Periods:       &clinics.PatientCGMPeriods{},
+			OffsetPeriods: &clinics.PatientCGMPeriods{},
 		}
 
 		if cgmSummary.Stats != nil {
@@ -79,117 +81,25 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 			patientUpdate.CgmStats.TotalHours = cgmStats.TotalHours
 
 			if cgmStats.Periods != nil {
-				patientUpdate.CgmStats.Periods = &clinics.PatientCGMPeriods{}
-
-				// this is bad, but it's better than copy and pasting the copy code N times
-				sourcePeriods := map[string]*summaries.CGMPeriod{}
-				destPeriods := map[string]*clinics.PatientCGMPeriod{}
-				if cgmStats.Periods.N1d != nil {
-					sourcePeriods["1d"] = cgmStats.Periods.N1d
-
-					patientUpdate.CgmStats.Periods.N1d = &clinics.PatientCGMPeriod{}
-					destPeriods["1d"] = patientUpdate.CgmStats.Periods.N1d
-				}
-				if cgmStats.Periods.N7d != nil {
-					sourcePeriods["7d"] = cgmStats.Periods.N7d
-
-					patientUpdate.CgmStats.Periods.N7d = &clinics.PatientCGMPeriod{}
-					destPeriods["7d"] = patientUpdate.CgmStats.Periods.N7d
-				}
-				if cgmStats.Periods.N14d != nil {
-					sourcePeriods["14d"] = cgmStats.Periods.N14d
-
-					patientUpdate.CgmStats.Periods.N14d = &clinics.PatientCGMPeriod{}
-					destPeriods["14d"] = patientUpdate.CgmStats.Periods.N14d
-				}
-				if cgmStats.Periods.N30d != nil {
-					sourcePeriods["30d"] = cgmStats.Periods.N30d
-
-					patientUpdate.CgmStats.Periods.N30d = &clinics.PatientCGMPeriod{}
-					destPeriods["30d"] = patientUpdate.CgmStats.Periods.N30d
-				}
-
-				for period := range sourcePeriods {
-					if sourcePeriods[period].AverageGlucose != nil {
-						destPeriods[period].AverageGlucose = &clinics.AverageGlucose{
-							Value: sourcePeriods[period].AverageGlucose.Value,
-							Units: clinics.AverageGlucoseUnits(sourcePeriods[period].AverageGlucose.Units)}
-					}
-					destPeriods[period].HasAverageGlucose = sourcePeriods[period].HasAverageGlucose
-
-					destPeriods[period].GlucoseManagementIndicator = sourcePeriods[period].GlucoseManagementIndicator
-					destPeriods[period].HasGlucoseManagementIndicator = sourcePeriods[period].HasGlucoseManagementIndicator
-
-					destPeriods[period].HasTimeCGMUsePercent = sourcePeriods[period].HasTimeCGMUsePercent
-					destPeriods[period].TimeCGMUsePercent = sourcePeriods[period].TimeCGMUsePercent
-
-					destPeriods[period].HasTimeCGMUseMinutes = sourcePeriods[period].HasTimeCGMUseMinutes
-					destPeriods[period].TimeCGMUseMinutes = sourcePeriods[period].TimeCGMUseMinutes
-
-					destPeriods[period].HasTimeCGMUseRecords = sourcePeriods[period].HasTimeCGMUseRecords
-					destPeriods[period].TimeCGMUseRecords = sourcePeriods[period].TimeCGMUseRecords
-
-					destPeriods[period].HasTimeInHighPercent = sourcePeriods[period].HasTimeInHighPercent
-					destPeriods[period].TimeInHighPercent = sourcePeriods[period].TimeInHighPercent
-
-					destPeriods[period].HasTimeInHighMinutes = sourcePeriods[period].HasTimeInHighMinutes
-					destPeriods[period].TimeInHighMinutes = sourcePeriods[period].TimeInHighMinutes
-
-					destPeriods[period].HasTimeInHighRecords = sourcePeriods[period].HasTimeInHighRecords
-					destPeriods[period].TimeInHighRecords = sourcePeriods[period].TimeInHighRecords
-
-					destPeriods[period].HasTimeInLowPercent = sourcePeriods[period].HasTimeInLowPercent
-					destPeriods[period].TimeInLowPercent = sourcePeriods[period].TimeInLowPercent
-
-					destPeriods[period].HasTimeInLowMinutes = sourcePeriods[period].HasTimeInLowMinutes
-					destPeriods[period].TimeInLowMinutes = sourcePeriods[period].TimeInLowMinutes
-
-					destPeriods[period].HasTimeInLowRecords = sourcePeriods[period].HasTimeInLowRecords
-					destPeriods[period].TimeInLowRecords = sourcePeriods[period].TimeInLowRecords
-
-					destPeriods[period].HasTimeInTargetPercent = sourcePeriods[period].HasTimeInTargetPercent
-					destPeriods[period].TimeInTargetPercent = sourcePeriods[period].TimeInTargetPercent
-
-					destPeriods[period].HasTimeInTargetMinutes = sourcePeriods[period].HasTimeInTargetMinutes
-					destPeriods[period].TimeInTargetMinutes = sourcePeriods[period].TimeInTargetMinutes
-
-					destPeriods[period].HasTimeInTargetRecords = sourcePeriods[period].HasTimeInTargetRecords
-					destPeriods[period].TimeInTargetRecords = sourcePeriods[period].TimeInTargetRecords
-
-					destPeriods[period].HasTimeInVeryHighPercent = sourcePeriods[period].HasTimeInVeryHighPercent
-					destPeriods[period].TimeInVeryHighPercent = sourcePeriods[period].TimeInVeryHighPercent
-
-					destPeriods[period].HasTimeInVeryHighMinutes = sourcePeriods[period].HasTimeInVeryHighMinutes
-					destPeriods[period].TimeInVeryHighMinutes = sourcePeriods[period].TimeInVeryHighMinutes
-
-					destPeriods[period].HasTimeInVeryHighRecords = sourcePeriods[period].HasTimeInVeryHighRecords
-					destPeriods[period].TimeInVeryHighRecords = sourcePeriods[period].TimeInVeryHighRecords
-
-					destPeriods[period].HasTimeInVeryLowPercent = sourcePeriods[period].HasTimeInVeryLowPercent
-					destPeriods[period].TimeInVeryLowPercent = sourcePeriods[period].TimeInVeryLowPercent
-
-					destPeriods[period].HasTimeInVeryLowMinutes = sourcePeriods[period].HasTimeInVeryLowMinutes
-					destPeriods[period].TimeInVeryLowMinutes = sourcePeriods[period].TimeInVeryLowMinutes
-
-					destPeriods[period].HasTimeInVeryLowRecords = sourcePeriods[period].HasTimeInVeryLowRecords
-					destPeriods[period].TimeInVeryLowRecords = sourcePeriods[period].TimeInVeryLowRecords
-
-					destPeriods[period].HasAverageDailyRecords = sourcePeriods[period].HasAverageDailyRecords
-					destPeriods[period].AverageDailyRecords = sourcePeriods[period].AverageDailyRecords
-
-					destPeriods[period].HasTotalRecords = sourcePeriods[period].HasTotalRecords
-					destPeriods[period].TotalRecords = sourcePeriods[period].TotalRecords
-
+				for k, source := range *cgmStats.Periods {
+					(*patientUpdate.CgmStats.Periods)[k] = clinics.PatientCGMPeriod(source)
 				}
 			}
 
+			if cgmStats.OffsetPeriods != nil {
+				for k, source := range *cgmStats.OffsetPeriods {
+					(*patientUpdate.CgmStats.OffsetPeriods)[k] = clinics.PatientCGMPeriod(source)
+				}
+			}
 		}
 	}
 
 	if bgmSummary != nil {
 		patientUpdate.BgmStats = &clinics.PatientBGMStats{
-			Dates:  (*clinics.PatientSummaryDates)(bgmSummary.Dates),
-			Config: (*clinics.PatientSummaryConfig)(bgmSummary.Config),
+			Dates:         (*clinics.PatientSummaryDates)(bgmSummary.Dates),
+			Config:        (*clinics.PatientSummaryConfig)(bgmSummary.Config),
+			Periods:       &clinics.PatientBGMPeriods{},
+			OffsetPeriods: &clinics.PatientBGMPeriods{},
 		}
 
 		if bgmSummary.Stats != nil {
@@ -200,79 +110,14 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 			patientUpdate.BgmStats.TotalHours = bgmStats.TotalHours
 
 			if bgmStats.Periods != nil {
-				patientUpdate.BgmStats.Periods = &clinics.PatientBGMPeriods{}
-
-				// this is bad, but it's better than copy and pasting the copy code N times
-				sourcePeriods := map[string]*summaries.BGMPeriod{}
-				destPeriods := map[string]*clinics.PatientBGMPeriod{}
-				if bgmStats.Periods.N1d != nil {
-					sourcePeriods["1d"] = bgmStats.Periods.N1d
-
-					patientUpdate.BgmStats.Periods.N1d = &clinics.PatientBGMPeriod{}
-					destPeriods["1d"] = patientUpdate.BgmStats.Periods.N1d
+				for k, source := range *bgmStats.Periods {
+					(*patientUpdate.BgmStats.Periods)[k] = clinics.PatientBGMPeriod(source)
 				}
-				if bgmStats.Periods.N7d != nil {
-					sourcePeriods["7d"] = bgmStats.Periods.N7d
+			}
 
-					patientUpdate.BgmStats.Periods.N7d = &clinics.PatientBGMPeriod{}
-					destPeriods["7d"] = patientUpdate.BgmStats.Periods.N7d
-				}
-				if bgmStats.Periods.N14d != nil {
-					sourcePeriods["14d"] = bgmStats.Periods.N14d
-
-					patientUpdate.BgmStats.Periods.N14d = &clinics.PatientBGMPeriod{}
-					destPeriods["14d"] = patientUpdate.BgmStats.Periods.N14d
-				}
-				if bgmStats.Periods.N30d != nil {
-					sourcePeriods["30d"] = bgmStats.Periods.N30d
-
-					patientUpdate.BgmStats.Periods.N30d = &clinics.PatientBGMPeriod{}
-					destPeriods["30d"] = patientUpdate.BgmStats.Periods.N30d
-				}
-
-				for period := range sourcePeriods {
-					if sourcePeriods[period].AverageGlucose != nil {
-						destPeriods[period].AverageGlucose = &clinics.AverageGlucose{
-							Value: sourcePeriods[period].AverageGlucose.Value,
-							Units: clinics.AverageGlucoseUnits(sourcePeriods[period].AverageGlucose.Units)}
-					}
-					destPeriods[period].HasAverageGlucose = sourcePeriods[period].HasAverageGlucose
-
-					destPeriods[period].HasTimeInHighPercent = sourcePeriods[period].HasTimeInHighPercent
-					destPeriods[period].TimeInHighPercent = sourcePeriods[period].TimeInHighPercent
-
-					destPeriods[period].HasTimeInHighRecords = sourcePeriods[period].HasTimeInHighRecords
-					destPeriods[period].TimeInHighRecords = sourcePeriods[period].TimeInHighRecords
-
-					destPeriods[period].HasTimeInLowPercent = sourcePeriods[period].HasTimeInLowPercent
-					destPeriods[period].TimeInLowPercent = sourcePeriods[period].TimeInLowPercent
-
-					destPeriods[period].HasTimeInLowRecords = sourcePeriods[period].HasTimeInLowRecords
-					destPeriods[period].TimeInLowRecords = sourcePeriods[period].TimeInLowRecords
-
-					destPeriods[period].HasTimeInTargetPercent = sourcePeriods[period].HasTimeInTargetPercent
-					destPeriods[period].TimeInTargetPercent = sourcePeriods[period].TimeInTargetPercent
-
-					destPeriods[period].HasTimeInTargetRecords = sourcePeriods[period].HasTimeInTargetRecords
-					destPeriods[period].TimeInTargetRecords = sourcePeriods[period].TimeInTargetRecords
-
-					destPeriods[period].HasTimeInVeryHighPercent = sourcePeriods[period].HasTimeInVeryHighPercent
-					destPeriods[period].TimeInVeryHighPercent = sourcePeriods[period].TimeInVeryHighPercent
-
-					destPeriods[period].HasTimeInVeryHighRecords = sourcePeriods[period].HasTimeInVeryHighRecords
-					destPeriods[period].TimeInVeryHighRecords = sourcePeriods[period].TimeInVeryHighRecords
-
-					destPeriods[period].HasTimeInVeryLowPercent = sourcePeriods[period].HasTimeInVeryLowPercent
-					destPeriods[period].TimeInVeryLowPercent = sourcePeriods[period].TimeInVeryLowPercent
-
-					destPeriods[period].HasTimeInVeryLowRecords = sourcePeriods[period].HasTimeInVeryLowRecords
-					destPeriods[period].TimeInVeryLowRecords = sourcePeriods[period].TimeInVeryLowRecords
-
-					destPeriods[period].HasAverageDailyRecords = sourcePeriods[period].HasAverageDailyRecords
-					destPeriods[period].AverageDailyRecords = sourcePeriods[period].AverageDailyRecords
-
-					destPeriods[period].HasTotalRecords = sourcePeriods[period].HasTotalRecords
-					destPeriods[period].TotalRecords = sourcePeriods[period].TotalRecords
+			if bgmStats.OffsetPeriods != nil {
+				for k, source := range *bgmStats.OffsetPeriods {
+					(*patientUpdate.BgmStats.OffsetPeriods)[k] = clinics.PatientBGMPeriod(source)
 				}
 			}
 		}
