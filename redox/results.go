@@ -1,7 +1,7 @@
 package redox
 
 import (
-	"github.com/tidepool-org/clinic/redox/models"
+	models "github.com/tidepool-org/clinic/redox_models"
 	"time"
 )
 

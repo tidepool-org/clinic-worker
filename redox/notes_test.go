@@ -10,7 +10,7 @@ import (
 	"github.com/tidepool-org/clinic-worker/redox"
 	"github.com/tidepool-org/clinic-worker/test"
 	api "github.com/tidepool-org/clinic/client"
-	"github.com/tidepool-org/clinic/redox/models"
+	models "github.com/tidepool-org/clinic/redox_models"
 	"time"
 )
 
@@ -44,6 +44,23 @@ var _ = Describe("Notes", func() {
 				redox.SetNotesPatientFromOrder(order, &notes)
 				Expect(notes.Patient.Identifiers).To(Equal(order.Patient.Identifiers))
 				Expect(notes.Patient.Demographics).To(Equal(order.Patient.Demographics))
+			})
+		})
+
+		Describe("SetVisitNumberInNotes", func() {
+			It("sets the visit number from the order", func() {
+				redox.SetVisitNumberInNotes(order, &notes)
+				Expect(notes.Visit).ToNot(BeNil())
+				Expect(notes.Visit.VisitNumber).To(PointTo(Equal(*order.Visit.VisitNumber)))
+			})
+		})
+
+		Describe("SetOrderIdInNotes", func() {
+			It("sets the order id from the order", func() {
+				redox.SetOrderIdInNotes(order, &notes)
+				Expect(notes.Orders).ToNot(BeNil())
+				Expect(*notes.Orders).To(HaveLen(1))
+				Expect((*notes.Orders)[0].ID).To(PointTo(Equal(order.Order.ID)))
 			})
 		})
 

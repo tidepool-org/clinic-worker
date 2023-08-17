@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/tidepool-org/clinic-worker/redox"
 	"github.com/tidepool-org/clinic-worker/test"
-	"github.com/tidepool-org/clinic/redox/models"
+	models "github.com/tidepool-org/clinic/redox_models"
 	"time"
 )
 

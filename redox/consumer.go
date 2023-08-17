@@ -5,7 +5,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/tidepool-org/clinic-worker/cdc"
-	"github.com/tidepool-org/clinic/redox/models"
+	models "github.com/tidepool-org/clinic/redox_models"
 	"github.com/tidepool-org/go-common/events"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/fx"
@@ -157,7 +157,7 @@ func (p *CDCConsumer) handleCDCEvent(event cdc.Event[models.MessageEnvelope]) er
 		defer cancel()
 
 		p.logger.Debugw("processing new order", "offset", event.Offset, "order", order.Meta)
-		return p.orderProcessor.ProcessOrder(ctx, order)
+		return p.orderProcessor.ProcessOrder(ctx, *event.FullDocument, order)
 	default:
 		p.logger.Infow("unexpected order event type", "order", event.FullDocument.Meta, "offset", event.Offset)
 	}

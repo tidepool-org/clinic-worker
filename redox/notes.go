@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	clinics "github.com/tidepool-org/clinic/client"
-	"github.com/tidepool-org/clinic/redox/models"
+	models "github.com/tidepool-org/clinic/redox_models"
 	"io"
 	"time"
 
@@ -41,6 +41,84 @@ func NewNotes() models.NewNotes {
 func SetNotesPatientFromOrder(order models.NewOrder, notes *models.NewNotes) {
 	notes.Patient.Identifiers = order.Patient.Identifiers
 	notes.Patient.Demographics = order.Patient.Demographics
+}
+
+func SetVisitNumberInNotes(order models.NewOrder, notes *models.NewNotes) {
+	if order.Visit != nil && order.Visit.VisitNumber != nil && *order.Visit.VisitNumber != "" {
+		visit := struct {
+			AccountNumber   *string `json:"AccountNumber"`
+			AdditionalStaff *[]struct {
+				Address *struct {
+					City          *string `json:"City"`
+					Country       *string `json:"Country"`
+					County        *string `json:"County"`
+					State         *string `json:"State"`
+					StreetAddress *string `json:"StreetAddress"`
+					ZIP           *string `json:"ZIP"`
+				} `json:"Address,omitempty"`
+				Credentials    *[]interface{} `json:"Credentials,omitempty"`
+				EmailAddresses *[]interface{} `json:"EmailAddresses,omitempty"`
+				FirstName      *string        `json:"FirstName"`
+				ID             *string        `json:"ID"`
+				IDType         *string        `json:"IDType"`
+				LastName       *string        `json:"LastName"`
+				Location       *struct {
+					Department            *string `json:"Department"`
+					DepartmentIdentifiers *[]struct {
+						ID     *string `json:"ID"`
+						IDType *string `json:"IDType"`
+					} `json:"DepartmentIdentifiers,omitempty"`
+					Facility            *string `json:"Facility"`
+					FacilityIdentifiers *[]struct {
+						ID     *string `json:"ID"`
+						IDType *string `json:"IDType"`
+					} `json:"FacilityIdentifiers,omitempty"`
+					Room *string `json:"Room"`
+					Type *string `json:"Type"`
+				} `json:"Location,omitempty"`
+				PhoneNumber *struct {
+					Office *string `json:"Office"`
+				} `json:"PhoneNumber,omitempty"`
+				Role *struct {
+					Code        *string `json:"Code"`
+					Codeset     *string `json:"Codeset"`
+					Description *string `json:"Description"`
+				} `json:"Role,omitempty"`
+			} `json:"AdditionalStaff,omitempty"`
+			Location *struct {
+				Bed                   *string `json:"Bed"`
+				Department            *string `json:"Department"`
+				DepartmentIdentifiers *[]struct {
+					ID     *string `json:"ID"`
+					IDType *string `json:"IDType"`
+				} `json:"DepartmentIdentifiers,omitempty"`
+				Facility            *string `json:"Facility"`
+				FacilityIdentifiers *[]struct {
+					ID     *string `json:"ID"`
+					IDType *string `json:"IDType"`
+				} `json:"FacilityIdentifiers,omitempty"`
+				Room *string `json:"Room"`
+				Type *string `json:"Type"`
+			} `json:"Location,omitempty"`
+			PatientClass  *string `json:"PatientClass"`
+			VisitDateTime *string `json:"VisitDateTime"`
+			VisitNumber   *string `json:"VisitNumber"`
+		}{
+			VisitNumber: order.Visit.VisitNumber,
+		}
+
+		notes.Visit = &visit
+	}
+}
+
+func SetOrderIdInNotes(order models.NewOrder, notes *models.NewNotes) {
+	orders := []struct {
+		ID   *string `json:"ID"`
+		Name *string `json:"Name"`
+	}{{
+		ID: &order.Order.ID,
+	}}
+	notes.Orders = &orders
 }
 
 func SetReportMetadata(clinic clinics.Clinic, patient clinics.Patient, notes *models.NewNotes) {

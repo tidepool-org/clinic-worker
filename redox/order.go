@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	clinics "github.com/tidepool-org/clinic/client"
-	"github.com/tidepool-org/clinic/redox/models"
+	models "github.com/tidepool-org/clinic/redox_models"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
@@ -21,10 +21,10 @@ const (
 )
 
 type OrderProcessor interface {
-	ProcessOrder(ctx context.Context, order models.NewOrder) error
+	ProcessOrder(ctx context.Context, envelope models.MessageEnvelope, order models.NewOrder) error
 }
 
-type OrderHandler = func(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error
+type OrderHandler = func(ctx context.Context, envelope models.MessageEnvelope, order models.NewOrder, match clinics.EHRMatchResponse) error
 
 type orderProcessor struct {
 	logger *zap.SugaredLogger
@@ -43,17 +43,17 @@ func NewOrderProcessor(clinics clinics.ClientWithResponsesInterface, redox Clien
 	}
 }
 
-func (o *orderProcessor) ProcessOrder(ctx context.Context, order models.NewOrder) error {
-	criteria, err := GetMatchingCriteria(order)
-	if err != nil {
-		// Return nil because the retrieval of the matching was unsuccessful and retrying will not help
-		o.logger.Warnw("invalid matching criteria", "order", order.Meta, zap.Error(err))
-		return nil
+func (o *orderProcessor) ProcessOrder(ctx context.Context, envelope models.MessageEnvelope, order models.NewOrder) error {
+	matchRequest := clinics.EHRMatchRequest{
+		MessageRef: &clinics.EHRMatchMessageRef{
+			DocumentId: envelope.Id.Hex(),
+			DataModel:  clinics.EHRMatchMessageRefDataModel(order.Meta.DataModel),
+			EventType:  clinics.EHRMatchMessageRefEventType(order.Meta.EventType),
+		},
 	}
-
-	response, err := o.clinics.MatchClinicAndPatientWithResponse(ctx, *criteria)
+	response, err := o.clinics.MatchClinicAndPatientWithResponse(ctx, matchRequest)
 	if err != nil {
-		o.logger.Warnw("unable to match clinic and patient", "order", order.Meta, zap.Error(err))
+		o.logger.Warnw("unable to match", "order", order.Meta, zap.Error(err))
 		// Return an error so we can retry the request
 		return err
 	}
@@ -70,11 +70,10 @@ func (o *orderProcessor) ProcessOrder(ctx context.Context, order models.NewOrder
 	}
 
 	match := response.JSON200
-
 	procedureCode := GetProcedureCode(order)
 	handler := o.GetHandlerForProcedure(procedureCode, match.Settings)
 
-	return handler(ctx, order, *match)
+	return handler(ctx, envelope, order, *match)
 }
 
 func GetProcedureCode(order models.NewOrder) string {
@@ -87,14 +86,14 @@ func GetProcedureCode(order models.NewOrder) string {
 
 func (o *orderProcessor) GetHandlerForProcedure(procedureCode string, settings clinics.EHRSettings) OrderHandler {
 	switch procedureCode {
-	case settings.ProcedureCodes.SummaryReportsSubscription:
-		return o.handleSummaryReportsSubscription
+	case settings.ProcedureCodes.EnableSummaryReports:
+		return o.handleEnableSummaryReports
 	default:
 		return o.handleUnknownProcedure
 	}
 }
 
-func (o *orderProcessor) handleSummaryReportsSubscription(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
+func (o *orderProcessor) handleEnableSummaryReports(ctx context.Context, envelope models.MessageEnvelope, order models.NewOrder, match clinics.EHRMatchResponse) error {
 	if match.Patients == nil || len(*match.Patients) == 0 {
 		return o.handleNoMatchingPatients(ctx, order, match)
 	} else if len(*match.Patients) > 1 {
@@ -135,11 +134,7 @@ func (o *orderProcessor) handleSummaryReportsSubscription(ctx context.Context, o
 
 func (o *orderProcessor) createSummaryStatisticsFlowsheet(order models.NewOrder, patient clinics.Patient, match clinics.EHRMatchResponse) models.NewFlowsheet {
 	source := o.client.GetSource()
-	destinationId := match.Settings.DestinationIds.Default
-	if match.Settings.DestinationIds.Flowsheet != nil && *match.Settings.DestinationIds.Flowsheet != "" {
-		destinationId = *match.Settings.DestinationIds.Flowsheet
-	}
-
+	destinationId := match.Settings.DestinationIds.Flowsheet
 	destinations := []struct {
 		ID   *string `json:"ID"`
 		Name *string `json:"Name"`
@@ -153,6 +148,7 @@ func (o *orderProcessor) createSummaryStatisticsFlowsheet(order models.NewOrder,
 	flowsheet.Patient.Identifiers = order.Patient.Identifiers
 	flowsheet.Patient.Demographics = order.Patient.Demographics
 
+	SetVisitNumberInFlowsheet(order, &flowsheet)
 	PopulateSummaryStatistics(patient, match.Clinic, &flowsheet)
 
 	return flowsheet
@@ -165,10 +161,7 @@ func (o *orderProcessor) createReportNote(ctx context.Context, order models.NewO
 	}
 
 	source := o.client.GetSource()
-	destinationId := match.Settings.DestinationIds.Default
-	if match.Settings.DestinationIds.Notes != nil && *match.Settings.DestinationIds.Notes != "" {
-		destinationId = *match.Settings.DestinationIds.Notes
-	}
+	destinationId := match.Settings.DestinationIds.Notes
 
 	destinations := []struct {
 		ID   *string `json:"ID"`
@@ -182,6 +175,8 @@ func (o *orderProcessor) createReportNote(ctx context.Context, order models.NewO
 	notes.Meta.Destinations = &destinations
 
 	SetNotesPatientFromOrder(order, &notes)
+	SetOrderIdInNotes(order, &notes)
+	SetVisitNumberInNotes(order, &notes)
 	SetReportMetadata(match.Clinic, patient, &notes)
 
 	reportParameters := ReportParameters{
@@ -230,7 +225,7 @@ func (o *orderProcessor) createReportNote(ctx context.Context, order models.NewO
 	return &notes, nil
 }
 
-func (o *orderProcessor) handleUnknownProcedure(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
+func (o *orderProcessor) handleUnknownProcedure(ctx context.Context, envelope models.MessageEnvelope, order models.NewOrder, match clinics.EHRMatchResponse) error {
 	o.logger.Infow("Unknown procedure code. Ignoring order.", "order", order.Meta, "settings", match.Settings)
 	return nil
 }
@@ -262,11 +257,7 @@ func (o *orderProcessor) handleSuccessfulPatientMatch(ctx context.Context, order
 func (o *orderProcessor) sendMatchingResultsNotification(ctx context.Context, matchingResult MatchingResult, order models.NewOrder, match clinics.EHRMatchResponse) error {
 	o.logger.Infow("Sending results notification", "order", order.Meta)
 	source := o.client.GetSource()
-	destinationId := match.Settings.DestinationIds.Default
-	if match.Settings.DestinationIds.Results != nil && *match.Settings.DestinationIds.Results != "" {
-		destinationId = *match.Settings.DestinationIds.Results
-	}
-
+	destinationId := match.Settings.DestinationIds.Results
 	destinations := []struct {
 		ID   *string `json:"ID"`
 		Name *string `json:"Name"`
@@ -283,57 +274,6 @@ func (o *orderProcessor) sendMatchingResultsNotification(ctx context.Context, ma
 	if err := o.client.Send(ctx, results); err != nil {
 		// Return an error so we can retry the request
 		return fmt.Errorf("unable to send results: %w", err)
-	}
-
-	return nil
-}
-
-func GetMatchingCriteria(order models.NewOrder) (*clinics.MatchClinicAndPatientJSONRequestBody, error) {
-	if order.Meta.Source == nil || order.Meta.Source.ID == nil {
-		return nil, errors.New("missing source ID")
-	}
-
-	criteria := clinics.MatchClinicAndPatientJSONRequestBody{
-		Clinic: clinics.EHRMatchClinicRequest{
-			SourceId: *order.Meta.Source.ID,
-		},
-		Patient: &clinics.EHRMatchPatientRequest{},
-	}
-	if order.Order.OrderingFacility != nil && order.Order.OrderingFacility.Name != nil {
-		criteria.Clinic.FacilityName = order.Order.OrderingFacility.Name
-	}
-
-	mrn := GetMRNFromOrder(order)
-	if mrn == nil {
-		return nil, errors.New("unable to find MRN in order")
-	}
-	if order.Patient.Demographics == nil {
-		return nil, errors.New("missing patient demographics")
-	}
-	if order.Patient.Demographics.DOB == nil || *order.Patient.Demographics.DOB == "" {
-		return nil, errors.New("missing patient date of birth")
-	}
-	if order.Patient.Demographics.FirstName == nil || *order.Patient.Demographics.FirstName == "" {
-		return nil, errors.New("missing patient first name")
-	}
-	if order.Patient.Demographics.LastName == nil || *order.Patient.Demographics.LastName == "" {
-		return nil, errors.New("missing patient last name")
-	}
-
-	criteria.Patient.Mrn = *mrn
-	criteria.Patient.DateOfBirth = *order.Patient.Demographics.DOB
-	criteria.Patient.FirstName = order.Patient.Demographics.FirstName
-	criteria.Patient.LastName = order.Patient.Demographics.LastName
-	criteria.Patient.MiddleName = order.Patient.Demographics.MiddleName
-
-	return &criteria, nil
-}
-
-func GetMRNFromOrder(order models.NewOrder) *string {
-	for _, identifier := range order.Patient.Identifiers {
-		if identifier.IDType == MrnIdentifierType {
-			return &identifier.ID
-		}
 	}
 
 	return nil
