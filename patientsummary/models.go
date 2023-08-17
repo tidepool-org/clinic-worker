@@ -139,7 +139,10 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{}
 	if *p.FullDocument.Type == "cgm" {
-		patientUpdate.CgmStats = &clinics.PatientCGMStats{}
+		patientUpdate.CgmStats = &clinics.PatientCGMStats{
+			Periods:       &clinics.PatientCGMPeriods{},
+			OffsetPeriods: &clinics.PatientCGMPeriods{},
+		}
 
 		patientUpdate.CgmStats.Dates = &clinics.PatientSummaryDates{
 			LastUpdatedDate: lastUpdatedDate,
@@ -166,7 +169,10 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 		}
 
 	} else if *p.FullDocument.Type == "bgm" {
-		patientUpdate.BgmStats = &clinics.PatientBGMStats{}
+		patientUpdate.BgmStats = &clinics.PatientBGMStats{
+			Periods:       &clinics.PatientBGMPeriods{},
+			OffsetPeriods: &clinics.PatientBGMPeriods{},
+		}
 
 		patientUpdate.BgmStats.Dates = &clinics.PatientSummaryDates{
 			LastUpdatedDate: lastUpdatedDate,
