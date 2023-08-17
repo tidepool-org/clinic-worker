@@ -10,12 +10,12 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.16.0
-	github.com/tidepool-org/clinic/client v0.0.0-20230814221803-0d5fa4af4e27
-	github.com/tidepool-org/go-common v0.10.1-0.20230814225310-af3a51116b86
-	github.com/tidepool-org/hydrophone/client v0.0.0-20221219223301-92bd47a8a11c
+	github.com/onsi/gomega v1.27.10
+	github.com/tidepool-org/clinic/client v0.0.0-20230817175855-3865b6fc7fca
+	github.com/tidepool-org/go-common v0.10.1-0.20230817174512-2e38ce659a65
+	github.com/tidepool-org/hydrophone/client v0.0.0-20230601114627-4b6ca511841d
 	go.uber.org/fx v1.20.0
-	go.uber.org/ratelimit v0.2.0
+	go.uber.org/ratelimit v0.3.0
 	go.uber.org/zap v1.25.0
 	golang.org/x/sync v0.3.0
 )
@@ -23,6 +23,7 @@ require (
 require (
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
+	github.com/benbjohnson/clock v1.3.5 // indirect
 	github.com/bytedance/sonic v1.10.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
@@ -37,7 +38,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.15.0 // indirect
+	github.com/go-playground/validator/v10 v10.15.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
