@@ -9,7 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"strconv"
 )
 
 // MessageCDCConsumer is kafka consumer for redox message CDC events
@@ -94,11 +93,7 @@ func (m *MessageCDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 }
 
 func (m *MessageCDCConsumer) unmarshalEvent(value []byte, event *cdc.Event[models.MessageEnvelope]) error {
-	message, err := strconv.Unquote(string(value))
-	if err != nil {
-		return err
-	}
-	return bson.UnmarshalExtJSON([]byte(message), true, event)
+	return bson.UnmarshalExtJSON(value, true, event)
 }
 
 func (m *MessageCDCConsumer) handleCDCEvent(event cdc.Event[models.MessageEnvelope]) error {
