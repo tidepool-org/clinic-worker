@@ -47,6 +47,23 @@ var _ = Describe("Notes", func() {
 			})
 		})
 
+		Describe("SetVisitNumberInNotes", func() {
+			It("sets the visit number from the order", func() {
+				redox.SetVisitNumberInNotes(order, &notes)
+				Expect(notes.Visit).ToNot(BeNil())
+				Expect(notes.Visit.VisitNumber).To(PointTo(Equal(*order.Visit.VisitNumber)))
+			})
+		})
+
+		Describe("SetOrderIdInNotes", func() {
+			It("sets the order id from the order", func() {
+				redox.SetOrderIdInNotes(order, &notes)
+				Expect(notes.Orders).ToNot(BeNil())
+				Expect(*notes.Orders).To(HaveLen(1))
+				Expect((*notes.Orders)[0].ID).To(PointTo(Equal(order.Order.ID)))
+			})
+		})
+
 		Describe("SetReportMetadata", func() {
 			It("sets the correct metadata", func() {
 				clinciId := "clinic12345"

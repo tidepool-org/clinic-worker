@@ -211,6 +211,34 @@ func CreateObservation(code, value, valueType string, units *string, description
 	return
 }
 
+func SetVisitNumberInFlowsheet(order models.NewOrder, flowsheet *models.NewFlowsheet) {
+	if order.Visit != nil && order.Visit.VisitNumber != nil && *order.Visit.VisitNumber != "" {
+		visit := struct {
+			AccountNumber *string `json:"AccountNumber"`
+			Location      *struct {
+				Bed                   *string `json:"Bed"`
+				Department            *string `json:"Department"`
+				DepartmentIdentifiers *[]struct {
+					ID     *string `json:"ID"`
+					IDType *string `json:"IDType"`
+				} `json:"DepartmentIdentifiers,omitempty"`
+				Facility            *string `json:"Facility"`
+				FacilityIdentifiers *[]struct {
+					ID     *string `json:"ID"`
+					IDType *string `json:"IDType"`
+				} `json:"FacilityIdentifiers,omitempty"`
+				Room *string `json:"Room"`
+				Type *string `json:"Type"`
+			} `json:"Location,omitempty"`
+			VisitDateTime *string `json:"VisitDateTime"`
+			VisitNumber   *string `json:"VisitNumber"`
+		}{
+			VisitNumber: order.Visit.VisitNumber,
+		}
+		flowsheet.Visit = &visit
+	}
+}
+
 type PeriodBounds struct {
 	Start time.Time
 	End   time.Time

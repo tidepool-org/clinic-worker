@@ -148,6 +148,7 @@ func (o *orderProcessor) createSummaryStatisticsFlowsheet(order models.NewOrder,
 	flowsheet.Patient.Identifiers = order.Patient.Identifiers
 	flowsheet.Patient.Demographics = order.Patient.Demographics
 
+	SetVisitNumberInFlowsheet(order, &flowsheet)
 	PopulateSummaryStatistics(patient, match.Clinic, &flowsheet)
 
 	return flowsheet
@@ -174,6 +175,8 @@ func (o *orderProcessor) createReportNote(ctx context.Context, order models.NewO
 	notes.Meta.Destinations = &destinations
 
 	SetNotesPatientFromOrder(order, &notes)
+	SetOrderIdInNotes(order, &notes)
+	SetVisitNumberInNotes(order, &notes)
 	SetReportMetadata(match.Clinic, patient, &notes)
 
 	reportParameters := ReportParameters{

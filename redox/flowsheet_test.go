@@ -8,6 +8,7 @@ import (
 	"github.com/onsi/gomega/types"
 	"github.com/tidepool-org/clinic-worker/test"
 	api "github.com/tidepool-org/clinic/client"
+	models "github.com/tidepool-org/clinic/redox_models"
 
 	//. "github.com/onsi/gomega/gstruct"
 	"github.com/tidepool-org/clinic-worker/redox"
@@ -25,6 +26,24 @@ var _ = Describe("Flowsheet", func() {
 			eventDateTime, err := time.Parse(time.RFC3339, *flowsheet.Meta.EventDateTime)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(eventDateTime).To(BeTemporally("~", time.Now(), 3*time.Second))
+		})
+	})
+
+	Describe("SetVisitNumberInFlowsheet", func() {
+		var flowsheet models.NewFlowsheet
+		var order models.NewOrder
+
+		BeforeEach(func() {
+			flowsheet = redox.NewFlowsheet()
+			fixture, err := test.LoadFixture("test/fixtures/neworder.json")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(json.Unmarshal(fixture, &order)).To(Succeed())
+		})
+
+		It("sets the visit number from the order", func() {
+			redox.SetVisitNumberInFlowsheet(order, &flowsheet)
+			Expect(flowsheet.Visit).ToNot(BeNil())
+			Expect(flowsheet.Visit.VisitNumber).To(PointTo(Equal(*order.Visit.VisitNumber)))
 		})
 	})
 
@@ -117,6 +136,7 @@ var _ = Describe("Flowsheet", func() {
 				))
 			})
 		})
+
 	})
 })
 
