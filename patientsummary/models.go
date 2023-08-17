@@ -139,10 +139,7 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{}
 	if *p.FullDocument.Type == "cgm" {
-		patientUpdate.CgmStats = &clinics.PatientCGMStats{
-			Periods:       &clinics.PatientCGMPeriods{},
-			OffsetPeriods: &clinics.PatientCGMPeriods{},
-		}
+		patientUpdate.CgmStats = &clinics.PatientCGMStats{}
 
 		patientUpdate.CgmStats.Dates = &clinics.PatientSummaryDates{
 			LastUpdatedDate: lastUpdatedDate,
@@ -169,10 +166,7 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 		}
 
 	} else if *p.FullDocument.Type == "bgm" {
-		patientUpdate.BgmStats = &clinics.PatientBGMStats{
-			Periods:       &clinics.PatientBGMPeriods{},
-			OffsetPeriods: &clinics.PatientBGMPeriods{},
-		}
+		patientUpdate.BgmStats = &clinics.PatientBGMStats{}
 
 		patientUpdate.BgmStats.Dates = &clinics.PatientSummaryDates{
 			LastUpdatedDate: lastUpdatedDate,
@@ -206,12 +200,14 @@ func (s CGMStats) ExportPeriods(destStatsInt interface{}) {
 	destStats := destStatsInt.(*clinics.PatientCGMStats)
 
 	if s.Periods != nil {
+		destStats.Periods = &clinics.PatientCGMPeriods{}
 		for k, source := range *s.Periods {
 			(*destStats.Periods)[k] = clinics.PatientCGMPeriod(source)
 		}
 	}
 
 	if s.OffsetPeriods != nil {
+		destStats.OffsetPeriods = &clinics.PatientCGMPeriods{}
 		for k, source := range *s.OffsetPeriods {
 			(*destStats.OffsetPeriods)[k] = clinics.PatientCGMPeriod(source)
 		}
@@ -222,12 +218,14 @@ func (s BGMStats) ExportPeriods(destStatsInt interface{}) {
 	destStats := destStatsInt.(*clinics.PatientBGMStats)
 
 	if s.Periods != nil {
+		destStats.Periods = &clinics.PatientBGMPeriods{}
 		for k, source := range *s.Periods {
 			(*destStats.Periods)[k] = clinics.PatientBGMPeriod(source)
 		}
 	}
 
 	if s.OffsetPeriods != nil {
+		destStats.OffsetPeriods = &clinics.PatientBGMPeriods{}
 		for k, source := range *s.OffsetPeriods {
 			(*destStats.OffsetPeriods)[k] = clinics.PatientBGMPeriod(source)
 		}
