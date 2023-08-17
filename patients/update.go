@@ -1,6 +1,7 @@
 package patients
 
 import (
+	"fmt"
 	clinics "github.com/tidepool-org/clinic/client"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"github.com/tidepool-org/go-common/errors"
@@ -82,12 +83,14 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 
 			if cgmStats.Periods != nil {
 				for k, source := range *cgmStats.Periods {
+					fmt.Println("converting cgm period:", k)
 					(*patientUpdate.CgmStats.Periods)[k] = clinics.PatientCGMPeriod(source)
 				}
 			}
 
 			if cgmStats.OffsetPeriods != nil {
 				for k, source := range *cgmStats.OffsetPeriods {
+					fmt.Println("converting cgm offsetperiod:", k)
 					(*patientUpdate.CgmStats.OffsetPeriods)[k] = clinics.PatientCGMPeriod(source)
 				}
 			}
@@ -111,12 +114,14 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 
 			if bgmStats.Periods != nil {
 				for k, source := range *bgmStats.Periods {
+					fmt.Println("converting bgm period:", k)
 					(*patientUpdate.BgmStats.Periods)[k] = clinics.PatientBGMPeriod(source)
 				}
 			}
 
 			if bgmStats.OffsetPeriods != nil {
 				for k, source := range *bgmStats.OffsetPeriods {
+					fmt.Println("converting bgm offsetperiod:", k)
 					(*patientUpdate.BgmStats.OffsetPeriods)[k] = clinics.PatientBGMPeriod(source)
 				}
 			}
