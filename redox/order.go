@@ -19,6 +19,7 @@ const (
 
 type NewOrderProcessor interface {
 	ProcessOrder(ctx context.Context, envelope models.MessageEnvelope, order models.NewOrder) error
+	SendSummaryAndReport(ctx context.Context, patient clinics.Patient, order models.NewOrder, match clinics.EHRMatchResponse) error
 }
 
 type newOrderProcessor struct {
@@ -96,10 +97,10 @@ func (o *newOrderProcessor) handleEnableSummaryReports(ctx context.Context, enve
 		return err
 	}
 
-	return o.sendSummaryAndReport(ctx, patient, order, match)
+	return o.SendSummaryAndReport(ctx, patient, order, match)
 }
 
-func (o *newOrderProcessor) sendSummaryAndReport(ctx context.Context, patient clinics.Patient, order models.NewOrder, match clinics.EHRMatchResponse) error {
+func (o *newOrderProcessor) SendSummaryAndReport(ctx context.Context, patient clinics.Patient, order models.NewOrder, match clinics.EHRMatchResponse) error {
 	flowsheet := o.createSummaryStatisticsFlowsheet(order, patient, match)
 	report, err := o.createReportNote(ctx, order, patient, match)
 	if err != nil {
@@ -274,25 +275,29 @@ func (o *newOrderProcessor) sendMatchingResultsNotification(ctx context.Context,
 }
 
 type ScheduledSummaryAndReport struct {
-	UserId           string                 `json:"userId" bson:"userId"`
-	ClinicId         primitive.ObjectID     `json:"clinicId" bson:"clinicId"`
-	LastMatchedOrder models.MessageEnvelope `json:"lastMatchedOrder" bson:"lastMatchedOrder"`
-	DecodedOrder     models.NewOrder
+	UserId           string                 `json:"userId"`
+	ClinicId         primitive.ObjectID     `json:"clinicId"`
+	LastMatchedOrder models.MessageEnvelope `json:"lastMatchedOrder"`
+	DecodedOrder     models.NewOrder        `json:"-"`
 }
 
-type ScheduledSummaryAndReportProcessor struct {
+type ScheduledSummaryAndReportProcessor interface {
+	ProcessOrder(ctx context.Context, scheduled ScheduledSummaryAndReport) error
+}
+
+type scheduledSummaryAndReportProcessor struct {
 	clinics        clinics.ClientWithResponsesInterface
-	orderProcessor newOrderProcessor
+	orderProcessor NewOrderProcessor
 	logger         *zap.SugaredLogger
 }
 
-func NewScheduledSummaryAndReportProcessor(orderProcessor newOrderProcessor) *ScheduledSummaryAndReportProcessor {
-	return &ScheduledSummaryAndReportProcessor{
+func NewScheduledSummaryAndReportProcessor(orderProcessor NewOrderProcessor) ScheduledSummaryAndReportProcessor {
+	return &scheduledSummaryAndReportProcessor{
 		orderProcessor: orderProcessor,
 	}
 }
 
-func (r *ScheduledSummaryAndReportProcessor) ProcessOrder(ctx context.Context, scheduled ScheduledSummaryAndReport) error {
+func (r *scheduledSummaryAndReportProcessor) ProcessOrder(ctx context.Context, scheduled ScheduledSummaryAndReport) error {
 	clinicId := scheduled.ClinicId.Hex()
 	patient, err := r.getPatient(ctx, clinicId, scheduled.UserId)
 	if err != nil {
@@ -330,10 +335,10 @@ func (r *ScheduledSummaryAndReportProcessor) ProcessOrder(ctx context.Context, s
 		Settings: *settings,
 	}
 
-	return r.orderProcessor.sendSummaryAndReport(ctx, *patient, scheduled.DecodedOrder, match)
+	return r.orderProcessor.SendSummaryAndReport(ctx, *patient, scheduled.DecodedOrder, match)
 }
 
-func (r *ScheduledSummaryAndReportProcessor) getPatient(ctx context.Context, clinicId, userId string) (*clinics.Patient, error) {
+func (r *scheduledSummaryAndReportProcessor) getPatient(ctx context.Context, clinicId, userId string) (*clinics.Patient, error) {
 	resp, err := r.clinics.GetPatientWithResponse(ctx, clinicId, userId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get patient: %w", err)
@@ -347,7 +352,7 @@ func (r *ScheduledSummaryAndReportProcessor) getPatient(ctx context.Context, cli
 	return resp.JSON200, nil
 }
 
-func (r *ScheduledSummaryAndReportProcessor) getClinic(ctx context.Context, clinicId string) (*clinics.Clinic, error) {
+func (r *scheduledSummaryAndReportProcessor) getClinic(ctx context.Context, clinicId string) (*clinics.Clinic, error) {
 	resp, err := r.clinics.GetClinicWithResponse(ctx, clinicId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get clinic: %w", err)
@@ -361,7 +366,7 @@ func (r *ScheduledSummaryAndReportProcessor) getClinic(ctx context.Context, clin
 	return resp.JSON200, nil
 }
 
-func (r *ScheduledSummaryAndReportProcessor) getClinicSettings(ctx context.Context, clinicId string) (*clinics.EHRSettings, error) {
+func (r *scheduledSummaryAndReportProcessor) getClinicSettings(ctx context.Context, clinicId string) (*clinics.EHRSettings, error) {
 	resp, err := r.clinics.GetEHRSettingsWithResponse(ctx, clinicId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get clinic ehr settings: %w", err)
