@@ -291,9 +291,11 @@ type scheduledSummaryAndReportProcessor struct {
 	logger         *zap.SugaredLogger
 }
 
-func NewScheduledSummaryAndReportProcessor(orderProcessor NewOrderProcessor) ScheduledSummaryAndReportProcessor {
+func NewScheduledSummaryAndReportProcessor(orderProcessor NewOrderProcessor, clinics clinics.ClientWithResponsesInterface, logger *zap.SugaredLogger) ScheduledSummaryAndReportProcessor {
 	return &scheduledSummaryAndReportProcessor{
+		clinics:        clinics,
 		orderProcessor: orderProcessor,
+		logger:         logger,
 	}
 }
 
