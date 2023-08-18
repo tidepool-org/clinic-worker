@@ -112,7 +112,5 @@ var _ = Describe("Notes", func() {
 			Expect(notes.Note.FileType).To(PointTo(Equal(fileType)))
 			Expect(notes.Note.ContentType).To(Equal("Plain Text"))
 		})
-
 	})
-
 })
