@@ -4,17 +4,13 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
-	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/redox"
 	"github.com/tidepool-org/clinic-worker/test"
 	api "github.com/tidepool-org/clinic/client"
 	models "github.com/tidepool-org/clinic/redox_models"
-	"go.mongodb.org/mongo-driver/bson"
-	"strconv"
 	"time"
 )
 
@@ -116,21 +112,5 @@ var _ = Describe("Notes", func() {
 			Expect(notes.Note.FileType).To(PointTo(Equal(fileType)))
 			Expect(notes.Note.ContentType).To(Equal("Plain Text"))
 		})
-
 	})
-
-	Describe("unmarshal", func() {
-		It("works", func() {
-			fixture, err := test.LoadFixture("test/fixtures/scheduledreportcdc.txt")
-			Expect(err).ToNot(HaveOccurred())
-			message, err := strconv.Unquote(string(fixture))
-			Expect(err).ToNot(HaveOccurred())
-			fmt.Println(message)
-			event := cdc.Event[redox.ScheduledSummaryAndReport]{}
-			err = bson.UnmarshalExtJSON([]byte(message), true, &event)
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-	})
-
 })

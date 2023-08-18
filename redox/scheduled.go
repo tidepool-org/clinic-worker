@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"strconv"
 )
 
 // ScheduledSummaryAndReportsCDCConsumer is kafka consumer for scheduled summary and reports CDC events
@@ -93,7 +94,11 @@ func (s *ScheduledSummaryAndReportsCDCConsumer) handleMessage(cm *sarama.Consume
 }
 
 func (s *ScheduledSummaryAndReportsCDCConsumer) unmarshalEvent(value []byte, event *cdc.Event[ScheduledSummaryAndReport]) error {
-	return bson.UnmarshalExtJSON(value, true, event)
+	message, err := strconv.Unquote(string(value))
+	if err != nil {
+		return err
+	}
+	return bson.UnmarshalExtJSON([]byte(message), true, event)
 }
 
 func (s *ScheduledSummaryAndReportsCDCConsumer) handleCDCEvent(event cdc.Event[ScheduledSummaryAndReport]) error {
