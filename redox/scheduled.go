@@ -80,6 +80,7 @@ func (s *ScheduledSummaryAndReportsCDCConsumer) handleMessage(cm *sarama.Consume
 
 	if err := s.unmarshalEvent(cm.Value, &event); err != nil {
 		s.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
+		s.logger.Warnw(string(cm.Value))
 		return err
 	}
 
