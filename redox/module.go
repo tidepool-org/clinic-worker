@@ -2,22 +2,19 @@ package redox
 
 import (
 	"github.com/kelseyhightower/envconfig"
+	"github.com/tidepool-org/clinic-worker/report"
 	"go.uber.org/fx"
 	"time"
 )
 
-const (
-	redoxTopic                      = "clinic.redox"
-	scheduledSummaryAndReportsTopic = "clinic.scheduledSummaryAndReportsOrders"
-	defaultTimeout                  = 30 * time.Second
-)
+const ()
 
 var Module = fx.Provide(
-	NewModuleConfig,
+	NewConfig,
 	NewClient,
 	NewNewOrderProcessor,
 	NewScheduledSummaryAndReportProcessor,
-	NewReportGenerator,
+	report.NewReportGenerator,
 	fx.Annotated{
 		Group:  "consumers",
 		Target: CreateRedoxMessageConsumerGroup,
@@ -28,11 +25,15 @@ var Module = fx.Provide(
 	},
 )
 
+const (
+	defaultTimeout = 60 * time.Second
+)
+
 type ModuleConfig struct {
 	Enabled bool `envconfig:"TIDEPOOL_REDOX_ENABLED" default:"false"`
 }
 
-func NewModuleConfig() (ModuleConfig, error) {
+func NewConfig() (ModuleConfig, error) {
 	config := ModuleConfig{}
 	err := envconfig.Process("", &config)
 	return config, err

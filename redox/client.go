@@ -25,6 +25,7 @@ type Client interface {
 		Name *string `json:"Name"`
 	})
 	Send(ctx context.Context, payload interface{}) error
+	IsUploadFileEnabled() bool
 	UploadFile(ctx context.Context, fileName string, reader io.Reader) (*UploadResult, error)
 }
 
@@ -39,21 +40,22 @@ type client struct {
 }
 
 type ClientConfig struct {
-	ClientId      string `envconfig:"TIDEPOOL_REDOX_CLIENT_ID" required:"true"`
-	KeyId         string `envconfig:"TIDEPOOL_REDOX_KEY_ID" required:"true"`
-	PrivateKeyPem string `envconfig:"TIDEPOOL_REDOX_PRIVATE_KEY" required:"true"`
-	SourceId      string `envconfig:"TIDEPOOL_REDOX_SOURCE_ID" required:"true"`
-	SourceName    string `envconfig:"TIDEPOOL_REDOX_SOURCE_NAME" required:"true"`
-	TestMode      bool   `envconfig:"TIDEPOOL_REDOX_TEST_MODE"`
+	ClientId          string `envconfig:"TIDEPOOL_REDOX_CLIENT_ID" required:"true"`
+	KeyId             string `envconfig:"TIDEPOOL_REDOX_KEY_ID" required:"true"`
+	PrivateKeyPem     string `envconfig:"TIDEPOOL_REDOX_PRIVATE_KEY" required:"true"`
+	SourceId          string `envconfig:"TIDEPOOL_REDOX_SOURCE_ID" required:"true"`
+	SourceName        string `envconfig:"TIDEPOOL_REDOX_SOURCE_NAME" required:"true"`
+	TestMode          bool   `envconfig:"TIDEPOOL_REDOX_TEST_MODE"`
+	UploadFileEnabled bool   `envconfig:"TIDEPOOL_REDOX_UPLOAD_FILE_ENABLED" default:"false"`
 }
 
-func NewClient(moduleConfig ModuleConfig, logger *zap.SugaredLogger) (Client, error) {
+func NewClient(config ModuleConfig, logger *zap.SugaredLogger) (Client, error) {
 	client := &client{
 		logger: logger,
 		mu:     &sync.RWMutex{},
 	}
 
-	if moduleConfig.Enabled {
+	if config.Enabled {
 		config := ClientConfig{}
 		err := envconfig.Process("", &config)
 		if err != nil {
@@ -101,6 +103,10 @@ func (c *client) Send(ctx context.Context, payload interface{}) error {
 	}
 
 	return nil
+}
+
+func (c *client) IsUploadFileEnabled() bool {
+	return c.config.UploadFileEnabled
 }
 
 func (c *client) UploadFile(ctx context.Context, fileName string, reader io.Reader) (*UploadResult, error) {

@@ -10,6 +10,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	scheduledSummaryAndReportsTopic = "clinic.scheduledSummaryAndReportsOrders"
+)
+
 // ScheduledSummaryAndReportsCDCConsumer is kafka consumer for scheduled summary and reports CDC events
 type ScheduledSummaryAndReportsCDCConsumer struct {
 	logger *zap.SugaredLogger
@@ -80,7 +84,6 @@ func (s *ScheduledSummaryAndReportsCDCConsumer) handleMessage(cm *sarama.Consume
 
 	if err := s.unmarshalEvent(cm.Value, &event); err != nil {
 		s.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
-		s.logger.Warnw(string(cm.Value))
 		return err
 	}
 
@@ -93,10 +96,6 @@ func (s *ScheduledSummaryAndReportsCDCConsumer) handleMessage(cm *sarama.Consume
 }
 
 func (s *ScheduledSummaryAndReportsCDCConsumer) unmarshalEvent(value []byte, event *cdc.Event[ScheduledSummaryAndReport]) error {
-	//message, err := strconv.Unquote(string(value))
-	//if err != nil {
-	//	return err
-	//}
 	return bson.UnmarshalExtJSON(value, true, event)
 }
 

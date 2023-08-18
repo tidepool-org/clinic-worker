@@ -1,4 +1,4 @@
-package redox
+package report
 
 import (
 	"bytes"
@@ -25,8 +25,8 @@ type ReportGeneratorConfig struct {
 	ExportServiceHost string `envconfig:"TIDEPOOL_EXPORT_CLIENT_ADDRESS" default:"http://export:9300"`
 }
 
-type ReportGenerator interface {
-	GenerateReport(ctx context.Context, params ReportParameters) (*Report, error)
+type Generator interface {
+	GenerateReport(ctx context.Context, params Parameters) (*Report, error)
 }
 
 type reportGenerator struct {
@@ -35,7 +35,7 @@ type reportGenerator struct {
 	logger          *zap.SugaredLogger
 }
 
-func (r *reportGenerator) GenerateReport(ctx context.Context, params ReportParameters) (*Report, error) {
+func (r *reportGenerator) GenerateReport(ctx context.Context, params Parameters) (*Report, error) {
 	token := r.shorelineClient.TokenProvide()
 	if token == "" {
 		return nil, fmt.Errorf("unable to get token from shoreline client")
@@ -61,7 +61,7 @@ func (r *reportGenerator) GenerateReport(ctx context.Context, params ReportParam
 	return nil, fmt.Errorf("received unexected %s response when generating report: %s", resp.Status(), resp.Body())
 }
 
-func NewReportGenerator(shorelineClient shoreline.Client, logger *zap.SugaredLogger) (ReportGenerator, error) {
+func NewReportGenerator(shorelineClient shoreline.Client, logger *zap.SugaredLogger) (Generator, error) {
 	config := ReportGeneratorConfig{}
 	if err := envconfig.Process("", &config); err != nil {
 		return nil, err
@@ -76,15 +76,15 @@ func NewReportGenerator(shorelineClient shoreline.Client, logger *zap.SugaredLog
 
 type SampleReportGenerator struct{}
 
-func NewSampleReportGenerator() ReportGenerator {
+func NewSampleReportGenerator() Generator {
 	return &SampleReportGenerator{}
 }
 
-func (s SampleReportGenerator) GenerateReport(ctx context.Context, params ReportParameters) (*Report, error) {
+func (s SampleReportGenerator) GenerateReport(ctx context.Context, params Parameters) (*Report, error) {
 	return &Report{Document: bytes.NewReader(sampleReport)}, nil
 }
 
-type ReportParameters struct {
+type Parameters struct {
 	UserDetail   UserDetail   `json:"userDetail"`
 	ReportDetail ReportDetail `json:"reportDetail"`
 }
@@ -108,6 +108,11 @@ type Report struct {
 	Document io.Reader
 }
 
+type PeriodBounds struct {
+	Start time.Time
+	End   time.Time
+}
+
 func GetPeriodBounds(dates *clinics.PatientSummaryDates, duration time.Duration) *PeriodBounds {
 	if dates == nil {
 		return nil
@@ -126,13 +131,13 @@ func GetPeriodBounds(dates *clinics.PatientSummaryDates, duration time.Duration)
 // If the patient has only CGM data, the reporting period will be based on the CGM data.
 // Otherwise, if the patient has only BGM data, the reporting period will be based on
 // the BGM data. If the patient has neither CGM nor BGM data, nil will be returned.
-func GetReportingPeriodBounds(patient clinics.Patient) *PeriodBounds {
+func GetReportingPeriodBounds(patient clinics.Patient, duration time.Duration) *PeriodBounds {
 	cgmDates := GetCGMStatsDates(patient)
 	bgmDates := GetBGMStatsDates(patient)
-	bounds := GetPeriodBounds(cgmDates, days14)
+	bounds := GetPeriodBounds(cgmDates, duration)
 
 	if bounds == nil || (bgmDates != nil && bgmDates.LastData != nil && bgmDates.LastData.After(bounds.End)) {
-		bounds = GetPeriodBounds(bgmDates, days14)
+		bounds = GetPeriodBounds(bgmDates, duration)
 	}
 	return bounds
 }

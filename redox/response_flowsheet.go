@@ -239,11 +239,6 @@ func SetVisitNumberInFlowsheet(order models.NewOrder, flowsheet *models.NewFlows
 	}
 }
 
-type PeriodBounds struct {
-	Start time.Time
-	End   time.Time
-}
-
 func formatTime(t *time.Time) string {
 	if t == nil {
 		return missingValue

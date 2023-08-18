@@ -11,6 +11,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	redoxMessageTopic = "clinic.redox"
+)
+
 // MessageCDCConsumer is kafka consumer for redox message CDC events
 type MessageCDCConsumer struct {
 	logger *zap.SugaredLogger
@@ -38,7 +42,7 @@ func CreateRedoxMessageConsumerGroup(p MessageCDCConsumerParams) (events.EventCo
 		return nil, err
 	}
 
-	config.KafkaTopic = redoxTopic
+	config.KafkaTopic = redoxMessageTopic
 
 	return events.NewFaultTolerantConsumerGroup(config, NewRedoxMessageConsumer(p))
 }
