@@ -184,6 +184,9 @@ func (o *newOrderProcessor) createReportNote(ctx context.Context, order models.N
 			Reports: []string{"all"},
 		},
 	}
+	if match.Clinic.Timezone != nil {
+		reportParameters.ReportDetail.TimezoneName = string(*match.Clinic.Timezone)
+	}
 	if patient.Mrn != nil {
 		reportParameters.UserDetail.MRN = *patient.Mrn
 	}

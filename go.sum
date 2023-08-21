@@ -322,6 +322,8 @@ github.com/tidepool-org/clinic/client v0.0.0-20230814135338-5efa2d28f892 h1:X5rY
 github.com/tidepool-org/clinic/client v0.0.0-20230814135338-5efa2d28f892/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/clinic/client v0.0.0-20230821094054-d7cf1b8f074b h1:wm3iUtbD32O97pgASGFm9RspNCmI9zLqi/vqY4z5Zr8=
 github.com/tidepool-org/clinic/client v0.0.0-20230821094054-d7cf1b8f074b/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
+github.com/tidepool-org/clinic/client v0.0.0-20230821095950-7e1dd22f091c h1:K6xcJa5uytKSfYVBqWLkSTOTM/6kXPRtiudh1L4AMc0=
+github.com/tidepool-org/clinic/client v0.0.0-20230821095950-7e1dd22f091c/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20230814135338-5efa2d28f892 h1:Mgk0nsNSF3qSQMICVE378VLt8q9qxstFEjUBLqMOX4c=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20230814135338-5efa2d28f892/go.mod h1:dCaLaavBX9ThZaGr6X64IF03l3d6Cin/8elupnpCC/c=
 github.com/tidepool-org/go-common v0.10.1-0.20230725004540-df00db4166b0 h1:qQs4mVJ44suUxqDb42l0O+UjY7/vh9V12ddRBiCfMbY=
