@@ -51,12 +51,6 @@ const (
 	DataSourceStatePendingReconnect DataSourceState = "pendingReconnect"
 )
 
-// Defines values for EHRMatchActionActionType.
-const (
-	DISABLESUMARYANDREPORTSSUBSCRIPTION EHRMatchActionActionType = "DISABLE_SUMARY_AND_REPORTS_SUBSCRIPTION"
-	ENABLESUMARYANDREPORTSSUBSCRIPTION  EHRMatchActionActionType = "ENABLE_SUMARY_AND_REPORTS_SUBSCRIPTION"
-)
-
 // Defines values for EHRMatchMessageRefDataModel.
 const (
 	Order EHRMatchMessageRefDataModel = "Order"
@@ -238,14 +232,6 @@ type EHRFacility struct {
 	Name string `json:"name"`
 }
 
-// EHRMatchAction defines model for EHRMatchAction.
-type EHRMatchAction struct {
-	ActionType EHRMatchActionActionType `json:"actionType"`
-}
-
-// EHRMatchActionActionType defines model for EHRMatchAction.ActionType.
-type EHRMatchActionActionType string
-
 // EHRMatchMessageRef defines model for EHRMatchMessageRef.
 type EHRMatchMessageRef struct {
 	DataModel  EHRMatchMessageRefDataModel `json:"dataModel"`
@@ -266,8 +252,6 @@ type EHRMatchRequest struct {
 
 // EHRMatchResponse defines model for EHRMatchResponse.
 type EHRMatchResponse struct {
-	Action *EHRMatchAction `json:"action,omitempty"`
-
 	// Clinic Clinic
 	Clinic   Clinic      `json:"clinic"`
 	Patients *Patients   `json:"patients,omitempty"`
@@ -725,6 +709,9 @@ type CreatedTimeEnd = time.Time
 // CreatedTimeStart defines model for createdTimeStart.
 type CreatedTimeStart = time.Time
 
+// EhrEnabled defines model for ehrEnabled.
+type EhrEnabled = bool
+
 // Email defines model for email.
 type Email = openapi_types.Email
 
@@ -787,6 +774,9 @@ type ListClinicsParams struct {
 
 	// CreatedTimeEnd Return records created before the given date (exclusive)
 	CreatedTimeEnd *CreatedTimeEnd `form:"createdTimeEnd,omitempty" json:"createdTimeEnd,omitempty"`
+
+	// EhrEnabled Retrieve clinics with enabled EHR integration
+	EhrEnabled *EhrEnabled `form:"ehrEnabled,omitempty" json:"ehrEnabled,omitempty"`
 }
 
 // ListCliniciansParams defines parameters for ListClinicians.
