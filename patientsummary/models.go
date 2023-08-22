@@ -157,8 +157,10 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 			OutdatedSince:    outdatedSince,
 		}
 
-		config := clinics.PatientSummaryConfig(*p.FullDocument.Config)
-		patientUpdate.CgmStats.Config = &config
+		if p.FullDocument.Config != nil {
+			config := clinics.PatientSummaryConfig(*p.FullDocument.Config)
+			patientUpdate.CgmStats.Config = &config
+		}
 
 		if p.FullDocument.Stats != nil {
 			patientUpdate.CgmStats.TotalHours = (*p.FullDocument.Stats).GetTotalHours()
@@ -184,8 +186,10 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 			OutdatedSince:    outdatedSince,
 		}
 
-		config := clinics.PatientSummaryConfig(*p.FullDocument.Config)
-		patientUpdate.BgmStats.Config = &config
+		if p.FullDocument.Config != nil {
+			config := clinics.PatientSummaryConfig(*p.FullDocument.Config)
+			patientUpdate.BgmStats.Config = &config
+		}
 
 		if p.FullDocument.Stats != nil {
 			patientUpdate.BgmStats.TotalHours = (*p.FullDocument.Stats).GetTotalHours()
