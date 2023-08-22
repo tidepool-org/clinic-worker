@@ -71,6 +71,8 @@ func (o *newOrderProcessor) ProcessOrder(ctx context.Context, envelope models.Me
 	switch procedureCode {
 	case match.Settings.ProcedureCodes.EnableSummaryReports:
 		return o.handleEnableSummaryReports(ctx, envelope, order, *match)
+	case match.Settings.ProcedureCodes.DisableSummaryReports:
+		return o.handleDisableSummaryReports(ctx, order, *match)
 	default:
 		return o.handleUnknownProcedure(ctx, order, *match)
 	}
@@ -100,6 +102,18 @@ func (o *newOrderProcessor) handleEnableSummaryReports(ctx context.Context, enve
 	return o.SendSummaryAndReport(ctx, patient, order, match)
 }
 
+func (o *newOrderProcessor) handleDisableSummaryReports(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
+	if match.Patients == nil || len(*match.Patients) == 0 {
+		return o.handleNoMatchingPatients(ctx, order, match)
+	} else if len(*match.Patients) > 1 {
+		return o.handleMultipleMatchingPatients(ctx, order, match)
+	}
+
+	patient := (*match.Patients)[0]
+	o.logger.Infow("successfully matched clinic and patient", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", patient.Id)
+	return o.handleSuccessfulPatientMatch(ctx, order, match)
+}
+
 func (o *newOrderProcessor) SendSummaryAndReport(ctx context.Context, patient clinics.Patient, order models.NewOrder, match clinics.EHRMatchResponse) error {
 	flowsheet := o.createSummaryStatisticsFlowsheet(order, patient, match)
 	notes, err := o.createReportNote(ctx, order, patient, match)
@@ -116,7 +130,7 @@ func (o *newOrderProcessor) SendSummaryAndReport(ctx context.Context, patient cl
 
 	if notes != nil {
 		o.logger.Infow("sending note", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", patient.Id)
-		if err := o.client.Send(ctx, notes); err != nil {
+		if err := o.client.Send(ctx, *notes); err != nil {
 			// Return an error so we can retry the request
 			return fmt.Errorf("unable to send notes: %w", err)
 		}

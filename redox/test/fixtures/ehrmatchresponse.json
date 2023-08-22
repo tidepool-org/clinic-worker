@@ -411,9 +411,16 @@
   ],
   "settings": {
     "destinationIds": {
-      "default": "af394f14-b34a-464f-8d24-895f370af4c9"
+      "default": "534dafdb-943a-4a11-8042-86a5841c6cb2",
+      "flowsheet": "534dafdb-943a-4a11-8042-86a5841c6cb2",
+      "notes": "1f163909-787f-445b-8159-a0add48a1b1e",
+      "results": "cf86b7e2-7097-41bf-b3db-3f7180cce0c5"
     },
     "enabled": true,
-    "sourceId": "7ce6f387-c33c-417d-8682-81e83628cbd9"
+    "procedureCodes": {
+      "enableSummaryReports": "PRO1090",
+      "disableSummaryReports": "PRO1091"
+    },
+    "sourceId": "ba31f6d3-8358-4d2c-ac65-d4af5f3db21d"
   }
 }
