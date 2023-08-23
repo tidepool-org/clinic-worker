@@ -16,7 +16,10 @@ import (
 
 const (
 	// The period of time before the token expiration when we should refresh it
-	expirationDelta = 1 * time.Minute
+	expirationDelta  = 1 * time.Minute
+	redoxBlobUrl     = "https://blob.redoxengine.com/upload"
+	redoxEndpointUrl = "https://api.redoxengine.com/endpoint"
+	redoxTokenUrl    = "https://api.redoxengine.com/v2/auth/token"
 )
 
 type Client interface {
@@ -93,7 +96,7 @@ func (c *client) Send(ctx context.Context, payload interface{}) error {
 		SetBody(payload).
 		SetHeader("Content-Type", "application/json").
 		SetError(httpErr).
-		Post("https://api.redoxengine.com/endpoint")
+		Post(redoxEndpointUrl)
 
 	if err != nil {
 		return fmt.Errorf("error sending payload to redox: %w", err)
@@ -124,7 +127,7 @@ func (c *client) UploadFile(ctx context.Context, fileName string, reader io.Read
 		SetFileReader("file", fileName, reader).
 		SetResult(uploadResult).
 		SetError(httpErr).
-		Post("https://blob.redoxengine.com/upload")
+		Post(redoxBlobUrl)
 
 	if err != nil {
 		return nil, fmt.Errorf("error uploading redox: %w", err)
@@ -178,7 +181,7 @@ func (c *client) obtainFreshToken(ctx context.Context) error {
 		SetFormData(data).
 		SetResult(token).
 		SetError(authErr).
-		Post("https://api.redoxengine.com/v2/auth/token")
+		Post(redoxTokenUrl)
 
 	if err != nil {
 		return fmt.Errorf("error obtaining token: %w", err)
