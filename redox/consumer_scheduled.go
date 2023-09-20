@@ -102,11 +102,13 @@ func (s *ScheduledSummaryAndReportsCDCConsumer) unmarshalEvent(value []byte, eve
 func (s *ScheduledSummaryAndReportsCDCConsumer) handleCDCEvent(event cdc.Event[ScheduledSummaryAndReport]) error {
 	if event.FullDocument == nil {
 		s.logger.Infow("skipping event with no full document", "offset", event.Offset)
+		return nil
 	}
 
 	scheduled := event.FullDocument
 	if scheduled.LastMatchedOrder.Meta.IsValid() {
 		s.logger.Infow("skipping event with invalid meta", "offset", event.Offset)
+		return nil
 	}
 
 	// We only expect orders for now
