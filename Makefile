@@ -1,4 +1,5 @@
 # Clinic-worker Makefile
+.PHONY: test build
 
 # Runs tests
 test:

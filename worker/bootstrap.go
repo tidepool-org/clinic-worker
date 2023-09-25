@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"github.com/tidepool-org/clinic-worker/redox"
 	"net/http"
 
 	"github.com/tidepool-org/clinic-worker/cdc"
@@ -40,6 +41,7 @@ var Modules = []fx.Option{
 	clinics.Module,
 	clinicians.Module,
 	migration.Module,
+	redox.Module,
 	users.Module,
 	marketo.Module,
 }

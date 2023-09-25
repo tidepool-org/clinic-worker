@@ -1,21 +1,18 @@
 package worker_test
 
-// TODO fix this, sarama bug?
-//
-//import (
-//	"os"
-//
-//	"github.com/Shopify/sarama"
-//	. "github.com/onsi/ginkgo"
-//	. "github.com/onsi/gomega"
-//	"github.com/tidepool-org/clinic-worker/worker"
-//	"go.uber.org/fx"
-//)
-//
-//const (
-//	MockBrokerAddress = "localhost:5432"
-//)
-//
+import (
+	"os"
+
+	"github.com/Shopify/sarama"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+const (
+	MockBrokerAddress = "localhost:8432"
+)
+
+// TODO samara update broke this test? hangs forever.
 //var _ = Describe("Boostrap", func() {
 //	Describe("Fx App", func() {
 //		var app *fx.App
@@ -64,29 +61,39 @@ package worker_test
 //		})
 //
 //		It("instantiates workers", func() {
-//			// clinic, clinicians, migration, patients, patientsummary, users, datasources
-//			expectedCount := 7
+//			// clinic, clinicians, migration, patients, patientsummary, users, datasources, redox, redox-scheduled
+//			expectedCount := 9
 //			Expect(components.Consumers).To(HaveLen(expectedCount))
 //		})
 //	})
 //})
-//
-//func NewMockKafkaBroker() *sarama.MockBroker {
-//	return sarama.NewMockBrokerAddr(GinkgoT(), 0, MockBrokerAddress)
-//}
-//
-//func SetRequiredEnvVariables() {
-//	Expect(os.Setenv("TIDEPOOL_SERVER_SECRET", "dummy")).ToNot(HaveOccurred())
-//	Expect(os.Setenv("KAFKA_BROKERS", MockBrokerAddress)).ToNot(HaveOccurred())
-//	Expect(os.Setenv("KAFKA_TOPIC_PREFIX", "local")).ToNot(HaveOccurred())
-//	Expect(os.Setenv("KAFKA_REQUIRE_SSL", "false")).ToNot(HaveOccurred())
-//	Expect(os.Setenv("KAFKA_VERSION", "2.6.0")).ToNot(HaveOccurred())
-//}
-//
-//func ClearRequiredEnvVariables() {
-//	Expect(os.Unsetenv("TIDEPOOL_SERVER_SECRET")).ToNot(HaveOccurred())
-//	Expect(os.Unsetenv("KAFKA_BROKERS")).ToNot(HaveOccurred())
-//	Expect(os.Unsetenv("KAFKA_TOPIC_PREFIX")).ToNot(HaveOccurred())
-//	Expect(os.Unsetenv("KAFKA_REQUIRE_SSL")).ToNot(HaveOccurred())
-//	Expect(os.Unsetenv("KAFKA_VERSION")).ToNot(HaveOccurred())
-//}
+
+func NewMockKafkaBroker() *sarama.MockBroker {
+	return sarama.NewMockBrokerAddr(GinkgoT(), 0, MockBrokerAddress)
+}
+
+func SetRequiredEnvVariables() {
+	Expect(os.Setenv("TIDEPOOL_SERVER_SECRET", "dummy")).ToNot(HaveOccurred())
+	Expect(os.Setenv("KAFKA_BROKERS", MockBrokerAddress)).ToNot(HaveOccurred())
+	Expect(os.Setenv("KAFKA_TOPIC_PREFIX", "local")).ToNot(HaveOccurred())
+	Expect(os.Setenv("KAFKA_REQUIRE_SSL", "false")).ToNot(HaveOccurred())
+	Expect(os.Setenv("KAFKA_VERSION", "2.6.0")).ToNot(HaveOccurred())
+	Expect(os.Setenv("TIDEPOOL_REDOX_CLIENT_ID", "1234567890")).ToNot(HaveOccurred())
+	Expect(os.Setenv("TIDEPOOL_REDOX_KEY_ID", "k-123")).ToNot(HaveOccurred())
+	Expect(os.Setenv("TIDEPOOL_REDOX_PRIVATE_KEY", "PK")).ToNot(HaveOccurred())
+	Expect(os.Setenv("TIDEPOOL_REDOX_SOURCE_ID", "Tidepool-Test-123")).ToNot(HaveOccurred())
+	Expect(os.Setenv("TIDEPOOL_REDOX_SOURCE_NAME", "Tidepool-Test")).ToNot(HaveOccurred())
+}
+
+func ClearRequiredEnvVariables() {
+	Expect(os.Unsetenv("TIDEPOOL_SERVER_SECRET")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("KAFKA_BROKERS")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("KAFKA_TOPIC_PREFIX")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("KAFKA_REQUIRE_SSL")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("KAFKA_VERSION")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("TIDEPOOL_REDOX_CLIENT_ID")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("TIDEPOOL_REDOX_KEY_ID")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("TIDEPOOL_REDOX_PRIVATE_KEY")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("TIDEPOOL_REDOX_SOURCE_ID")).ToNot(HaveOccurred())
+	Expect(os.Unsetenv("TIDEPOOL_REDOX_SOURCE_NAME")).ToNot(HaveOccurred())
+}
