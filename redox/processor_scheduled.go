@@ -134,7 +134,7 @@ func patientHasUploadedDataRecently(patient clinics.Patient) bool {
 
 func getMostRecentUploadDate(patient clinics.Patient) time.Time {
 	var mostRecentUpload time.Time
-	if patient.Summary != nil && patient.Summary.CgmStats != nil && patient.Summary.BgmStats.Dates.LastUploadDate != nil {
+	if patient.Summary != nil && patient.Summary.CgmStats != nil && patient.Summary.CgmStats.Dates.LastUploadDate != nil {
 		mostRecentUpload = *patient.Summary.CgmStats.Dates.LastUploadDate
 	}
 	if patient.Summary != nil && patient.Summary.BgmStats != nil && patient.Summary.BgmStats.Dates.LastUploadDate != nil && patient.Summary.BgmStats.Dates.LastUploadDate.After(mostRecentUpload) {

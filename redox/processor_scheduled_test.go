@@ -192,5 +192,21 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
 			Expect(redoxClient.Sent).To(HaveLen(2))
 		})
+
+		It("succeeds if cgm stats is nil", func() {
+			now := time.Now()
+			patient.Summary.CgmStats = nil
+			patient.Summary.BgmStats.Dates.LastUploadDate = &now
+
+			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+		})
+
+		It("succeeds if bgm stats is nil", func() {
+			now := time.Now()
+			patient.Summary.CgmStats.Dates.LastUploadDate = &now
+			patient.Summary.BgmStats = nil
+
+			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+		})
 	})
 })
