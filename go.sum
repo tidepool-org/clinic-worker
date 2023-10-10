@@ -130,6 +130,7 @@ github.com/golang/protobuf v1.4.2/go.mod h1:oDoupMAO8OvCJWAcko0GGGIgR6R6ocIYbsSw
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=
 github.com/golang/protobuf v1.5.2/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiuN0vRsmY=
 github.com/golang/protobuf v1.5.3 h1:KhyjKVUg7Usr/dYsdSqoFveMYd5ko72D+zANwlG1mmg=
+github.com/golang/protobuf v1.5.3/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiuN0vRsmY=
 github.com/golang/snappy v0.0.1/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
 github.com/golang/snappy v0.0.2/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
 github.com/golang/snappy v0.0.4 h1:yAGX7huGHXlcLOEtBnF4w7FQwA26wojNCwOYAEhLjQM=
@@ -318,10 +319,6 @@ github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o
 github.com/stretchr/testify v1.8.3/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
-github.com/tidepool-org/clinic/client v0.0.0-20230814135338-5efa2d28f892 h1:X5rYYYbl2Md7N5cOyINHTGbMRTr4U1aHYY+MRjnnqb0=
-github.com/tidepool-org/clinic/client v0.0.0-20230814135338-5efa2d28f892/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
-github.com/tidepool-org/clinic/client v0.0.0-20230821094054-d7cf1b8f074b h1:wm3iUtbD32O97pgASGFm9RspNCmI9zLqi/vqY4z5Zr8=
-github.com/tidepool-org/clinic/client v0.0.0-20230821094054-d7cf1b8f074b/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/clinic/client v0.0.0-20230821095950-7e1dd22f091c h1:K6xcJa5uytKSfYVBqWLkSTOTM/6kXPRtiudh1L4AMc0=
 github.com/tidepool-org/clinic/client v0.0.0-20230821095950-7e1dd22f091c/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20230814135338-5efa2d28f892 h1:Mgk0nsNSF3qSQMICVE378VLt8q9qxstFEjUBLqMOX4c=

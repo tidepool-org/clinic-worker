@@ -1,6 +1,6 @@
 module github.com/tidepool-org/clinic-worker
 
-go 1.19
+go 1.21
 
 require (
 	github.com/Shopify/sarama v1.28.0
