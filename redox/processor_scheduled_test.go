@@ -13,6 +13,7 @@ import (
 	"github.com/tidepool-org/clinic-worker/test"
 	clinics "github.com/tidepool-org/clinic/client"
 	models "github.com/tidepool-org/clinic/redox_models"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -29,7 +30,8 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 		redoxClient = testRedox.NewTestRedoxClient("testSourceId", "testSourceName")
 		clinicCtrl = gomock.NewController(GinkgoT())
 		clinicClient = clinics.NewMockClientWithResponsesInterface(clinicCtrl)
-		processor := redox.NewNewOrderProcessor(clinicClient, redoxClient, report.NewSampleReportGenerator(), zap.NewNop().Sugar())
+		shorelineClient := shoreline.NewMock("test")
+		processor := redox.NewNewOrderProcessor(clinicClient, redoxClient, report.NewSampleReportGenerator(), shorelineClient, zap.NewNop().Sugar())
 		scheduledProcessor = redox.NewScheduledSummaryAndReportProcessor(processor, clinicClient, zap.NewNop().Sugar())
 	})
 

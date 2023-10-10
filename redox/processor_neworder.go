@@ -34,15 +34,16 @@ type newOrderProcessor struct {
 	clinics         clinics.ClientWithResponsesInterface
 	client          Client
 	reportGenerator report.Generator
-	shoreline       shoreline.Client
+	shorelineClient shoreline.Client
 }
 
-func NewNewOrderProcessor(clinics clinics.ClientWithResponsesInterface, redox Client, reportGenerator report.Generator, logger *zap.SugaredLogger) NewOrderProcessor {
+func NewNewOrderProcessor(clinics clinics.ClientWithResponsesInterface, redox Client, reportGenerator report.Generator, shorelineClient shoreline.Client, logger *zap.SugaredLogger) NewOrderProcessor {
 	return &newOrderProcessor{
 		logger:          logger,
 		clinics:         clinics,
 		client:          redox,
 		reportGenerator: reportGenerator,
+		shorelineClient: shorelineClient,
 	}
 }
 
@@ -165,7 +166,7 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, order model
 			return o.handleAccountCreationError(ctx, err, order, match)
 		}
 	}
-	
+
 	resp, err := o.clinics.CreatePatientAccountWithResponse(ctx, *match.Clinic.Id, createPatient)
 	if err != nil {
 		// Retry in case of unexpected failure
@@ -183,7 +184,7 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, order model
 }
 
 func (o *newOrderProcessor) emailExists(email string) (bool, error) {
-	user, err := o.shoreline.GetUser(email, o.shoreline.TokenProvide())
+	user, err := o.shorelineClient.GetUser(email, o.shorelineClient.TokenProvide())
 	if user != nil && len(user.UserID) > 0 {
 		return true, nil
 	}
