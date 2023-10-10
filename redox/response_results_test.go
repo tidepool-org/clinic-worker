@@ -31,7 +31,7 @@ var _ = Describe("Results", func() {
 
 		BeforeEach(func() {
 			results = redox.NewResults()
-			fixture, err := test.LoadFixture("test/fixtures/neworder.json")
+			fixture, err := test.LoadFixture("test/fixtures/subscriptionorder.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(fixture, &order)).To(Succeed())
 		})

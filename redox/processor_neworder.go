@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	EventTypeNewOrder = "New"
-	DataModelOrder    = "Order"
+	EventTypeNewOrder               = "New"
+	DataModelOrder                  = "Order"
+	MinimumAgeSelfOwnedAccountYears = 13
 )
 
 type NewOrderProcessor interface {
@@ -155,14 +156,16 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, order model
 		return o.handleAccountCreationError(ctx, err, order, match)
 	}
 
-	if exists, err := o.emailExists(*createPatient.Email); err != nil {
-		o.logger.Errorw("unexpected error when checking for duplicate emails", "order", order.Meta, "error", err)
-		return err
-	} else if exists {
-		err = fmt.Errorf("the email address is already in use")
-		return o.handleAccountCreationError(ctx, err, order, match)
+	if createPatient.Email != nil {
+		if exists, err := o.emailExists(*createPatient.Email); err != nil {
+			o.logger.Errorw("unexpected error when checking for duplicate emails", "order", order.Meta, "error", err)
+			return err
+		} else if exists {
+			err = fmt.Errorf("the email address is already in use")
+			return o.handleAccountCreationError(ctx, err, order, match)
+		}
 	}
-
+	
 	resp, err := o.clinics.CreatePatientAccountWithResponse(ctx, *match.Clinic.Id, createPatient)
 	if err != nil {
 		// Retry in case of unexpected failure
@@ -428,18 +431,63 @@ func GetBirthDateFromOrder(order models.NewOrder) (types.Date, error) {
 }
 
 func GetEmailAddressFromOrder(order models.NewOrder) (*string, error) {
+	birthDate, err := GetBirthDateFromOrder(order)
+	if err != nil {
+		return nil, err
+	}
+
+	var email *string
+	if shouldUseGuarantorEmail(birthDate) {
+		email, err = GetGuarantorEmailAddressFromOrder(order)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		email, err = GetPatientEmailAddressFromOrder(order)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if email == nil {
+		return nil, nil
+	}
+
+	addr, err := mail.ParseAddress(*email)
+	if err != nil {
+		return nil, fmt.Errorf("email address is invalid")
+	}
+
+	return &addr.Address, nil
+}
+
+func shouldUseGuarantorEmail(birthDate types.Date) bool {
+	now := time.Now()
+	cutoff := birthDate.AddDate(MinimumAgeSelfOwnedAccountYears, 0, 0)
+	return !cutoff.Before(now)
+}
+
+func GetPatientEmailAddressFromOrder(order models.NewOrder) (*string, error) {
 	if order.Patient.Demographics == nil || order.Patient.Demographics.EmailAddresses == nil || len(*order.Patient.Demographics.EmailAddresses) == 0 {
-		return nil, fmt.Errorf("email address is missing")
+		return nil, nil
 	}
 
 	email, ok := (*order.Patient.Demographics.EmailAddresses)[0].(string)
 	if !ok {
-		return nil, fmt.Errorf("email address is not a string")
+		return nil, fmt.Errorf("patient email address is not a string")
 	}
 
-	_, err := mail.ParseAddress(email)
-	if err != nil {
-		return nil, fmt.Errorf("email address is invalid")
+	return &email, nil
+}
+
+func GetGuarantorEmailAddressFromOrder(order models.NewOrder) (*string, error) {
+	if order.Visit == nil || order.Visit.Guarantor == nil || order.Visit.Guarantor.EmailAddresses == nil || len(*order.Visit.Guarantor.EmailAddresses) == 0 {
+		return nil, nil
+	}
+
+	email, ok := (*order.Visit.Guarantor.EmailAddresses)[0].(string)
+	if !ok {
+		return nil, fmt.Errorf("guarantor email address is not a string")
 	}
 
 	return &email, nil

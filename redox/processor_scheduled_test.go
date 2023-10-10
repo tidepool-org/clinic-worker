@@ -39,7 +39,7 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 
 		BeforeEach(func() {
 			response := &clinics.EHRMatchResponse{}
-			matchFixture, err := test.LoadFixture("test/fixtures/ehrmatchresponse.json")
+			matchFixture, err := test.LoadFixture("test/fixtures/subscriptionmatchresponse.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(matchFixture, response)).To(Succeed())
 
@@ -67,7 +67,7 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 					JSON200:      &response.Settings,
 				}, nil)
 
-			newOrderFixture, err := test.LoadFixture("test/fixtures/neworder.json")
+			newOrderFixture, err := test.LoadFixture("test/fixtures/subscriptionorder.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(newOrderFixture, &order)).To(Succeed())
 
