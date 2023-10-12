@@ -59,10 +59,7 @@
           "periods": {
             "14d": {
               "averageDailyRecords": 4.928571428571429,
-              "averageGlucose": {
-                "units": "mmol/L",
-                "value": 9.563426
-              },
+              "averageGlucoseMmol": 9.563426,
               "hasAverageDailyRecords": true,
               "hasAverageGlucose": true,
               "hasTimeInHighPercent": true,
@@ -90,10 +87,7 @@
             },
             "1d": {
               "averageDailyRecords": 6,
-              "averageGlucose": {
-                "units": "mmol/L",
-                "value": 8.620528
-              },
+              "averageGlucoseMmol":8.620528,
               "hasAverageDailyRecords": true,
               "hasAverageGlucose": true,
               "hasTimeInHighPercent": true,
@@ -121,10 +115,7 @@
             },
             "30d": {
               "averageDailyRecords": 4.9,
-              "averageGlucose": {
-                "units": "mmol/L",
-                "value": 9.418188
-              },
+              "averageGlucoseMmol": 9.418188,
               "hasAverageDailyRecords": true,
               "hasAverageGlucose": true,
               "hasTimeInHighPercent": true,
@@ -152,10 +143,7 @@
             },
             "7d": {
               "averageDailyRecords": 5,
-              "averageGlucose": {
-                "units": "mmol/L",
-                "value": 10.543989
-              },
+              "averageGlucoseMmol": 10.543989,
               "hasAverageDailyRecords": true,
               "hasAverageGlucose": true,
               "hasTimeInHighPercent": true,
@@ -205,10 +193,7 @@
           "periods": {
             "14d": {
               "averageDailyRecords": 144.28571428571428,
-              "averageGlucose": {
-                "units": "mmol/L",
-                "value": 7.921203
-              },
+              "averageGlucoseMmol": 7.921203,
               "hasAverageDailyRecords": true,
               "hasAverageGlucose": true,
               "hasGlucoseManagementIndicator": false,
@@ -253,10 +238,7 @@
             },
             "1d": {
               "averageDailyRecords": 202,
-              "averageGlucose": {
-                "units": "mmol/L",
-                "value": 7.8978934
-              },
+              "averageGlucoseMmol": 7.8978934,
               "glucoseManagementIndicator": 6.7,
               "hasAverageDailyRecords": true,
               "hasAverageGlucose": true,
@@ -302,10 +284,7 @@
             },
             "30d": {
               "averageDailyRecords": 67.33333333333333,
-              "averageGlucose": {
-                "units": "mmol/L",
-                "value": 7.921203
-              },
+              "averageGlucoseMmol": 7.921203,
               "hasAverageDailyRecords": true,
               "hasAverageGlucose": true,
               "hasGlucoseManagementIndicator": false,
@@ -350,10 +329,7 @@
             },
             "7d": {
               "averageDailyRecords": 202,
-              "averageGlucose": {
-                "units": "mmol/L",
-                "value": 8.144968
-              },
+              "averageGlucoseMmol": 8.144968,
               "glucoseManagementIndicator": 6.8,
               "hasAverageDailyRecords": true,
               "hasAverageGlucose": true,

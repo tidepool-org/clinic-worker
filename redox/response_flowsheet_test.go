@@ -126,7 +126,7 @@ var _ = Describe("Flowsheet", func() {
 
 				flowsheet := redox.NewFlowsheet()
 				patient := (*response.Patients)[0]
-				response.Clinic.PreferredBgUnits = api.ClinicPreferredBgUnitsMgdL
+				response.Clinic.PreferredBgUnits = api.MgdL
 
 				redox.PopulateSummaryStatistics(patient, response.Clinic, &flowsheet)
 
