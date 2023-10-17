@@ -15,7 +15,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.10
-	github.com/tidepool-org/clinic/client v0.0.0-20231011144944-fa0adf49fbf9
+	github.com/tidepool-org/clinic/client v0.0.0-20231017160524-bdba881d7bd2
 	github.com/tidepool-org/clinic/redox_models v0.0.0-20230920085059-c5bc741cfed0
 	github.com/tidepool-org/go-common v0.10.1-0.20230817174512-2e38ce659a65
 	github.com/tidepool-org/hydrophone/client v0.0.0-20230601114627-4b6ca511841d

@@ -465,7 +465,7 @@ github.com/tdewolff/parse/v2/js
 github.com/tdewolff/parse/v2/json
 github.com/tdewolff/parse/v2/strconv
 github.com/tdewolff/parse/v2/xml
-# github.com/tidepool-org/clinic/client v0.0.0-20231011144944-fa0adf49fbf9
+# github.com/tidepool-org/clinic/client v0.0.0-20231017160524-bdba881d7bd2
 ## explicit; go 1.16
 github.com/tidepool-org/clinic/client
 # github.com/tidepool-org/clinic/redox_models v0.0.0-20230920085059-c5bc741cfed0
