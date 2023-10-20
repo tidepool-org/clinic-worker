@@ -55,7 +55,7 @@
         "Office": null,
         "Mobile": null
       },
-      "EmailAddresses": [],
+      "EmailAddresses": ["tim@test.com"],
       "Language": "en",
       "Citizenship": [],
       "Address": {
@@ -187,7 +187,7 @@
         "Business": null,
         "Mobile": null
       },
-      "EmailAddresses": [],
+      "EmailAddresses": ["kent@test.com"],
       "Type": null,
       "RelationToPatient": "Father",
       "Employer": {

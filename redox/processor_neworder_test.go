@@ -18,6 +18,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
 
 var _ = Describe("NewOrderProcessor", func() {
@@ -30,7 +31,7 @@ var _ = Describe("NewOrderProcessor", func() {
 		redoxClient = testRedox.NewTestRedoxClient("testSourceId", "testSourceName")
 		clinicCtrl = gomock.NewController(GinkgoT())
 		clinicClient = clinics.NewMockClientWithResponsesInterface(clinicCtrl)
-		shorelineClient := shoreline.NewMock("test")
+		shorelineClient := &testRedox.ShorelineNoUser{Client: shoreline.NewMock("test")}
 		processor = redox.NewNewOrderProcessor(clinicClient, redoxClient, report.NewSampleReportGenerator(), shorelineClient, zap.NewNop().Sugar())
 	})
 
@@ -192,6 +193,83 @@ var _ = Describe("NewOrderProcessor", func() {
 				Expect(processor.ProcessOrder(context.Background(), envelope, order)).To(Succeed())
 
 			})
+		})
+	})
+
+	Describe("GetEmailAddressFromOrder", func() {
+		var order models.NewOrder
+
+		BeforeEach(func() {
+			orderFixture, err := test.LoadFixture("test/fixtures/accountcreationorder.json")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(json.Unmarshal(orderFixture, &order)).To(Succeed())
+		})
+
+		It("returns the patient email address if the patient is over 13", func() {
+			email, err := redox.GetEmailAddressFromOrder(order)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(email).ToNot(BeNil())
+			Expect(email).To(PointTo(Equal("tim@test.com")))
+		})
+
+		It("returns the guarantor email address if the patient is under 13", func() {
+			almostThirteenYearsAgo := time.Now().AddDate(-12, 11, 13).Format("2006-01-02")
+			order.Patient.Demographics.DOB = &almostThirteenYearsAgo
+
+			email, err := redox.GetEmailAddressFromOrder(order)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(email).ToNot(BeNil())
+			Expect(email).To(PointTo(Equal("kent@test.com")))
+		})
+	})
+
+	Describe("GetFullNameFromOrder", func() {
+		var order models.NewOrder
+
+		BeforeEach(func() {
+			orderFixture, err := test.LoadFixture("test/fixtures/accountcreationorder.json")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(json.Unmarshal(orderFixture, &order)).To(Succeed())
+		})
+
+		It("returns the concatenated first and last names", func() {
+			name, err := redox.GetFullNameFromOrder(order)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(name).ToNot(BeNil())
+			Expect(name).To(Equal("Timothy Bixby"))
+		})
+	})
+
+	Describe("GetBirthDateFromOrder", func() {
+		var order models.NewOrder
+
+		BeforeEach(func() {
+			orderFixture, err := test.LoadFixture("test/fixtures/accountcreationorder.json")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(json.Unmarshal(orderFixture, &order)).To(Succeed())
+		})
+
+		It("returns the date of birth of the patient", func() {
+			dob, err := redox.GetBirthDateFromOrder(order)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(dob.Format("2006-01-02")).To(Equal("2008-01-06"))
+		})
+	})
+
+	Describe("GetMrnFromOrder", func() {
+		var order models.NewOrder
+
+		BeforeEach(func() {
+			orderFixture, err := test.LoadFixture("test/fixtures/accountcreationorder.json")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(json.Unmarshal(orderFixture, &order)).To(Succeed())
+		})
+
+		It("returns the mrn of the patient", func() {
+			mrn, err := redox.GetMrnFromOrder(order)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(mrn).ToNot(BeNil())
+			Expect(mrn).To(PointTo(Equal("0000000001")))
 		})
 	})
 })
