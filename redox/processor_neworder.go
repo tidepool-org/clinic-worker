@@ -125,6 +125,18 @@ func (o *newOrderProcessor) handleDisableSummaryReports(ctx context.Context, ord
 
 func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
 	if match.Patients != nil && len(*match.Patients) > 0 {
+		ids := make([]string, len(*match.Patients))
+		for i, patient := range *match.Patients {
+			ids[i] = *patient.Id
+		}
+
+		o.logger.Infow(
+			"unable to create new patient account, because matching patients were found",
+			"order", order.Meta,
+			"clinicId", match.Clinic.Id,
+			"patientIds", strings.Join(ids, ","),
+		)
+
 		err := fmt.Errorf("patient already exists")
 		return o.handleAccountCreationError(ctx, err, order, match)
 	}
