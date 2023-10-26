@@ -6,9 +6,14 @@ import (
 )
 
 const (
-	EventTypeNewResults              = "New"
-	DataModelResults                 = "Results"
-	OrderStatusResulted              = "Resulted"
+	EventTypeNewResults               = "New"
+	DataModelResults                  = "Results"
+	OrderStatusResulted               = "Resulted"
+	AccountCreationResultCode         = "ACCOUNT_CREATION_RESULT"
+	AccountCreationResultDescription  = "Indicates whether the account was successfully created"
+	AccountCreationMessageCode        = "ACCOUNT_CREATION_RESULT_MESSAGE"
+	AccountCreationMessageDescription = "Message indicating the result of the account creation"
+
 	MatchingResultCode               = "MATCHING_RESULT"
 	MatchingResultMessageCode        = "MATCHING_RESULT_MESSAGE"
 	MatchingResultDescription        = "Indicates whether the order was successfully matched"
@@ -17,12 +22,36 @@ const (
 	NoMatchingPatientsMessage       = "No matching patients were found"
 	MultipleMatchingPatientsMessage = "Multiple matching patients were found"
 	SuccessfulMatchingMessage       = "Patient was successfully matched"
+
+	SuccessfulAccountCreationMessage = "Account was successfully created"
 )
 
-type MatchingResult struct {
+type ResultsNotification struct {
 	IsSuccess bool
 	Message   string
 }
+
+type NotificationFields struct {
+	MessageCode                string
+	MessageDescription         string
+	OperationResultCode        string
+	OperationResultDescription string
+}
+
+var (
+	accountCreationNotificationFields = NotificationFields{
+		MessageCode:                AccountCreationMessageCode,
+		MessageDescription:         AccountCreationMessageDescription,
+		OperationResultCode:        AccountCreationResultCode,
+		OperationResultDescription: AccountCreationResultDescription,
+	}
+	patientMatchingNotificationFields = NotificationFields{
+		MessageCode:                MatchingResultMessageCode,
+		MessageDescription:         MatchingResultMessageDescription,
+		OperationResultCode:        MatchingResultCode,
+		OperationResultDescription: MatchingResultDescription,
+	}
+)
 
 func NewResults() models.NewResults {
 	res := models.NewResults{}
@@ -40,7 +69,15 @@ func SetResultsPatientFromOrder(order models.NewOrder, results *models.NewResult
 	results.Patient.Demographics = order.Patient.Demographics
 }
 
-func SetMatchingResult(matching MatchingResult, order models.NewOrder, results *models.NewResults) {
+func SetMatchingResult(notification ResultsNotification, order models.NewOrder, results *models.NewResults) {
+	SetNotificationResult(notification, patientMatchingNotificationFields, order, results)
+}
+
+func SetAccountCreationResults(notification ResultsNotification, order models.NewOrder, results *models.NewResults) {
+	SetNotificationResult(notification, accountCreationNotificationFields, order, results)
+}
+
+func SetNotificationResult(notification ResultsNotification, fields NotificationFields, order models.NewOrder, results *models.NewResults) {
 	results.Orders = []struct {
 		ApplicationOrderID *string        `json:"ApplicationOrderID"`
 		CollectionDateTime *string        `json:"CollectionDateTime"`
@@ -348,20 +385,18 @@ func SetMatchingResult(matching MatchingResult, order models.NewOrder, results *
 		ValueType string  `json:"ValueType"`
 	}{{}, {}}
 
-	description := MatchingResultDescription
-	results.Orders[0].Results[0].Code = MatchingResultCode
-	results.Orders[0].Results[0].Description = &description
+	results.Orders[0].Results[0].Code = fields.OperationResultCode
+	results.Orders[0].Results[0].Description = &fields.OperationResultDescription
 
 	results.Orders[0].Results[0].ValueType = "String"
-	if matching.IsSuccess {
+	if notification.IsSuccess {
 		results.Orders[0].Results[0].Value = "SUCCESS"
 	} else {
 		results.Orders[0].Results[0].Value = "FAILURE"
 	}
 
-	messageDescription := MatchingResultMessageDescription
-	results.Orders[0].Results[1].Code = MatchingResultMessageCode
-	results.Orders[0].Results[1].Description = &messageDescription
+	results.Orders[0].Results[1].Code = fields.MessageCode
+	results.Orders[0].Results[1].Description = &fields.MessageDescription
 	results.Orders[0].Results[1].ValueType = "String"
-	results.Orders[0].Results[1].Value = matching.Message
+	results.Orders[0].Results[1].Value = notification.Message
 }
