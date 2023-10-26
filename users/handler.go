@@ -3,7 +3,7 @@ package users
 import (
 	"context"
 	"fmt"
-	"github.com/deepmap/oapi-codegen/pkg/types"
+	"github.com/oapi-codegen/runtime/types"
 	clinics "github.com/tidepool-org/clinic/client"
 	ev "github.com/tidepool-org/go-common/events"
 
