@@ -39,19 +39,18 @@ type Glucose struct {
 }
 
 type Dates struct {
-	LastUpdatedDate *cdc.Date `json:"lastUpdatedDate"`
-
-	HasLastUploadDate *bool     `json:"hasLastUploadDate"`
-	LastUploadDate    *cdc.Date `json:"lastUploadDate"`
-
-	HasFirstData *bool     `json:"hasFirstData"`
-	FirstData    *cdc.Date `json:"firstData"`
-
-	HasLastData *bool     `json:"hasLastData"`
-	LastData    *cdc.Date `json:"lastData"`
-
-	HasOutdatedSince *bool     `json:"hasOutdatedSince"`
-	OutdatedSince    *cdc.Date `json:"outdatedSince"`
+	FirstData          *cdc.Date `json:"firstData,omitempty"`
+	HasFirstData       *bool     `json:"hasFirstData,omitempty"`
+	HasLastData        *bool     `json:"hasLastData,omitempty"`
+	HasLastUploadDate  *bool     `json:"hasLastUploadDate,omitempty"`
+	HasOutdatedSince   *bool     `json:"hasOutdatedSince,omitempty"`
+	LastData           *cdc.Date `json:"lastData,omitempty"`
+	LastUpdatedDate    *cdc.Date `json:"lastUpdatedDate,omitempty"`
+	LastUpdatedReason  *[]string `json:"lastUpdatedReason,omitempty"`
+	LastUploadDate     *cdc.Date `json:"lastUploadDate,omitempty"`
+	OutdatedReason     *[]string `json:"outdatedReason,omitempty"`
+	OutdatedSince      *cdc.Date `json:"outdatedSince,omitempty"`
+	OutdatedSinceLimit *cdc.Date `json:"outdatedSinceLimit,omitempty"`
 }
 
 // BGMPeriods
@@ -115,6 +114,7 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 	var lastUpdatedDate *time.Time
 	var lastUploadDate *time.Time
 	var outdatedSince *time.Time
+	var outdatedSinceLimit *time.Time
 
 	if p.FullDocument.Dates.FirstData != nil {
 		firstDataVal := time.UnixMilli(p.FullDocument.Dates.FirstData.Value)
@@ -136,13 +136,18 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 		outdatedSinceVal := time.UnixMilli(p.FullDocument.Dates.OutdatedSince.Value)
 		outdatedSince = &outdatedSinceVal
 	}
+	if p.FullDocument.Dates.OutdatedSinceLimit != nil {
+		outdatedSinceLimitVal := time.UnixMilli(p.FullDocument.Dates.OutdatedSinceLimit.Value)
+		outdatedSinceLimit = &outdatedSinceLimitVal
+	}
 
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{}
 	if *p.FullDocument.Type == "cgm" {
 		patientUpdate.CgmStats = &clinics.PatientCGMStats{}
 
 		patientUpdate.CgmStats.Dates = &clinics.PatientSummaryDates{
-			LastUpdatedDate: lastUpdatedDate,
+			LastUpdatedDate:   lastUpdatedDate,
+			LastUpdatedReason: p.FullDocument.Dates.LastUpdatedReason,
 
 			HasLastUploadDate: p.FullDocument.Dates.HasLastUploadDate,
 			LastUploadDate:    lastUploadDate,
@@ -153,8 +158,10 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 			HasLastData: p.FullDocument.Dates.HasLastData,
 			LastData:    lastData,
 
-			HasOutdatedSince: p.FullDocument.Dates.HasOutdatedSince,
-			OutdatedSince:    outdatedSince,
+			HasOutdatedSince:   p.FullDocument.Dates.HasOutdatedSince,
+			OutdatedSince:      outdatedSince,
+			OutdatedReason:     p.FullDocument.Dates.OutdatedReason,
+			OutdatedSinceLimit: outdatedSinceLimit,
 		}
 
 		if p.FullDocument.Config != nil {
@@ -171,7 +178,8 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 		patientUpdate.BgmStats = &clinics.PatientBGMStats{}
 
 		patientUpdate.BgmStats.Dates = &clinics.PatientSummaryDates{
-			LastUpdatedDate: lastUpdatedDate,
+			LastUpdatedDate:   lastUpdatedDate,
+			LastUpdatedReason: p.FullDocument.Dates.LastUpdatedReason,
 
 			HasLastUploadDate: p.FullDocument.Dates.HasLastUploadDate,
 			LastUploadDate:    lastUploadDate,
@@ -182,8 +190,10 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 			HasLastData: p.FullDocument.Dates.HasLastData,
 			LastData:    lastData,
 
-			HasOutdatedSince: p.FullDocument.Dates.HasOutdatedSince,
-			OutdatedSince:    outdatedSince,
+			HasOutdatedSince:   p.FullDocument.Dates.HasOutdatedSince,
+			OutdatedSince:      outdatedSince,
+			OutdatedReason:     p.FullDocument.Dates.OutdatedReason,
+			OutdatedSinceLimit: outdatedSinceLimit,
 		}
 
 		if p.FullDocument.Config != nil {
