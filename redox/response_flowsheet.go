@@ -52,10 +52,10 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits cl
 	reportingTime := formatTime(&now)
 	var firstData, periodEnd, periodStart *time.Time
 
-	if stats != nil && stats.Dates != nil {
+	if stats != nil {
 		reportingTime = formatTime(stats.Dates.LastUpdatedDate)
 		if stats.Periods != nil {
-			if v, ok := (*stats.Periods)["14d"]; ok {
+			if v, ok := stats.Periods["14d"]; ok {
 				period = &v
 			}
 		}
@@ -128,10 +128,10 @@ func PopulateBGMObservations(stats *clinics.PatientBGMStats, preferredBgUnits cl
 	reportingTime := formatTime(&now)
 
 	var firstData, periodEnd, periodStart *time.Time
-	if stats != nil && stats.Dates != nil {
+	if stats != nil {
 		reportingTime = formatTime(stats.Dates.LastUpdatedDate)
 		if stats.Periods != nil {
-			if v, ok := (*stats.Periods)["14d"]; ok {
+			if v, ok := stats.Periods["14d"]; ok {
 				period = &v
 			}
 		}
