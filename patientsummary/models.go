@@ -3,6 +3,7 @@ package patientsummary
 import (
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
+	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"time"
 )
 
@@ -38,36 +39,37 @@ type Glucose struct {
 }
 
 type Dates struct {
-	LastUpdatedDate *cdc.Date `json:"lastUpdatedDate"`
-
-	HasLastUploadDate *bool     `json:"hasLastUploadDate"`
-	LastUploadDate    *cdc.Date `json:"lastUploadDate"`
-
-	HasFirstData *bool     `json:"hasFirstData"`
-	FirstData    *cdc.Date `json:"firstData"`
-
-	HasLastData *bool     `json:"hasLastData"`
-	LastData    *cdc.Date `json:"lastData"`
-
-	HasOutdatedSince *bool     `json:"hasOutdatedSince"`
-	OutdatedSince    *cdc.Date `json:"outdatedSince"`
+	FirstData          *cdc.Date `json:"firstData,omitempty"`
+	HasFirstData       *bool     `json:"hasFirstData,omitempty"`
+	HasLastData        *bool     `json:"hasLastData,omitempty"`
+	HasLastUploadDate  *bool     `json:"hasLastUploadDate,omitempty"`
+	HasOutdatedSince   *bool     `json:"hasOutdatedSince,omitempty"`
+	LastData           *cdc.Date `json:"lastData,omitempty"`
+	LastUpdatedDate    *cdc.Date `json:"lastUpdatedDate,omitempty"`
+	LastUpdatedReason  *[]string `json:"lastUpdatedReason,omitempty"`
+	LastUploadDate     *cdc.Date `json:"lastUploadDate,omitempty"`
+	OutdatedReason     *[]string `json:"outdatedReason,omitempty"`
+	OutdatedSince      *cdc.Date `json:"outdatedSince,omitempty"`
+	OutdatedSinceLimit *cdc.Date `json:"outdatedSinceLimit,omitempty"`
 }
 
 // BGMPeriods
 // For the moment, the period structure matches between the clinic and data service. We don't need to repeat these here.
 // we use the clinic side instead of the summary side to guard against any additional fields the clinic service isn't
 // ready to handle.
-type BGMPeriods map[string]clinics.PatientBGMPeriod
-type CGMPeriods map[string]clinics.PatientCGMPeriod
+type BGMPeriods map[string]summaries.BGMPeriod
+type CGMPeriods map[string]summaries.CGMPeriod
 
 type CGMStats struct {
-	Periods    *CGMPeriods `json:"periods"`
-	TotalHours *int        `json:"totalHours"`
+	Periods       *CGMPeriods `json:"periods"`
+	OffsetPeriods *CGMPeriods `json:"offsetPeriods"`
+	TotalHours    *int        `json:"totalHours"`
 }
 
 type BGMStats struct {
-	Periods    *BGMPeriods `json:"periods"`
-	TotalHours *int        `json:"totalHours"`
+	Periods       *BGMPeriods `json:"periods"`
+	OffsetPeriods *BGMPeriods `json:"offsetPeriods"`
+	TotalHours    *int        `json:"totalHours"`
 }
 
 func (s BGMStats) GetTotalHours() *int {
@@ -90,7 +92,7 @@ type Summary[T Stats] struct {
 	Type   *string      `json:"type"`
 	UserID *string      `json:"userId"`
 
-	Config *clinics.PatientSummaryConfig `json:"config"`
+	Config *summaries.Config `json:"config"`
 
 	Dates *Dates `json:"dates"`
 	Stats *T     `json:"stats"`
@@ -101,7 +103,7 @@ type StaticSummary struct {
 	Type   *string      `json:"type"`
 	UserID *string      `json:"userId"`
 
-	Config *clinics.PatientSummaryConfig `json:"config"`
+	Config *summaries.Config `json:"config"`
 
 	Dates *Dates `json:"dates"`
 }
@@ -112,6 +114,7 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 	var lastUpdatedDate *time.Time
 	var lastUploadDate *time.Time
 	var outdatedSince *time.Time
+	var outdatedSinceLimit *time.Time
 
 	if p.FullDocument.Dates.FirstData != nil {
 		firstDataVal := time.UnixMilli(p.FullDocument.Dates.FirstData.Value)
@@ -133,13 +136,18 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 		outdatedSinceVal := time.UnixMilli(p.FullDocument.Dates.OutdatedSince.Value)
 		outdatedSince = &outdatedSinceVal
 	}
+	if p.FullDocument.Dates.OutdatedSinceLimit != nil {
+		outdatedSinceLimitVal := time.UnixMilli(p.FullDocument.Dates.OutdatedSinceLimit.Value)
+		outdatedSinceLimit = &outdatedSinceLimitVal
+	}
 
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{}
 	if *p.FullDocument.Type == "cgm" {
 		patientUpdate.CgmStats = &clinics.PatientCGMStats{}
 
 		patientUpdate.CgmStats.Dates = &clinics.PatientSummaryDates{
-			LastUpdatedDate: lastUpdatedDate,
+			LastUpdatedDate:   lastUpdatedDate,
+			LastUpdatedReason: p.FullDocument.Dates.LastUpdatedReason,
 
 			HasLastUploadDate: p.FullDocument.Dates.HasLastUploadDate,
 			LastUploadDate:    lastUploadDate,
@@ -150,11 +158,16 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 			HasLastData: p.FullDocument.Dates.HasLastData,
 			LastData:    lastData,
 
-			HasOutdatedSince: p.FullDocument.Dates.HasOutdatedSince,
-			OutdatedSince:    outdatedSince,
+			HasOutdatedSince:   p.FullDocument.Dates.HasOutdatedSince,
+			OutdatedSince:      outdatedSince,
+			OutdatedReason:     p.FullDocument.Dates.OutdatedReason,
+			OutdatedSinceLimit: outdatedSinceLimit,
 		}
 
-		patientUpdate.CgmStats.Config = p.FullDocument.Config
+		if p.FullDocument.Config != nil {
+			config := clinics.PatientSummaryConfig(*p.FullDocument.Config)
+			patientUpdate.CgmStats.Config = &config
+		}
 
 		if p.FullDocument.Stats != nil {
 			patientUpdate.CgmStats.TotalHours = (*p.FullDocument.Stats).GetTotalHours()
@@ -165,7 +178,8 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 		patientUpdate.BgmStats = &clinics.PatientBGMStats{}
 
 		patientUpdate.BgmStats.Dates = &clinics.PatientSummaryDates{
-			LastUpdatedDate: lastUpdatedDate,
+			LastUpdatedDate:   lastUpdatedDate,
+			LastUpdatedReason: p.FullDocument.Dates.LastUpdatedReason,
 
 			HasLastUploadDate: p.FullDocument.Dates.HasLastUploadDate,
 			LastUploadDate:    lastUploadDate,
@@ -176,11 +190,16 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 			HasLastData: p.FullDocument.Dates.HasLastData,
 			LastData:    lastData,
 
-			HasOutdatedSince: p.FullDocument.Dates.HasOutdatedSince,
-			OutdatedSince:    outdatedSince,
+			HasOutdatedSince:   p.FullDocument.Dates.HasOutdatedSince,
+			OutdatedSince:      outdatedSince,
+			OutdatedReason:     p.FullDocument.Dates.OutdatedReason,
+			OutdatedSinceLimit: outdatedSinceLimit,
 		}
 
-		patientUpdate.BgmStats.Config = p.FullDocument.Config
+		if p.FullDocument.Config != nil {
+			config := clinics.PatientSummaryConfig(*p.FullDocument.Config)
+			patientUpdate.BgmStats.Config = &config
+		}
 
 		if p.FullDocument.Stats != nil {
 			patientUpdate.BgmStats.TotalHours = (*p.FullDocument.Stats).GetTotalHours()
@@ -192,45 +211,37 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 }
 
 func (s CGMStats) ExportPeriods(destStatsInt interface{}) {
-	var destStats = destStatsInt.(*clinics.PatientCGMStats)
+	destStats := destStatsInt.(*clinics.PatientCGMStats)
 
 	if s.Periods != nil {
 		destStats.Periods = &clinics.PatientCGMPeriods{}
+		for k, source := range *s.Periods {
+			(*destStats.Periods)[k] = clinics.PatientCGMPeriod(source)
+		}
+	}
 
-		// this is bad, but it's better than copy and pasting the copy code N times
-		if v, exists := (*s.Periods)["1d"]; exists {
-			destStats.Periods.N1d = &v
-		}
-		if v, exists := (*s.Periods)["7d"]; exists {
-			destStats.Periods.N7d = &v
-		}
-		if v, exists := (*s.Periods)["14d"]; exists {
-			destStats.Periods.N14d = &v
-		}
-		if v, exists := (*s.Periods)["30d"]; exists {
-			destStats.Periods.N30d = &v
+	if s.OffsetPeriods != nil {
+		destStats.OffsetPeriods = &clinics.PatientCGMPeriods{}
+		for k, source := range *s.OffsetPeriods {
+			(*destStats.OffsetPeriods)[k] = clinics.PatientCGMPeriod(source)
 		}
 	}
 }
 
 func (s BGMStats) ExportPeriods(destStatsInt interface{}) {
-	var destStats = destStatsInt.(*clinics.PatientBGMStats)
+	destStats := destStatsInt.(*clinics.PatientBGMStats)
 
 	if s.Periods != nil {
 		destStats.Periods = &clinics.PatientBGMPeriods{}
+		for k, source := range *s.Periods {
+			(*destStats.Periods)[k] = clinics.PatientBGMPeriod(source)
+		}
+	}
 
-		// this is bad, but it's better than copy and pasting the copy code N times
-		if v, exists := (*s.Periods)["1d"]; exists {
-			destStats.Periods.N1d = &v
-		}
-		if v, exists := (*s.Periods)["7d"]; exists {
-			destStats.Periods.N7d = &v
-		}
-		if v, exists := (*s.Periods)["14d"]; exists {
-			destStats.Periods.N14d = &v
-		}
-		if v, exists := (*s.Periods)["30d"]; exists {
-			destStats.Periods.N30d = &v
+	if s.OffsetPeriods != nil {
+		destStats.OffsetPeriods = &clinics.PatientBGMPeriods{}
+		for k, source := range *s.OffsetPeriods {
+			(*destStats.OffsetPeriods)[k] = clinics.PatientBGMPeriod(source)
 		}
 	}
 }

@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-const ()
-
 var Module = fx.Provide(
 	NewConfig,
 	NewClient,

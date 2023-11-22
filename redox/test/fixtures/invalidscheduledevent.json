@@ -1,0 +1,402 @@
+{
+  "_id": {
+    "_data": "826528ED310000003F2B022C0100296E5A100428F4F1E7C7D64B3A8853D1BEF65A9D1546645F696400646528ED3121D14252A7855A600004"
+  },
+  "operationType": "insert",
+  "clusterTime": {
+    "$timestamp": {
+      "t": 1697180977,
+      "i": 63
+    }
+  },
+  "wallTime": {
+    "$date": {
+      "$numberLong": "1697180977131"
+    }
+  },
+  "fullDocument": {
+    "_id": {
+      "$oid": "6528ed3121d14252a7855a60"
+    },
+    "clinicId": {
+      "$oid": "6501f32cd366b3774d3ae65a"
+    },
+    "createdTime": {
+      "$date": {
+        "$numberLong": "1697180977107"
+      }
+    },
+    "lastMatchedOrder": {
+      "_id": {
+        "$oid": "651c78cad7f0c5864374429b"
+      },
+      "meta": {
+        "DataModel": "",
+        "Destinations": [
+          {
+            "ID": "67b364bd-6c26-4999-ba3e-5e26c21d1435",
+            "Name": "Production"
+          }
+        ],
+        "EventDateTime": "2023-10-03T13:25:44.000Z",
+        "EventType": "",
+        "FacilityCode": null,
+        "Logs": [
+          {
+            "AttemptID": "6f8ebf90-313d-4488-b34e-c2e4f06e4fef",
+            "ID": "34e96956-63b4-4bf5-b417-ed8d880ea95c"
+          }
+        ],
+        "Source": {
+          "ID": "e9a1bee4-7f4a-438b-aa9c-86da4e7cc0f1",
+          "Name": "Valley Children - Tidepool Orders Source (p)"
+        },
+        "Test": false
+      },
+      "message": {
+        "Meta": {
+          "DataModel": "Order",
+          "EventType": "New",
+          "EventDateTime": "2023-10-03T13:25:44.000Z",
+          "Test": false,
+          "Source": {
+            "ID": "e9a1bee4-7f4a-438b-aa9c-86da4e7cc0f1",
+            "Name": "Valley Children - Tidepool Orders Source (p)"
+          },
+          "Destinations": [
+            {
+              "ID": "67b364bd-6c26-4999-ba3e-5e26c21d1435",
+              "Name": "Production"
+            }
+          ],
+          "Logs": [
+            {
+              "ID": "34e96956-63b4-4bf5-b417-ed8d880ea95c",
+              "AttemptID": "6f8ebf90-313d-4488-b34e-c2e4f06e4fef"
+            }
+          ],
+          "FacilityCode": null
+        },
+        "Patient": {
+          "Identifiers": [
+            {
+              "ID": "M001129367",
+              "IDType": "MRN"
+            }
+          ],
+          "Demographics": {
+            "FirstName": "Hailey",
+            "MiddleName": null,
+            "LastName": "Ayonhernandez",
+            "DOB": "2013-05-16",
+            "SSN": null,
+            "Sex": "Female",
+            "Race": "White",
+            "IsHispanic": true,
+            "Religion": null,
+            "MaritalStatus": "Single",
+            "IsDeceased": false,
+            "DeathDateTime": null,
+            "PhoneNumber": {
+              "Home": "+16612290147",
+              "Office": null,
+              "Mobile": null
+            },
+            "EmailAddresses": [],
+            "Language": null,
+            "Citizenship": [],
+            "Address": {
+              "StreetAddress": "216 RD 148",
+              "City": "DELANO",
+              "State": "CA",
+              "ZIP": "93215",
+              "County": null,
+              "Country": "US"
+            }
+          },
+          "Notes": []
+        },
+        "Visit": {
+          "VisitNumber": "219267589",
+          "AccountNumber": "219267589",
+          "PatientClass": "Outpatient",
+          "VisitDateTime": "2023-10-03T13:03:12.000Z",
+          "AttendingProvider": {
+            "ID": "CAKAN",
+            "IDType": "PROVID",
+            "FirstName": "Nedim",
+            "LastName": "Cakan",
+            "Credentials": [],
+            "Address": {
+              "StreetAddress": null,
+              "City": null,
+              "State": null,
+              "ZIP": null,
+              "County": null,
+              "Country": null
+            },
+            "EmailAddresses": [],
+            "PhoneNumber": {
+              "Office": null
+            },
+            "Location": {
+              "Type": null,
+              "Facility": null,
+              "FacilityIdentifiers": [],
+              "Department": null,
+              "DepartmentIdentifiers": [],
+              "Room": null
+            }
+          },
+          "ConsultingProvider": {
+            "ID": null,
+            "IDType": null,
+            "FirstName": null,
+            "LastName": null,
+            "Credentials": [],
+            "Address": {
+              "StreetAddress": null,
+              "City": null,
+              "State": null,
+              "ZIP": null,
+              "County": null,
+              "Country": null
+            },
+            "EmailAddresses": [],
+            "PhoneNumber": {
+              "Office": null
+            },
+            "Location": {
+              "Type": null,
+              "Facility": null,
+              "FacilityIdentifiers": [],
+              "Department": null,
+              "DepartmentIdentifiers": [],
+              "Room": null
+            }
+          },
+          "ReferringProvider": {
+            "ID": null,
+            "IDType": null,
+            "FirstName": null,
+            "LastName": null,
+            "Credentials": [],
+            "Address": {
+              "StreetAddress": null,
+              "City": null,
+              "State": null,
+              "ZIP": null,
+              "County": null,
+              "Country": null
+            },
+            "EmailAddresses": [],
+            "PhoneNumber": {
+              "Office": null
+            },
+            "Location": {
+              "Type": null,
+              "Facility": null,
+              "FacilityIdentifiers": [],
+              "Department": null,
+              "DepartmentIdentifiers": [],
+              "Room": null
+            }
+          },
+          "Guarantor": {
+            "Number": null,
+            "FirstName": null,
+            "MiddleName": null,
+            "LastName": null,
+            "SSN": null,
+            "DOB": null,
+            "Sex": null,
+            "Spouse": {
+              "FirstName": null,
+              "LastName": null
+            },
+            "Address": {
+              "StreetAddress": null,
+              "City": null,
+              "State": null,
+              "ZIP": null,
+              "County": null,
+              "Country": null
+            },
+            "PhoneNumber": {
+              "Home": null,
+              "Business": null,
+              "Mobile": null
+            },
+            "EmailAddresses": [],
+            "Type": null,
+            "RelationToPatient": null,
+            "Employer": {
+              "Name": null,
+              "Address": {
+                "StreetAddress": null,
+                "City": null,
+                "State": null,
+                "ZIP": null,
+                "County": null,
+                "Country": null
+              },
+              "PhoneNumber": null
+            }
+          },
+          "Insurances": [
+            {
+              "Plan": {
+                "ID": null,
+                "IDType": null,
+                "Name": null,
+                "Type": null
+              },
+              "MemberNumber": null,
+              "Company": {
+                "ID": null,
+                "IDType": null,
+                "Name": null,
+                "Address": {
+                  "StreetAddress": null,
+                  "City": null,
+                  "State": null,
+                  "ZIP": null,
+                  "County": null,
+                  "Country": null
+                },
+                "PhoneNumber": null
+              },
+              "GroupNumber": null,
+              "GroupName": null,
+              "EffectiveDate": null,
+              "ExpirationDate": null,
+              "PolicyNumber": null,
+              "Priority": null,
+              "AgreementType": null,
+              "CoverageType": null,
+              "Insured": {
+                "Identifiers": [],
+                "LastName": null,
+                "MiddleName": null,
+                "FirstName": null,
+                "SSN": null,
+                "Relationship": null,
+                "DOB": null,
+                "Sex": null,
+                "Address": {
+                  "StreetAddress": null,
+                  "City": null,
+                  "State": null,
+                  "ZIP": null,
+                  "County": null,
+                  "Country": null
+                }
+              }
+            }
+          ],
+          "Location": {
+            "Type": null,
+            "Facility": "VMHM",
+            "FacilityIdentifiers": [],
+            "Department": "VCMENDOCRIN",
+            "DepartmentIdentifiers": [],
+            "Room": null,
+            "Bed": null
+          }
+        },
+        "Order": {
+          "ID": "50815049",
+          "ApplicationOrderID": null,
+          "Status": "New",
+          "TransactionDateTime": "2023-10-03T13:25:39.000Z",
+          "CollectionDateTime": null,
+          "Specimen": {
+            "Source": null,
+            "BodySite": null,
+            "ID": null
+          },
+          "Procedure": {
+            "Code": "PRO1090",
+            "Codeset": null,
+            "Description": "START DIABETES DEVICE READINGS"
+          },
+          "Provider": {
+            "NPI": "CAKAN",
+            "ID": "CAKAN",
+            "IDType": "PROVID",
+            "FirstName": "NEDIM",
+            "LastName": "CAKAN",
+            "Credentials": [],
+            "Address": {
+              "StreetAddress": null,
+              "City": null,
+              "State": null,
+              "ZIP": null,
+              "County": null,
+              "Country": null
+            },
+            "EmailAddresses": [],
+            "PhoneNumber": {
+              "Office": null
+            },
+            "Location": {
+              "Type": null,
+              "Facility": null,
+              "FacilityIdentifiers": [],
+              "Department": null,
+              "DepartmentIdentifiers": [],
+              "Room": null
+            }
+          },
+          "ResultCopyProviders": [],
+          "OrderingFacility": {
+            "Name": null,
+            "Address": {
+              "StreetAddress": null,
+              "City": null,
+              "State": null,
+              "ZIP": null,
+              "County": null,
+              "Country": null
+            },
+            "PhoneNumber": null
+          },
+          "Priority": null,
+          "Expiration": null,
+          "Comments": null,
+          "Notes": [],
+          "Diagnoses": [
+            {
+              "Code": null,
+              "Codeset": null,
+              "Name": null,
+              "Type": null,
+              "DocumentedDateTime": null
+            }
+          ],
+          "ClinicalInfo": [
+            {
+              "Code": null,
+              "Codeset": null,
+              "Description": null,
+              "Value": null,
+              "Units": null,
+              "Abbreviation": null,
+              "Notes": []
+            }
+          ]
+        }
+      }
+    },
+    "userId": "d8efd5d2-55c8-4b71-888f-d374fcc84adc"
+  },
+  "ns": {
+    "db": "clinic",
+    "coll": "scheduledSummaryAndReportsOrders"
+  },
+  "documentKey": {
+    "_id": {
+      "$oid": "6528ed3121d14252a7855a60"
+    }
+  }
+}

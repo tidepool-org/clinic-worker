@@ -1,6 +1,7 @@
 package patients
 
 import (
+	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"time"
 
 	"github.com/tidepool-org/clinic-worker/cdc"
@@ -88,17 +89,19 @@ func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interf
 }
 
 type BGMStats struct {
-	Config     clinics.PatientSummaryConfig          `json:"config" bson:"config"`
-	Dates      patientsummary.Dates                  `json:"dates" bson:"dates"`
-	Periods    map[string]*clinics.PatientBGMPeriods `json:"periods" bson:"periods"`
-	TotalHours *int                                  `json:"totalHours" bson:"totalHours"`
+	Config        *summaries.Config               `json:"config" bson:"config"`
+	Dates         *patientsummary.Dates           `json:"dates" bson:"dates"`
+	Periods       map[string]*summaries.BGMPeriod `json:"periods" bson:"periods"`
+	OffsetPeriods map[string]*summaries.BGMPeriod `json:"OffsetPeriods" bson:"offsetPeriods"`
+	TotalHours    *int                            `json:"totalHours" bson:"totalHours"`
 }
 
 type CGMStats struct {
-	Config     clinics.PatientSummaryConfig          `json:"config" bson:"config"`
-	Dates      patientsummary.Dates                  `json:"dates" bson:"dates"`
-	Periods    map[string]*clinics.PatientCGMPeriods `json:"periods" bson:"periods"`
-	TotalHours *int                                  `json:"totalHours" bson:"totalHours"`
+	Config        *summaries.Config               `json:"config" bson:"config"`
+	Dates         *patientsummary.Dates           `json:"dates" bson:"dates"`
+	Periods       map[string]*summaries.CGMPeriod `json:"periods" bson:"periods"`
+	OffsetPeriods map[string]*summaries.CGMPeriod `json:"OffsetPeriods" bson:"offsetPeriods"`
+	TotalHours    *int                            `json:"totalHours" bson:"totalHours"`
 }
 
 type CDCSummary struct {

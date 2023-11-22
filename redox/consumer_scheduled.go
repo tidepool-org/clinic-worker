@@ -82,7 +82,7 @@ func (s *ScheduledSummaryAndReportsCDCConsumer) handleMessage(cm *sarama.Consume
 		Offset: cm.Offset,
 	}
 
-	if err := s.unmarshalEvent(cm.Value, &event); err != nil {
+	if err := UnmarshalEvent(cm.Value, &event); err != nil {
 		s.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
 		return err
 	}
@@ -95,23 +95,21 @@ func (s *ScheduledSummaryAndReportsCDCConsumer) handleMessage(cm *sarama.Consume
 	return nil
 }
 
-func (s *ScheduledSummaryAndReportsCDCConsumer) unmarshalEvent(value []byte, event *cdc.Event[ScheduledSummaryAndReport]) error {
-	return bson.UnmarshalExtJSON(value, true, event)
-}
-
 func (s *ScheduledSummaryAndReportsCDCConsumer) handleCDCEvent(event cdc.Event[ScheduledSummaryAndReport]) error {
 	if event.FullDocument == nil {
-		s.logger.Infow("skipping event with no full document", "offset", event.Offset)
+		s.logger.Errorw("skipping event with no full document", "offset", event.Offset)
+		return nil
 	}
 
 	scheduled := event.FullDocument
-	if scheduled.LastMatchedOrder.Meta.IsValid() {
-		s.logger.Infow("skipping event with invalid meta", "offset", event.Offset)
+	if !scheduled.LastMatchedOrder.Meta.IsValid() {
+		s.logger.Errorw("skipping event with invalid meta", "offset", event.Offset)
+		return nil
 	}
 
 	// We only expect orders for now
 	if scheduled.LastMatchedOrder.Meta.DataModel != DataModelOrder {
-		s.logger.Infow("unexpected data model", "order", scheduled.LastMatchedOrder.Meta, "offset", event.Offset)
+		s.logger.Errorw("unexpected data model", "order", scheduled.LastMatchedOrder.Meta, "offset", event.Offset)
 		return nil
 	}
 
@@ -134,4 +132,8 @@ func (s *ScheduledSummaryAndReportsCDCConsumer) handleCDCEvent(event cdc.Event[S
 	}
 
 	return nil
+}
+
+func UnmarshalEvent(value []byte, event *cdc.Event[ScheduledSummaryAndReport]) error {
+	return bson.UnmarshalExtJSON(value, true, event)
 }

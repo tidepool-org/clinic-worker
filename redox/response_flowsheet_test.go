@@ -35,7 +35,7 @@ var _ = Describe("Flowsheet", func() {
 
 		BeforeEach(func() {
 			flowsheet = redox.NewFlowsheet()
-			fixture, err := test.LoadFixture("test/fixtures/neworder.json")
+			fixture, err := test.LoadFixture("test/fixtures/subscriptionorder.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(fixture, &order)).To(Succeed())
 		})
@@ -52,7 +52,7 @@ var _ = Describe("Flowsheet", func() {
 
 		BeforeEach(func() {
 			response = api.EHRMatchResponse{}
-			fixture, err := test.LoadFixture("test/fixtures/ehrmatchresponse.json")
+			fixture, err := test.LoadFixture("test/fixtures/subscriptionmatchresponse.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(fixture, &response)).To(Succeed())
 			Expect(response.Patients).ToNot(BeNil())
@@ -126,7 +126,7 @@ var _ = Describe("Flowsheet", func() {
 
 				flowsheet := redox.NewFlowsheet()
 				patient := (*response.Patients)[0]
-				response.Clinic.PreferredBgUnits = api.ClinicPreferredBgUnitsMgdL
+				response.Clinic.PreferredBgUnits = api.MgdL
 
 				redox.PopulateSummaryStatistics(patient, response.Clinic, &flowsheet)
 

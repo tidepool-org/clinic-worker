@@ -55,7 +55,9 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits cl
 	if stats != nil && stats.Dates != nil {
 		reportingTime = formatTime(stats.Dates.LastUpdatedDate)
 		if stats.Periods != nil {
-			period = stats.Periods.N14d
+			if v, ok := (*stats.Periods)["14d"]; ok {
+				period = &v
+			}
 		}
 
 		firstData = stats.Dates.FirstData
@@ -82,9 +84,9 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits cl
 	var timeInVeryHigh *float64
 
 	if period != nil {
-		if period.AverageGlucose != nil {
-			val := float64(period.AverageGlucose.Value)
-			units := string(period.AverageGlucose.Units)
+		if period.AverageGlucoseMmol != nil {
+			val := float64(*period.AverageGlucoseMmol)
+			units := string(clinics.MmolL)
 
 			// Convert blood glucose to preferred units
 			val, units = bgInUnits(val, units, string(preferredBgUnits))
@@ -129,7 +131,9 @@ func PopulateBGMObservations(stats *clinics.PatientBGMStats, preferredBgUnits cl
 	if stats != nil && stats.Dates != nil {
 		reportingTime = formatTime(stats.Dates.LastUpdatedDate)
 		if stats.Periods != nil {
-			period = stats.Periods.N14d
+			if v, ok := (*stats.Periods)["14d"]; ok {
+				period = &v
+			}
 		}
 
 		firstData = stats.Dates.FirstData
@@ -150,9 +154,9 @@ func PopulateBGMObservations(stats *clinics.PatientBGMStats, preferredBgUnits cl
 	var timeInVeryHighRecords *int
 
 	if period != nil {
-		if period.AverageGlucose != nil {
-			val := float64(period.AverageGlucose.Value)
-			units := string(period.AverageGlucose.Units)
+		if period.AverageGlucoseMmol != nil {
+			val := float64(*period.AverageGlucoseMmol)
+			units := string(clinics.MmolL)
 
 			// Convert blood glucose to preferred units
 			val, units = bgInUnits(val, units, string(preferredBgUnits))

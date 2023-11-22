@@ -31,7 +31,7 @@ var _ = Describe("Results", func() {
 
 		BeforeEach(func() {
 			results = redox.NewResults()
-			fixture, err := test.LoadFixture("test/fixtures/neworder.json")
+			fixture, err := test.LoadFixture("test/fixtures/subscriptionorder.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(fixture, &order)).To(Succeed())
 		})
@@ -45,10 +45,10 @@ var _ = Describe("Results", func() {
 		})
 
 		Describe("SetMatchingResult", func() {
-			var matchingResult redox.MatchingResult
+			var matchingResult redox.ResultsNotification
 
 			It("sets the order id and status", func() {
-				redox.SetMatchingResult(redox.MatchingResult{
+				redox.SetMatchingResult(redox.ResultsNotification{
 					IsSuccess: true,
 					Message:   "success",
 				}, order, &results)
@@ -60,7 +60,7 @@ var _ = Describe("Results", func() {
 
 			When("matching result is success", func() {
 				BeforeEach(func() {
-					matchingResult = redox.MatchingResult{
+					matchingResult = redox.ResultsNotification{
 						IsSuccess: true,
 						Message:   "Matched!",
 					}
@@ -85,7 +85,7 @@ var _ = Describe("Results", func() {
 
 			When("matching result is failure", func() {
 				BeforeEach(func() {
-					matchingResult = redox.MatchingResult{
+					matchingResult = redox.ResultsNotification{
 						IsSuccess: false,
 						Message:   "No patients matched!",
 					}
