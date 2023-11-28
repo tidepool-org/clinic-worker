@@ -103,10 +103,12 @@ func (m *MessageCDCConsumer) unmarshalEvent(value []byte, event *cdc.Event[model
 func (m *MessageCDCConsumer) handleCDCEvent(event cdc.Event[models.MessageEnvelope]) error {
 	if event.FullDocument == nil {
 		m.logger.Infow("skipping event with no full document", "offset", event.Offset)
+		return nil
 	}
 
-	if event.FullDocument.Meta.IsValid() {
+	if !event.FullDocument.Meta.IsValid() {
 		m.logger.Infow("skipping event with invalid meta", "offset", event.Offset)
+		return nil
 	}
 
 	// We only expect orders for now
