@@ -41,7 +41,11 @@ func (r *reportGenerator) GenerateReport(ctx context.Context, params Parameters)
 		return nil, fmt.Errorf("unable to get token from shoreline client")
 	}
 
-	r.logger.Infow("generating report", "userId", params.UserDetail.UserId, "params", params)
+	r.logger.Infow("generating report",
+		"clinicId", params.ClinicId,
+		"userId", params.UserDetail.UserId,
+		"params", params,
+	)
 
 	resp, err := r.restyClient.R().
 		SetContext(ctx).
@@ -85,6 +89,8 @@ func (s SampleReportGenerator) GenerateReport(ctx context.Context, params Parame
 }
 
 type Parameters struct {
+	// The clinic id is used only for logging purposes
+	ClinicId     string       `json:"-"`
 	UserDetail   UserDetail   `json:"userDetail"`
 	ReportDetail ReportDetail `json:"reportDetail"`
 }
