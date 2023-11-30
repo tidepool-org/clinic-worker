@@ -248,8 +248,8 @@ github.com/tdewolff/parse/v2 v2.7.2 h1:9NdxF0nk/+lPI0YADDonSlpiY15hGcVUhXRj9hnK8
 github.com/tdewolff/parse/v2 v2.7.2/go.mod h1:9p2qMIHpjRSTr1qnFxQr+igogyTUTlwvf9awHSm84h8=
 github.com/tdewolff/test v1.0.10 h1:uWiheaLgLcNFqHcdWveum7PQfMnIUTf9Kl3bFxrIoew=
 github.com/tdewolff/test v1.0.10/go.mod h1:6DAvZliBAAnD7rhVgwaM7DE5/d9NMOAJ09SqYqeK4QE=
-github.com/tidepool-org/clinic/client v0.0.0-20231026183642-f2dc21992db5 h1:BDqrYxTIDOC7GolIfYHs0NrWpS6Qwkt3nLVlIjBweKQ=
-github.com/tidepool-org/clinic/client v0.0.0-20231026183642-f2dc21992db5/go.mod h1:/pKE2peJWlb18cnXWdxLO+jeenxnWH6V6W0OilLyT7I=
+github.com/tidepool-org/clinic/client v0.0.0-20231122091221-edb5eb5a015f h1:xWZ8yL+hEcic3sPC0LRQAiPFA9sHdbt+zEIDeTgFitI=
+github.com/tidepool-org/clinic/client v0.0.0-20231122091221-edb5eb5a015f/go.mod h1:/pKE2peJWlb18cnXWdxLO+jeenxnWH6V6W0OilLyT7I=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20231026151906-ad2e71e79f6f h1:dIIjrxPbOI4Y0nHVbqQiqsDDL+Huv1D8FrXy0vHIdys=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20231026151906-ad2e71e79f6f/go.mod h1:dCaLaavBX9ThZaGr6X64IF03l3d6Cin/8elupnpCC/c=
 github.com/tidepool-org/go-common v0.11.1-0.20231026191335-3dbe2538f5d1 h1:VVmoZVa7lEEW4aAr1P0A3QDuVUUzgutJK+DhtfJeeTo=
