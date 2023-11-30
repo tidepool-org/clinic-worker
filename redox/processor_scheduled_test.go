@@ -18,6 +18,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
 
 var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
@@ -38,12 +39,20 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 	Describe("ProcessOrder", func() {
 		var order models.NewOrder
 		var scheduled redox.ScheduledSummaryAndReport
+		var patient *clinics.Patient
 
 		BeforeEach(func() {
 			response := &clinics.EHRMatchResponse{}
 			matchFixture, err := test.LoadFixture("test/fixtures/subscriptionmatchresponse.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(matchFixture, response)).To(Succeed())
+
+			patient = &(*response.Patients)[0]
+			// Make sure we're not ignoring the scheduled order when
+			// the user's last upload data is too far back
+			now := time.Now()
+			patient.Summary.CgmStats.Dates.LastUploadDate = &now
+			patient.Summary.BgmStats.Dates.LastUploadDate = &now
 
 			clinicClient.EXPECT().
 				GetClinicWithResponse(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -58,7 +67,7 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 				Return(&clinics.GetPatientResponse{
 					Body:         nil,
 					HTTPResponse: &http.Response{StatusCode: http.StatusOK},
-					JSON200:      &((*response.Patients)[0]),
+					JSON200:      patient,
 				}, nil)
 
 			clinicClient.EXPECT().
@@ -87,7 +96,7 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			scheduled = redox.ScheduledSummaryAndReport{
-				UserId:           *(*response.Patients)[0].Id,
+				UserId:           *patient.Id,
 				ClinicId:         clinicObjectId,
 				LastMatchedOrder: envelope,
 				DecodedOrder:     order,
@@ -155,6 +164,51 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 				}),
 			}))
 
+		})
+
+		It("doesn't send any documents if last upload date is more than 14 days ago", func() {
+			beforeCutoff := time.Now().Add(-15 * 24 * time.Hour)
+			patient.Summary.CgmStats.Dates.LastUploadDate = &beforeCutoff
+			patient.Summary.BgmStats.Dates.LastUploadDate = &beforeCutoff
+
+			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+			Expect(redoxClient.Sent).To(HaveLen(0))
+		})
+
+		It("sends documents if bgm upload date is before the cutoff but cgm after", func() {
+			now := time.Now()
+			beforeCutoff := time.Now().Add(-15 * 24 * time.Hour)
+			patient.Summary.CgmStats.Dates.LastUploadDate = &now
+			patient.Summary.BgmStats.Dates.LastUploadDate = &beforeCutoff
+
+			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+			Expect(redoxClient.Sent).To(HaveLen(2))
+		})
+
+		It("sends documents if cgm upload date is before the cutoff but bgm after", func() {
+			now := time.Now()
+			beforeCutoff := time.Now().Add(-15 * 24 * time.Hour)
+			patient.Summary.CgmStats.Dates.LastUploadDate = &beforeCutoff
+			patient.Summary.BgmStats.Dates.LastUploadDate = &now
+
+			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+			Expect(redoxClient.Sent).To(HaveLen(2))
+		})
+
+		It("succeeds if cgm stats is nil", func() {
+			now := time.Now()
+			patient.Summary.CgmStats = nil
+			patient.Summary.BgmStats.Dates.LastUploadDate = &now
+
+			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+		})
+
+		It("succeeds if bgm stats is nil", func() {
+			now := time.Now()
+			patient.Summary.CgmStats.Dates.LastUploadDate = &now
+			patient.Summary.BgmStats = nil
+
+			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
 		})
 	})
 })

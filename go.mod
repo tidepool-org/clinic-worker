@@ -16,9 +16,9 @@ require (
 	github.com/oapi-codegen/runtime v1.1.0
 	github.com/onsi/ginkgo/v2 v2.13.2
 	github.com/onsi/gomega v1.30.0
-	github.com/tidepool-org/clinic/client v0.0.0-20231206162857-261022ec5a55
+	github.com/tidepool-org/clinic/client v0.0.0-20240110033014-3fc666a89d20
 	github.com/tidepool-org/clinic/redox_models v0.0.0-20231130132900-fa671533ce9f
-	github.com/tidepool-org/go-common v0.11.1-0.20231206161745-ffbc28a94749
+	github.com/tidepool-org/go-common v0.11.1-0.20240105042238-737bbef94c00
 	github.com/tidepool-org/hydrophone/client v0.0.0-20230915144349-ccec1a4d1782
 	go.mongodb.org/mongo-driver v1.13.0
 	go.uber.org/fx v1.20.1
