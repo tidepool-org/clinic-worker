@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/deepmap/oapi-codegen/pkg/types"
+	"github.com/oapi-codegen/runtime/types"
 	"github.com/tidepool-org/clinic-worker/report"
 	clinics "github.com/tidepool-org/clinic/client"
 	models "github.com/tidepool-org/clinic/redox_models"
@@ -293,6 +293,9 @@ func (o *newOrderProcessor) createReportNote(ctx context.Context, order models.N
 		ReportDetail: report.ReportDetail{
 			Reports: []string{"all"},
 		},
+	}
+	if match.Clinic.Id != nil {
+		reportParameters.ClinicId = *match.Clinic.Id
 	}
 	if match.Clinic.Timezone != nil {
 		reportParameters.ReportDetail.TimezoneName = string(*match.Clinic.Timezone)
