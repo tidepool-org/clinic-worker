@@ -152,12 +152,12 @@ func GetCGMStatsDates(patient clinics.Patient) *clinics.PatientSummaryDates {
 	if patient.Summary == nil || patient.Summary.CgmStats == nil {
 		return nil
 	}
-	return patient.Summary.CgmStats.Dates
+	return &patient.Summary.CgmStats.Dates
 }
 
 func GetBGMStatsDates(patient clinics.Patient) *clinics.PatientSummaryDates {
 	if patient.Summary == nil || patient.Summary.BgmStats == nil {
 		return nil
 	}
-	return patient.Summary.BgmStats.Dates
+	return &patient.Summary.BgmStats.Dates
 }
