@@ -247,12 +247,12 @@ github.com/tdewolff/parse/v2 v2.7.6 h1:PGZH2b/itDSye9RatReRn4GBhsT+KFEMtAMjHRuY1
 github.com/tdewolff/parse/v2 v2.7.6/go.mod h1:3FbJWZp3XT9OWVN3Hmfp0p/a08v4h8J9W1aghka0soA=
 github.com/tdewolff/test v1.0.11-0.20231101010635-f1265d231d52 h1:gAQliwn+zJrkjAHVcBEYW/RFvd2St4yYimisvozAYlA=
 github.com/tdewolff/test v1.0.11-0.20231101010635-f1265d231d52/go.mod h1:6DAvZliBAAnD7rhVgwaM7DE5/d9NMOAJ09SqYqeK4QE=
-github.com/tidepool-org/clinic/client v0.0.0-20231206162857-261022ec5a55 h1:zxkCFHIZ4VWKWT+3tskPuxYSVmnfUogQ2NAdV1ntjJs=
-github.com/tidepool-org/clinic/client v0.0.0-20231206162857-261022ec5a55/go.mod h1:/pKE2peJWlb18cnXWdxLO+jeenxnWH6V6W0OilLyT7I=
+github.com/tidepool-org/clinic/client v0.0.0-20240110033014-3fc666a89d20 h1:NVuNmUCL4lM1osaVxq8W0G0ASjiVpzDCM+cKYV6ugOw=
+github.com/tidepool-org/clinic/client v0.0.0-20240110033014-3fc666a89d20/go.mod h1:/pKE2peJWlb18cnXWdxLO+jeenxnWH6V6W0OilLyT7I=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20231130132900-fa671533ce9f h1:M8jOacAtDXGe5JYMX3pqdI7VDxSzBKQlAzQa0e4QE2I=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20231130132900-fa671533ce9f/go.mod h1:dCaLaavBX9ThZaGr6X64IF03l3d6Cin/8elupnpCC/c=
-github.com/tidepool-org/go-common v0.11.1-0.20231206161745-ffbc28a94749 h1:ICO0owzOBuVEcSOnd7OoCjKgdg2qxC8ynXVg7in0KPE=
-github.com/tidepool-org/go-common v0.11.1-0.20231206161745-ffbc28a94749/go.mod h1:H5FwIwQLFAunmfoy1jtzsQM+lxV/6ssw8l40e/KfQ4A=
+github.com/tidepool-org/go-common v0.11.1-0.20240105042238-737bbef94c00 h1:eqltvBHqxDjfACjvyReso8BgC7y3WIGcQoCteB7q2TI=
+github.com/tidepool-org/go-common v0.11.1-0.20240105042238-737bbef94c00/go.mod h1:H5FwIwQLFAunmfoy1jtzsQM+lxV/6ssw8l40e/KfQ4A=
 github.com/tidepool-org/hydrophone/client v0.0.0-20230915144349-ccec1a4d1782 h1:WwzVS/nnVWoOXC/T4h1/WsRAx3FDR+i8r5P4hZ/xb3A=
 github.com/tidepool-org/hydrophone/client v0.0.0-20230915144349-ccec1a4d1782/go.mod h1:OTyfLgQuKg7xiU5PLMvxzwwOaUdZsbeIvVxTKrT0n+g=
 github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS4MhqMhdFk5YI=
