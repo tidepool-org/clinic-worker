@@ -151,7 +151,7 @@ func (l *Lexer) Next() (TokenType, []byte) {
 	}
 
 	if l.rawTag != 0 {
-		if rawText := l.shiftRawText(); len(rawText) > 0 {
+		if rawText := l.shiftRawText(); 0 < len(rawText) {
 			l.text = rawText
 			l.rawTag = 0
 			return TextToken, rawText
@@ -166,6 +166,7 @@ func (l *Lexer) Next() (TokenType, []byte) {
 			isEndTag := c == '/' && l.r.Peek(2) != '>' && (l.r.Peek(2) != 0 || l.r.PeekErr(2) == nil)
 			if !isEndTag && (c < 'a' || 'z' < c) && (c < 'A' || 'Z' < c) && c != '!' && c != '?' {
 				// not a tag
+				l.r.Move(1)
 			} else if 0 < l.r.Pos() {
 				// return currently buffered texttoken so that we can return tag next iteration
 				l.text = l.r.Shift()
@@ -184,6 +185,10 @@ func (l *Lexer) Next() (TokenType, []byte) {
 			} else if c == '!' {
 				l.r.Move(2)
 				return l.readMarkup()
+			} else if 0 < len(l.tmplBegin) && l.at(l.tmplBegin...) {
+				l.r.Move(len(l.tmplBegin))
+				l.moveTemplate()
+				l.hasTmpl = true
 			} else if c == '?' {
 				l.r.Move(1)
 				return CommentToken, l.shiftBogusComment()
@@ -193,13 +198,14 @@ func (l *Lexer) Next() (TokenType, []byte) {
 			l.moveTemplate()
 			l.hasTmpl = true
 		} else if c == 0 && l.r.Err() != nil {
-			if l.r.Pos() > 0 {
+			if 0 < l.r.Pos() {
 				l.text = l.r.Shift()
 				return TextToken, l.text
 			}
 			return ErrorToken, nil
+		} else {
+			l.r.Move(1)
 		}
-		l.r.Move(1)
 	}
 }
 
@@ -274,6 +280,10 @@ func (l *Lexer) shiftRawText() []byte {
 				} else {
 					l.r.Move(1)
 				}
+			} else if 0 < len(l.tmplBegin) && l.at(l.tmplBegin...) {
+				l.r.Move(len(l.tmplBegin))
+				l.moveTemplate()
+				l.hasTmpl = true
 			} else if c == 0 && l.r.Err() != nil {
 				return l.r.Shift()
 			} else {
@@ -531,19 +541,19 @@ func (l *Lexer) shiftXML(rawTag Hash) []byte {
 
 func (l *Lexer) moveTemplate() {
 	for {
-		if c := l.r.Peek(0); l.at(l.tmplEnd...) || c == 0 && l.r.Err() != nil {
-			if c != 0 {
-				l.r.Move(len(l.tmplEnd))
-			}
-			break
+		if c := l.r.Peek(0); c == 0 && l.r.Err() != nil {
+			return
+		} else if l.at(l.tmplEnd...) {
+			l.r.Move(len(l.tmplEnd))
+			return
 		} else if c == '"' || c == '\'' {
 			l.r.Move(1)
 			escape := false
 			for {
-				if c2 := l.r.Peek(0); !escape && c2 == c || c2 == 0 && l.r.Err() != nil {
-					if c2 != 0 {
-						l.r.Move(1)
-					}
+				if c2 := l.r.Peek(0); c2 == 0 && l.r.Err() != nil {
+					return
+				} else if !escape && c2 == c {
+					l.r.Move(1)
 					break
 				} else if c2 == '\\' {
 					escape = !escape

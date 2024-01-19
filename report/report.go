@@ -22,7 +22,7 @@ const (
 )
 
 type ReportGeneratorConfig struct {
-	ExportServiceHost string `envconfig:"TIDEPOOL_EXPORT_CLIENT_ADDRESS" default:"http://export:9300"`
+	ExportServiceHost string `envconfig:"TIDEPOOL_EXPORT_CLIENT_ADDRESS" default:"http://export:9301"`
 }
 
 type Generator interface {
@@ -152,12 +152,12 @@ func GetCGMStatsDates(patient clinics.Patient) *clinics.PatientSummaryDates {
 	if patient.Summary == nil || patient.Summary.CgmStats == nil {
 		return nil
 	}
-	return patient.Summary.CgmStats.Dates
+	return &patient.Summary.CgmStats.Dates
 }
 
 func GetBGMStatsDates(patient clinics.Patient) *clinics.PatientSummaryDates {
 	if patient.Summary == nil || patient.Summary.BgmStats == nil {
 		return nil
 	}
-	return patient.Summary.BgmStats.Dates
+	return &patient.Summary.BgmStats.Dates
 }
