@@ -14,10 +14,10 @@ require (
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/onsi/ginkgo/v2 v2.15.0
 	github.com/onsi/gomega v1.31.1
-	github.com/tidepool-org/clinic/client v0.0.0-20240118184732-13bcf1eae0cd
-	github.com/tidepool-org/clinic/redox_models v0.0.0-20240118184732-13bcf1eae0cd
-	github.com/tidepool-org/go-common v0.11.1-0.20240118173354-94b2e200da21
-	github.com/tidepool-org/hydrophone/client v0.0.0-20240119145014-b9326f27b144
+	github.com/tidepool-org/clinic/client v0.0.0-20240119154138-fd88ad427641
+	github.com/tidepool-org/clinic/redox_models v0.0.0-20240119154138-fd88ad427641
+	github.com/tidepool-org/go-common v0.11.1-0.20240119151220-be854abc1af5
+	github.com/tidepool-org/hydrophone/client v0.0.0-20240119155203-d8065cfb9c89
 	go.mongodb.org/mongo-driver v1.13.1
 	go.uber.org/fx v1.20.1
 	go.uber.org/ratelimit v0.3.0
@@ -121,3 +121,6 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+// Resolve GO-2023-2116, GO-2023-2115, GO-2023-2052
+replace github.com/gofiber/fiber/v2 v2.49.1 => github.com/gofiber/fiber/v2 v2.52.0
