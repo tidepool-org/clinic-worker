@@ -87,7 +87,7 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 	}
 	if err := p.unmarshalEvent(cm.Value, &staticEvent); err != nil {
 		p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
-		return err
+		return nil
 	}
 
 	p.logger.Debugw("event being processed", "event", staticEvent)
