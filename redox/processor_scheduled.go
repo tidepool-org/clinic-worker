@@ -8,7 +8,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
+
+const recentDataCutoff = 14 * 24 * time.Hour
 
 type ScheduledSummaryAndReport struct {
 	UserId           string                 `json:"userId"`
@@ -67,6 +70,11 @@ func (r *scheduledSummaryAndReportProcessor) ProcessOrder(ctx context.Context, s
 		return nil
 	}
 
+	if !patientHasUploadedDataRecently(*patient) {
+		r.logger.Infow("ignoring scheduled summary and report request because the user doesn't have recent data", "clinicId", clinicId, "userId", scheduled.UserId)
+		return nil
+	}
+
 	match := clinics.EHRMatchResponse{
 		Clinic:   *clinic,
 		Patients: &clinics.Patients{*patient},
@@ -116,4 +124,21 @@ func (r *scheduledSummaryAndReportProcessor) getClinicSettings(ctx context.Conte
 	}
 
 	return resp.JSON200, nil
+}
+
+func patientHasUploadedDataRecently(patient clinics.Patient) bool {
+	cutoffDate := time.Now().Add(-recentDataCutoff)
+	mostRecentUploadDate := getMostRecentUploadDate(patient)
+	return mostRecentUploadDate.After(cutoffDate)
+}
+
+func getMostRecentUploadDate(patient clinics.Patient) time.Time {
+	var mostRecentUpload time.Time
+	if patient.Summary != nil && patient.Summary.CgmStats != nil && patient.Summary.CgmStats.Dates.LastUploadDate != nil {
+		mostRecentUpload = *patient.Summary.CgmStats.Dates.LastUploadDate
+	}
+	if patient.Summary != nil && patient.Summary.BgmStats != nil && patient.Summary.BgmStats.Dates.LastUploadDate != nil && patient.Summary.BgmStats.Dates.LastUploadDate.After(mostRecentUpload) {
+		mostRecentUpload = *patient.Summary.BgmStats.Dates.LastUploadDate
+	}
+	return mostRecentUpload
 }

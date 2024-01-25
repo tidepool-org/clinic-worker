@@ -89,19 +89,19 @@ func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interf
 }
 
 type BGMStats struct {
-	Config        *summaries.Config               `json:"config" bson:"config"`
-	Dates         *patientsummary.Dates           `json:"dates" bson:"dates"`
+	Config        summaries.Config                `json:"config" bson:"config"`
+	Dates         patientsummary.Dates            `json:"dates" bson:"dates"`
 	Periods       map[string]*summaries.BGMPeriod `json:"periods" bson:"periods"`
-	OffsetPeriods map[string]*summaries.BGMPeriod `json:"OffsetPeriods" bson:"offsetPeriods"`
-	TotalHours    *int                            `json:"totalHours" bson:"totalHours"`
+	OffsetPeriods map[string]*summaries.BGMPeriod `json:"offsetPeriods" bson:"offsetPeriods"`
+	TotalHours    int                             `json:"totalHours" bson:"totalHours"`
 }
 
 type CGMStats struct {
-	Config        *summaries.Config               `json:"config" bson:"config"`
-	Dates         *patientsummary.Dates           `json:"dates" bson:"dates"`
+	Config        summaries.Config                `json:"config" bson:"config"`
+	Dates         patientsummary.Dates            `json:"dates" bson:"dates"`
 	Periods       map[string]*summaries.CGMPeriod `json:"periods" bson:"periods"`
-	OffsetPeriods map[string]*summaries.CGMPeriod `json:"OffsetPeriods" bson:"offsetPeriods"`
-	TotalHours    *int                            `json:"totalHours" bson:"totalHours"`
+	OffsetPeriods map[string]*summaries.CGMPeriod `json:"offsetPeriods" bson:"offsetPeriods"`
+	TotalHours    int                             `json:"totalHours" bson:"totalHours"`
 }
 
 type CDCSummary struct {

@@ -22,7 +22,7 @@ const (
 )
 
 type ReportGeneratorConfig struct {
-	ExportServiceHost string `envconfig:"TIDEPOOL_EXPORT_CLIENT_ADDRESS" default:"http://export:9300"`
+	ExportServiceHost string `envconfig:"TIDEPOOL_EXPORT_CLIENT_ADDRESS" default:"http://export:9301"`
 }
 
 type Generator interface {
@@ -41,7 +41,11 @@ func (r *reportGenerator) GenerateReport(ctx context.Context, params Parameters)
 		return nil, fmt.Errorf("unable to get token from shoreline client")
 	}
 
-	r.logger.Infow("generating report", "userId", params.UserDetail.UserId, "params", params)
+	r.logger.Infow("generating report",
+		"clinicId", params.ClinicId,
+		"userId", params.UserDetail.UserId,
+		"params", params,
+	)
 
 	resp, err := r.restyClient.R().
 		SetContext(ctx).
@@ -85,6 +89,8 @@ func (s SampleReportGenerator) GenerateReport(ctx context.Context, params Parame
 }
 
 type Parameters struct {
+	// The clinic id is used only for logging purposes
+	ClinicId     string       `json:"-"`
 	UserDetail   UserDetail   `json:"userDetail"`
 	ReportDetail ReportDetail `json:"reportDetail"`
 }
@@ -146,12 +152,12 @@ func GetCGMStatsDates(patient clinics.Patient) *clinics.PatientSummaryDates {
 	if patient.Summary == nil || patient.Summary.CgmStats == nil {
 		return nil
 	}
-	return patient.Summary.CgmStats.Dates
+	return &patient.Summary.CgmStats.Dates
 }
 
 func GetBGMStatsDates(patient clinics.Patient) *clinics.PatientSummaryDates {
 	if patient.Summary == nil || patient.Summary.BgmStats == nil {
 		return nil
 	}
-	return patient.Summary.BgmStats.Dates
+	return &patient.Summary.BgmStats.Dates
 }

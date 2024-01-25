@@ -67,8 +67,8 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 
 	if cgmSummary != nil {
 		patientUpdate.CgmStats = &clinics.PatientCGMStats{
-			Dates:  (*clinics.PatientSummaryDates)(cgmSummary.Dates),
-			Config: (*clinics.PatientSummaryConfig)(cgmSummary.Config),
+			Dates:  clinics.PatientSummaryDates(cgmSummary.Dates),
+			Config: clinics.PatientSummaryConfig(cgmSummary.Config),
 		}
 
 		if cgmSummary.Stats != nil {
@@ -79,16 +79,16 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 			patientUpdate.CgmStats.TotalHours = cgmStats.TotalHours
 
 			if cgmStats.Periods != nil {
-				patientUpdate.CgmStats.Periods = &clinics.PatientCGMPeriods{}
-				for k, source := range *cgmStats.Periods {
-					(*patientUpdate.CgmStats.Periods)[k] = clinics.PatientCGMPeriod(source)
+				patientUpdate.CgmStats.Periods = clinics.PatientCGMPeriods{}
+				for k, source := range cgmStats.Periods {
+					patientUpdate.CgmStats.Periods[k] = clinics.PatientCGMPeriod(source)
 				}
 			}
 
 			if cgmStats.OffsetPeriods != nil {
-				patientUpdate.CgmStats.OffsetPeriods = &clinics.PatientCGMPeriods{}
-				for k, source := range *cgmStats.OffsetPeriods {
-					(*patientUpdate.CgmStats.OffsetPeriods)[k] = clinics.PatientCGMPeriod(source)
+				patientUpdate.CgmStats.OffsetPeriods = clinics.PatientCGMPeriods{}
+				for k, source := range cgmStats.OffsetPeriods {
+					patientUpdate.CgmStats.OffsetPeriods[k] = clinics.PatientCGMPeriod(source)
 				}
 			}
 		}
@@ -96,8 +96,8 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 
 	if bgmSummary != nil {
 		patientUpdate.BgmStats = &clinics.PatientBGMStats{
-			Dates:  (*clinics.PatientSummaryDates)(bgmSummary.Dates),
-			Config: (*clinics.PatientSummaryConfig)(bgmSummary.Config),
+			Dates:  clinics.PatientSummaryDates(bgmSummary.Dates),
+			Config: clinics.PatientSummaryConfig(bgmSummary.Config),
 		}
 
 		if bgmSummary.Stats != nil {
@@ -108,16 +108,16 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summarie
 			patientUpdate.BgmStats.TotalHours = bgmStats.TotalHours
 
 			if bgmStats.Periods != nil {
-				patientUpdate.BgmStats.Periods = &clinics.PatientBGMPeriods{}
-				for k, source := range *bgmStats.Periods {
-					(*patientUpdate.BgmStats.Periods)[k] = clinics.PatientBGMPeriod(source)
+				patientUpdate.BgmStats.Periods = clinics.PatientBGMPeriods{}
+				for k, source := range bgmStats.Periods {
+					patientUpdate.BgmStats.Periods[k] = clinics.PatientBGMPeriod(source)
 				}
 			}
 
 			if bgmStats.OffsetPeriods != nil {
-				patientUpdate.BgmStats.OffsetPeriods = &clinics.PatientBGMPeriods{}
-				for k, source := range *bgmStats.OffsetPeriods {
-					(*patientUpdate.BgmStats.OffsetPeriods)[k] = clinics.PatientBGMPeriod(source)
+				patientUpdate.BgmStats.OffsetPeriods = clinics.PatientBGMPeriods{}
+				for k, source := range bgmStats.OffsetPeriods {
+					patientUpdate.BgmStats.OffsetPeriods[k] = clinics.PatientBGMPeriod(source)
 				}
 			}
 		}

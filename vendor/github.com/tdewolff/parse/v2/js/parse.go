@@ -12,6 +12,7 @@ import (
 
 type Options struct {
 	WhileToFor bool
+	Inline     bool
 }
 
 // Parser is the state for the parser.
@@ -44,20 +45,33 @@ func Parse(r *parse.Input, o Options) (*AST, error) {
 		await: true,
 	}
 
-	// catch shebang in first line
-	var shebang []byte
-	if r.Peek(0) == '#' && r.Peek(1) == '!' {
-		r.Move(2)
-		p.l.consumeSingleLineComment() // consume till end-of-line
-		shebang = r.Shift()
-	}
+	if o.Inline {
+		p.next()
+		p.retrn = true
+		p.allowDirectivePrologue = true
+		p.enterScope(&ast.BlockStmt.Scope, true)
+		for {
+			if p.tt == ErrorToken {
+				break
+			}
+			ast.BlockStmt.List = append(ast.BlockStmt.List, p.parseStmt(true))
+		}
+	} else {
+		// catch shebang in first line
+		var shebang []byte
+		if r.Peek(0) == '#' && r.Peek(1) == '!' {
+			r.Move(2)
+			p.l.consumeSingleLineComment() // consume till end-of-line
+			shebang = r.Shift()
+		}
 
-	// parse JS module
-	p.next()
-	ast.BlockStmt = p.parseModule()
+		// parse JS module
+		p.next()
+		ast.BlockStmt = p.parseModule()
 
-	if 0 < len(shebang) {
-		ast.BlockStmt.List = append([]IStmt{&Comment{shebang}}, ast.BlockStmt.List...)
+		if 0 < len(shebang) {
+			ast.BlockStmt.List = append([]IStmt{&Comment{shebang}}, ast.BlockStmt.List...)
+		}
 	}
 
 	if p.err == nil {
@@ -370,6 +384,8 @@ func (p *Parser) parseStmt(allowDeclaration bool) (stmt IStmt) {
 				body.List = p.parseStmtList("")
 			} else if p.tt != SemicolonToken {
 				body.List = []IStmt{p.parseStmt(false)}
+			} else {
+				p.next()
 			}
 			if init == nil {
 				varDecl := &VarDecl{TokenType: VarToken, Scope: p.scope, InFor: true}
@@ -394,6 +410,8 @@ func (p *Parser) parseStmt(allowDeclaration bool) (stmt IStmt) {
 				body.List = p.parseStmtList("")
 			} else if p.tt != SemicolonToken {
 				body.List = []IStmt{p.parseStmt(false)}
+			} else {
+				p.next()
 			}
 			if varDecl, ok := init.(*VarDecl); ok {
 				varDecl.InForInOf = true
@@ -410,6 +428,8 @@ func (p *Parser) parseStmt(allowDeclaration bool) (stmt IStmt) {
 				body.List = p.parseStmtList("")
 			} else if p.tt != SemicolonToken {
 				body.List = []IStmt{p.parseStmt(false)}
+			} else {
+				p.next()
 			}
 			if varDecl, ok := init.(*VarDecl); ok {
 				varDecl.InForInOf = true
@@ -535,13 +555,16 @@ func (p *Parser) parseStmt(allowDeclaration bool) (stmt IStmt) {
 	case DebuggerToken:
 		stmt = &DebuggerStmt{}
 		p.next()
-	case SemicolonToken, ErrorToken:
+	case SemicolonToken:
 		stmt = &EmptyStmt{}
 		p.next()
 	case CommentToken, CommentLineTerminatorToken:
 		// bang comment
 		stmt = &Comment{p.data}
 		p.next()
+	case ErrorToken:
+		stmt = &EmptyStmt{}
+		return
 	default:
 		if p.retrn && p.tt == ReturnToken {
 			p.next()
@@ -923,8 +946,11 @@ func (p *Parser) parseFunc(async, expr bool) (funcDecl *FuncDecl) {
 		funcDecl.Name, _ = p.scope.Declare(ExprDecl, name) // cannot fail
 	}
 	funcDecl.Params = p.parseFuncParams("function declaration")
-	p.allowDirectivePrologue = true
+
+	prevAllowDirectivePrologue, prevExprLevel := p.allowDirectivePrologue, p.exprLevel
+	p.allowDirectivePrologue, p.exprLevel = true, 0
 	funcDecl.Body.List = p.parseStmtList("function declaration")
+	p.allowDirectivePrologue, p.exprLevel = prevAllowDirectivePrologue, prevExprLevel
 
 	p.await, p.yield, p.retrn = prevAwait, prevYield, prevRetrn
 	p.exitScope(parent)
@@ -1068,8 +1094,11 @@ func (p *Parser) parseClassElement() ClassElement {
 	p.await, p.yield, p.retrn = method.Async, method.Generator, true
 
 	method.Params = p.parseFuncParams("method definition")
-	p.allowDirectivePrologue = true
-	method.Body.List = p.parseStmtList("method definition")
+
+	prevAllowDirectivePrologue, prevExprLevel := p.allowDirectivePrologue, p.exprLevel
+	p.allowDirectivePrologue, p.exprLevel = true, 0
+	method.Body.List = p.parseStmtList("method function")
+	p.allowDirectivePrologue, p.exprLevel = prevAllowDirectivePrologue, prevExprLevel
 
 	p.await, p.yield, p.retrn = prevAwait, prevYield, prevRetrn
 	p.exitScope(parent)
@@ -1415,21 +1444,22 @@ func (p *Parser) parseArguments() (args Args) {
 	// assume we're on (
 	p.next()
 	args.List = make([]Arg, 0, 4)
-	for {
+	for p.tt != CloseParenToken && p.tt != ErrorToken {
 		rest := p.tt == EllipsisToken
 		if rest {
 			p.next()
-		}
-
-		if p.tt == CloseParenToken || p.tt == ErrorToken {
-			break
 		}
 		args.List = append(args.List, Arg{
 			Value: p.parseExpression(OpAssign),
 			Rest:  rest,
 		})
-		if p.tt == CommaToken {
-			p.next()
+		if p.tt != CloseParenToken {
+			if p.tt != CommaToken {
+				p.fail("arguments", CommaToken, CloseParenToken)
+				return
+			} else {
+				p.next() // CommaToken
+			}
 		}
 	}
 	p.consume("arguments", CloseParenToken)
@@ -1502,8 +1532,12 @@ func (p *Parser) parseArrowFuncBody() (list []IStmt) {
 	if p.tt == OpenBraceToken {
 		prevIn, prevRetrn := p.in, p.retrn
 		p.in, p.retrn = true, true
-		p.allowDirectivePrologue = true
+
+		prevAllowDirectivePrologue, prevExprLevel := p.allowDirectivePrologue, p.exprLevel
+		p.allowDirectivePrologue, p.exprLevel = true, 0
 		list = p.parseStmtList("arrow function")
+		p.allowDirectivePrologue, p.exprLevel = prevAllowDirectivePrologue, prevExprLevel
+
 		p.in, p.retrn = prevIn, prevRetrn
 	} else {
 		list = []IStmt{&ReturnStmt{p.parseExpression(OpAssign)}}
@@ -1769,11 +1803,15 @@ func (p *Parser) parseExpression(prec OpPrec) IExpr {
 		left = &template
 		p.in = prevIn
 	case PrivateIdentifierToken:
+		if OpCompare < prec || !p.in {
+			p.fail("expression")
+			return nil
+		}
 		left = &LiteralExpr{p.tt, p.data}
 		p.next()
 		if p.tt != InToken {
 			p.fail("relational expression", InToken)
-			return left
+			return nil
 		}
 	default:
 		p.fail("expression")
@@ -2215,7 +2253,7 @@ func (p *Parser) parseParenthesizedExpressionOrArrowFunc(prec OpPrec, async []by
 		left = p.scope.Use(async)
 		left = &CallExpr{left, Args{}, false}
 		precLeft = OpCall
-	} else if len(list) == 0 || !isAsync && rest != nil || isAsync && OpCall < prec {
+	} else if len(list) == 0 && rest == nil || !isAsync && rest != nil || isAsync && OpCall < prec {
 		p.fail("arrow function", ArrowToken)
 		return nil
 	} else {
