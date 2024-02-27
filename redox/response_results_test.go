@@ -70,16 +70,31 @@ var _ = Describe("Results", func() {
 				It("sets the expected results", func() {
 					Expect(results.Orders).To(HaveLen(1))
 
+					Expect(results.Orders[0].Procedure).ToNot(BeNil())
+					Expect(results.Orders[0].Procedure.Code).To(Equal(order.Order.Procedure.Code))
+					Expect(results.Orders[0].Procedure.Codeset).To(Equal(order.Order.Procedure.Codeset))
+					Expect(results.Orders[0].Procedure.Description).To(Equal(order.Order.Procedure.Description))
+
+					Expect(results.Orders[0].CompletionDateTime).ToNot(PointTo(BeEmpty()))
+					Expect(results.Orders[0].ResultsStatus).To(PointTo(Equal("Final")))
+
 					Expect(results.Orders[0].Results).To(HaveLen(2))
+
 					Expect(results.Orders[0].Results[0].Code).To(Equal("MATCHING_RESULT"))
+					Expect(results.Orders[0].Results[0].CompletionDateTime).ToNot(PointTo(BeEmpty()))
 					Expect(results.Orders[0].Results[0].Value).To(Equal("SUCCESS"))
 					Expect(results.Orders[0].Results[0].ValueType).To(Equal("String"))
 					Expect(results.Orders[0].Results[0].Description).To(PointTo(Equal("Indicates whether the order was successfully matched")))
+					Expect(results.Orders[0].Results[0].Status).To(PointTo(Equal("Final")))
 
 					Expect(results.Orders[0].Results[1].Code).To(Equal("MATCHING_RESULT_MESSAGE"))
+					Expect(results.Orders[0].Results[1].CompletionDateTime).ToNot(PointTo(BeEmpty()))
 					Expect(results.Orders[0].Results[1].Value).To(Equal("Matched!"))
 					Expect(results.Orders[0].Results[1].ValueType).To(Equal("String"))
 					Expect(results.Orders[0].Results[1].Description).To(PointTo(Equal("Message indicating the result of the matching process")))
+					Expect(results.Orders[0].Results[1].Status).To(PointTo(Equal("Final")))
+
+					Expect(results.Orders[0].Provider).To(PointTo(Equal(*order.Order.Provider)))
 				})
 			})
 
@@ -95,16 +110,30 @@ var _ = Describe("Results", func() {
 				It("sets the expected results", func() {
 					Expect(results.Orders).To(HaveLen(1))
 
+					Expect(results.Orders[0].Procedure).ToNot(BeNil())
+					Expect(results.Orders[0].Procedure.Code).To(Equal(order.Order.Procedure.Code))
+					Expect(results.Orders[0].Procedure.Codeset).To(Equal(order.Order.Procedure.Codeset))
+					Expect(results.Orders[0].Procedure.Description).To(Equal(order.Order.Procedure.Description))
+
+					Expect(results.Orders[0].CompletionDateTime).ToNot(PointTo(BeEmpty()))
+					Expect(results.Orders[0].ResultsStatus).To(PointTo(Equal("Final")))
+
 					Expect(results.Orders[0].Results).To(HaveLen(2))
 					Expect(results.Orders[0].Results[0].Code).To(Equal("MATCHING_RESULT"))
+					Expect(results.Orders[0].Results[0].CompletionDateTime).ToNot(PointTo(BeEmpty()))
 					Expect(results.Orders[0].Results[0].Value).To(Equal("FAILURE"))
 					Expect(results.Orders[0].Results[0].ValueType).To(Equal("String"))
 					Expect(results.Orders[0].Results[0].Description).To(PointTo(Equal("Indicates whether the order was successfully matched")))
+					Expect(results.Orders[0].Results[0].Status).To(PointTo(Equal("Final")))
 
 					Expect(results.Orders[0].Results[1].Code).To(Equal("MATCHING_RESULT_MESSAGE"))
+					Expect(results.Orders[0].Results[1].CompletionDateTime).ToNot(PointTo(BeEmpty()))
 					Expect(results.Orders[0].Results[1].Value).To(Equal("No patients matched!"))
 					Expect(results.Orders[0].Results[1].ValueType).To(Equal("String"))
 					Expect(results.Orders[0].Results[1].Description).To(PointTo(Equal("Message indicating the result of the matching process")))
+					Expect(results.Orders[0].Results[1].Status).To(PointTo(Equal("Final")))
+
+					Expect(results.Orders[0].Provider).To(PointTo(Equal(*order.Order.Provider)))
 				})
 			})
 		})
