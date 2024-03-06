@@ -279,10 +279,13 @@ func (o *newOrderProcessor) createReportNote(ctx context.Context, order models.N
 	notes.Meta.Source = &source
 	notes.Meta.Destinations = &destinations
 
-	SetNotesPatientFromOrder(order, &notes)
 	SetOrderIdInNotes(order, &notes)
 	SetVisitNumberInNotes(order, &notes)
 	SetReportMetadata(match.Clinic, patient, &notes)
+
+	SetNotesPatientFromOrder(order, &notes)
+	SetNotesProcedureFromOrder(order, &notes)
+	SetNotesProviderFromOrder(order, &notes)
 
 	reportParameters := report.Parameters{
 		UserDetail: report.UserDetail{
