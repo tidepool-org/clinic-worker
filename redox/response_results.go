@@ -26,6 +26,10 @@ const (
 	SuccessfulAccountCreationMessage = "Account was successfully created"
 )
 
+var (
+	OrderResultsStatusFinal = "Final"
+)
+
 type ResultsNotification struct {
 	IsSuccess bool
 	Message   string
@@ -78,6 +82,8 @@ func SetAccountCreationResults(notification ResultsNotification, order models.Ne
 }
 
 func SetNotificationResult(notification ResultsNotification, fields NotificationFields, order models.NewOrder, results *models.NewResults) {
+	now := time.Now().Format(time.RFC3339)
+
 	results.Orders = []struct {
 		ApplicationOrderID *string        `json:"ApplicationOrderID"`
 		CollectionDateTime *string        `json:"CollectionDateTime"`
@@ -274,6 +280,10 @@ func SetNotificationResult(notification ResultsNotification, fields Notification
 
 	results.Orders[0].ID = order.Order.ID
 	results.Orders[0].Status = OrderStatusResulted
+	results.Orders[0].CompletionDateTime = &now
+	results.Orders[0].Procedure = order.Order.Procedure
+	results.Orders[0].Provider = order.Order.Provider
+	results.Orders[0].ResultsStatus = &OrderResultsStatusFinal
 
 	results.Orders[0].Results = []struct {
 		AbnormalFlag       *string        `json:"AbnormalFlag"`
@@ -386,17 +396,20 @@ func SetNotificationResult(notification ResultsNotification, fields Notification
 	}{{}, {}}
 
 	results.Orders[0].Results[0].Code = fields.OperationResultCode
+	results.Orders[0].Results[0].CompletionDateTime = &now
 	results.Orders[0].Results[0].Description = &fields.OperationResultDescription
-
 	results.Orders[0].Results[0].ValueType = "String"
 	if notification.IsSuccess {
 		results.Orders[0].Results[0].Value = "SUCCESS"
 	} else {
 		results.Orders[0].Results[0].Value = "FAILURE"
 	}
+	results.Orders[0].Results[0].Status = &OrderResultsStatusFinal
 
 	results.Orders[0].Results[1].Code = fields.MessageCode
+	results.Orders[0].Results[1].CompletionDateTime = &now
 	results.Orders[0].Results[1].Description = &fields.MessageDescription
 	results.Orders[0].Results[1].ValueType = "String"
 	results.Orders[0].Results[1].Value = notification.Message
+	results.Orders[0].Results[1].Status = &OrderResultsStatusFinal
 }
