@@ -439,14 +439,14 @@ github.com/tdewolff/parse/v2/js
 github.com/tdewolff/parse/v2/json
 github.com/tdewolff/parse/v2/strconv
 github.com/tdewolff/parse/v2/xml
-# github.com/tidepool-org/clinic/client v0.0.0-20240119154138-fd88ad427641
-## explicit; go 1.21
+# github.com/tidepool-org/clinic/client v0.0.0-20240307005814-71ebe5953545
+## explicit; go 1.22
 github.com/tidepool-org/clinic/client
-# github.com/tidepool-org/clinic/redox_models v0.0.0-20240119154138-fd88ad427641
-## explicit; go 1.21
+# github.com/tidepool-org/clinic/redox_models v0.0.0-20240307005814-71ebe5953545
+## explicit; go 1.22
 github.com/tidepool-org/clinic/redox_models
-# github.com/tidepool-org/go-common v0.11.1-0.20240119151220-be854abc1af5
-## explicit; go 1.21
+# github.com/tidepool-org/go-common v0.11.1-0.20240306185825-1ddb2b762e00
+## explicit; go 1.22
 github.com/tidepool-org/go-common/clients
 github.com/tidepool-org/go-common/clients/disc
 github.com/tidepool-org/go-common/clients/hakken
@@ -457,8 +457,8 @@ github.com/tidepool-org/go-common/clients/summary
 github.com/tidepool-org/go-common/errors
 github.com/tidepool-org/go-common/events
 github.com/tidepool-org/go-common/jepson
-# github.com/tidepool-org/hydrophone/client v0.0.0-20240119155203-d8065cfb9c89
-## explicit; go 1.21
+# github.com/tidepool-org/hydrophone/client v0.0.0-20240307010218-b797b7e7f889
+## explicit; go 1.22
 github.com/tidepool-org/hydrophone/client
 # github.com/twitchyliquid64/golang-asm v0.15.1
 ## explicit; go 1.13

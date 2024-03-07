@@ -14,10 +14,10 @@ require (
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/onsi/ginkgo/v2 v2.15.0
 	github.com/onsi/gomega v1.31.1
-	github.com/tidepool-org/clinic/client v0.0.0-20240119154138-fd88ad427641
-	github.com/tidepool-org/clinic/redox_models v0.0.0-20240119154138-fd88ad427641
-	github.com/tidepool-org/go-common v0.11.1-0.20240119151220-be854abc1af5
-	github.com/tidepool-org/hydrophone/client v0.0.0-20240119155203-d8065cfb9c89
+	github.com/tidepool-org/clinic/client v0.0.0-20240307005814-71ebe5953545
+	github.com/tidepool-org/clinic/redox_models v0.0.0-20240307005814-71ebe5953545
+	github.com/tidepool-org/go-common v0.11.1-0.20240306185825-1ddb2b762e00
+	github.com/tidepool-org/hydrophone/client v0.0.0-20240307010218-b797b7e7f889
 	go.mongodb.org/mongo-driver v1.13.1
 	go.uber.org/fx v1.20.1
 	go.uber.org/ratelimit v0.3.0
