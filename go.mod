@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/Shopify/sarama v1.38.1
 	github.com/avast/retry-go v3.0.0+incompatible
-	github.com/cloudevents/sdk-go/v2 v2.14.0
+	github.com/cloudevents/sdk-go/v2 v2.15.2
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/golang/mock v1.6.0
@@ -14,10 +14,10 @@ require (
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/onsi/ginkgo/v2 v2.15.0
 	github.com/onsi/gomega v1.31.1
-	github.com/tidepool-org/clinic/client v0.0.0-20240307005814-71ebe5953545
-	github.com/tidepool-org/clinic/redox_models v0.0.0-20240307005814-71ebe5953545
-	github.com/tidepool-org/go-common v0.11.1-0.20240306185825-1ddb2b762e00
-	github.com/tidepool-org/hydrophone/client v0.0.0-20240307010218-b797b7e7f889
+	github.com/tidepool-org/clinic/client v0.0.0-20240327165651-1935a7e97b44
+	github.com/tidepool-org/clinic/redox_models v0.0.0-20240327165651-1935a7e97b44
+	github.com/tidepool-org/go-common v0.12.0
+	github.com/tidepool-org/hydrophone/client v0.0.0-20240327170603-13de813217f2
 	go.mongodb.org/mongo-driver v1.13.1
 	go.uber.org/fx v1.20.1
 	go.uber.org/ratelimit v0.3.0
