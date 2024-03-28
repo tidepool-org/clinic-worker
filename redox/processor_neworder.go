@@ -4,6 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/mail"
+	"strings"
+	"time"
+
 	"github.com/oapi-codegen/runtime/types"
 	"github.com/tidepool-org/clinic-worker/report"
 	clinics "github.com/tidepool-org/clinic/client"
@@ -11,10 +16,6 @@ import (
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	"go.uber.org/zap"
-	"net/http"
-	"net/mail"
-	"strings"
-	"time"
 )
 
 const (
@@ -76,9 +77,9 @@ func (o *newOrderProcessor) ProcessOrder(ctx context.Context, envelope models.Me
 	match := response.JSON200
 	procedureCode := GetProcedureCode(order)
 
-	if procedureCode == match.Settings.ProcedureCodes.EnableSummaryReports {
+	if match.Settings.ProcedureCodes.EnableSummaryReports != nil && *match.Settings.ProcedureCodes.EnableSummaryReports == procedureCode {
 		return o.handleEnableSummaryReports(ctx, envelope, order, *match)
-	} else if procedureCode == match.Settings.ProcedureCodes.DisableSummaryReports {
+	} else if match.Settings.ProcedureCodes.DisableSummaryReports != nil && *match.Settings.ProcedureCodes.DisableSummaryReports == procedureCode {
 		return o.handleDisableSummaryReports(ctx, order, *match)
 	} else if match.Settings.ProcedureCodes.CreateAccount != nil && *match.Settings.ProcedureCodes.CreateAccount == procedureCode {
 		return o.handleCreateAccount(ctx, order, *match)

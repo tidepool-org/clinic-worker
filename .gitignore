@@ -16,3 +16,8 @@
 
 dist/
 .idea/
+
+artifact_docker.sh
+.vscode/
+*.envrc
+*.env
