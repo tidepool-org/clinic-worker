@@ -439,13 +439,13 @@ github.com/tdewolff/parse/v2/js
 github.com/tdewolff/parse/v2/json
 github.com/tdewolff/parse/v2/strconv
 github.com/tdewolff/parse/v2/xml
-# github.com/tidepool-org/clinic/client v0.0.0-20240327165651-1935a7e97b44
+# github.com/tidepool-org/clinic/client v0.0.0-20240405013858-50f54cf204d6
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/client
-# github.com/tidepool-org/clinic/redox_models v0.0.0-20240327165651-1935a7e97b44
+# github.com/tidepool-org/clinic/redox_models v0.0.0-20240405013858-50f54cf204d6
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/redox_models
-# github.com/tidepool-org/go-common v0.12.0
+# github.com/tidepool-org/go-common v0.12.1
 ## explicit; go 1.22
 github.com/tidepool-org/go-common/clients
 github.com/tidepool-org/go-common/clients/disc
@@ -457,7 +457,7 @@ github.com/tidepool-org/go-common/clients/summary
 github.com/tidepool-org/go-common/errors
 github.com/tidepool-org/go-common/events
 github.com/tidepool-org/go-common/jepson
-# github.com/tidepool-org/hydrophone/client v0.0.0-20240327170603-13de813217f2
+# github.com/tidepool-org/hydrophone/client v0.0.0-20240405014412-c7eb8551f2a4
 ## explicit; go 1.22
 github.com/tidepool-org/hydrophone/client
 # github.com/twitchyliquid64/golang-asm v0.15.1
@@ -552,7 +552,7 @@ go.uber.org/zap/zapcore
 # golang.org/x/arch v0.7.0
 ## explicit; go 1.18
 golang.org/x/arch/x86/x86asm
-# golang.org/x/crypto v0.18.0
+# golang.org/x/crypto v0.21.0
 ## explicit; go 1.18
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
@@ -563,7 +563,7 @@ golang.org/x/crypto/sha3
 ## explicit; go 1.20
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
-# golang.org/x/net v0.20.0
+# golang.org/x/net v0.23.0
 ## explicit; go 1.18
 golang.org/x/net/context
 golang.org/x/net/html
@@ -581,7 +581,7 @@ golang.org/x/net/publicsuffix
 ## explicit; go 1.18
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.16.0
+# golang.org/x/sys v0.18.0
 ## explicit; go 1.18
 golang.org/x/sys/cpu
 golang.org/x/sys/unix

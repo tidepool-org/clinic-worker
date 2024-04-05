@@ -1,10 +1,23 @@
-# Clinic-worker Makefile
-.PHONY: test build
+.PHONY: generate
+generate:
 
-# Runs tests
+.PHONY: build
+build:
+	./build.sh
+
+.PHONY: test
 test:
 	./test.sh
 
-# Builds package
-build:
-	./build.sh
+.PHONY: clean
+clean:
+	rm -rf dist
+
+.PHONY: ci-generate
+ci-generate: generate
+
+.PHONY: ci-build
+ci-build: build
+
+.PHONY: ci-test
+ci-test: test
