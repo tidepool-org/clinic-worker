@@ -439,10 +439,10 @@ github.com/tdewolff/parse/v2/js
 github.com/tdewolff/parse/v2/json
 github.com/tdewolff/parse/v2/strconv
 github.com/tdewolff/parse/v2/xml
-# github.com/tidepool-org/clinic/client v0.0.0-20240405013858-50f54cf204d6
+# github.com/tidepool-org/clinic/client v0.0.0-20240412024055-e6391b37e456
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/client
-# github.com/tidepool-org/clinic/redox_models v0.0.0-20240405013858-50f54cf204d6
+# github.com/tidepool-org/clinic/redox_models v0.0.0-20240412024055-e6391b37e456
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/redox_models
 # github.com/tidepool-org/go-common v0.12.1
@@ -457,7 +457,7 @@ github.com/tidepool-org/go-common/clients/summary
 github.com/tidepool-org/go-common/errors
 github.com/tidepool-org/go-common/events
 github.com/tidepool-org/go-common/jepson
-# github.com/tidepool-org/hydrophone/client v0.0.0-20240405014412-c7eb8551f2a4
+# github.com/tidepool-org/hydrophone/client v0.0.0-20240412025448-85c89a8038b8
 ## explicit; go 1.22
 github.com/tidepool-org/hydrophone/client
 # github.com/twitchyliquid64/golang-asm v0.15.1
