@@ -14,10 +14,18 @@ import (
 const recentDataCutoff = 14 * 24 * time.Hour
 
 type ScheduledSummaryAndReport struct {
-	UserId           string                 `json:"userId"`
-	ClinicId         primitive.ObjectID     `json:"clinicId"`
-	LastMatchedOrder models.MessageEnvelope `json:"lastMatchedOrder"`
-	DecodedOrder     models.NewOrder        `json:"-"`
+	Id                primitive.ObjectID     `json:"_id"`
+	UserId            string                 `json:"userId"`
+	ClinicId          primitive.ObjectID     `json:"clinicId"`
+	LastMatchedOrder  models.MessageEnvelope `json:"lastMatchedOrder"`
+	PrecedingDocument *PrecedingDocument     `json:"precedingDocument"`
+	CreatedTime       time.Time              `json:"createdTime"`
+	DecodedOrder      models.NewOrder        `json:"-"`
+}
+
+type PrecedingDocument struct {
+	Id          primitive.ObjectID `json:"_id"`
+	CreatedTime time.Time          `json:"createdTime"`
 }
 
 type ScheduledSummaryAndReportProcessor interface {
@@ -81,7 +89,16 @@ func (r *scheduledSummaryAndReportProcessor) ProcessOrder(ctx context.Context, s
 		Settings: *settings,
 	}
 
-	return r.orderProcessor.SendSummaryAndReport(ctx, *patient, scheduled.DecodedOrder, match)
+	params := SummaryAndReportParameters{
+		Match:      match,
+		Order:      scheduled.DecodedOrder,
+		DocumentId: scheduled.Id.Hex(),
+	}
+	if scheduled.PrecedingDocument != nil {
+		params.PrecedingDocumentId = scheduled.PrecedingDocument.Id.Hex()
+	}
+
+	return r.orderProcessor.SendSummaryAndReport(ctx, params)
 }
 
 func (r *scheduledSummaryAndReportProcessor) getPatient(ctx context.Context, clinicId, userId string) (*clinics.Patient, error) {

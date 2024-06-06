@@ -76,15 +76,15 @@ var _ = Describe("NewOrderProcessor", func() {
 				Expect(redoxClient.Sent).To(HaveLen(3))
 
 				var results models.NewResults
-				var notes models.NewNotes
+				var notes redox.Notes
 				var flowsheet models.NewFlowsheet
 
 				for _, payload := range redoxClient.Sent {
 					switch payload.(type) {
 					case models.NewResults:
 						results = payload.(models.NewResults)
-					case models.NewNotes:
-						notes = payload.(models.NewNotes)
+					case redox.Notes:
+						notes = payload.(redox.Notes)
 					case models.NewFlowsheet:
 						flowsheet = payload.(models.NewFlowsheet)
 					}
@@ -104,7 +104,7 @@ var _ = Describe("NewOrderProcessor", func() {
 					}),
 				}))
 
-				Expect(notes).To(MatchFields(IgnoreExtras, Fields{
+				Expect(notes).To(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Meta": MatchFields(IgnoreExtras, Fields{
 						"DataModel": Equal("Notes"),
 						"EventType": Equal("New"),
@@ -112,7 +112,7 @@ var _ = Describe("NewOrderProcessor", func() {
 					"Note": MatchFields(IgnoreExtras, Fields{
 						"FileContents": PointTo(Not(BeEmpty())),
 					}),
-				}))
+				})))
 
 				Expect(redoxClient.Uploaded).To(BeEmpty())
 			})
@@ -122,17 +122,17 @@ var _ = Describe("NewOrderProcessor", func() {
 				Expect(processor.ProcessOrder(context.Background(), envelope, order)).To(Succeed())
 				Expect(redoxClient.Sent).To(HaveLen(3))
 
-				var notes models.NewNotes
+				var notes redox.Notes
 
 				for _, payload := range redoxClient.Sent {
 					switch payload.(type) {
-					case models.NewNotes:
-						notes = payload.(models.NewNotes)
+					case redox.Notes:
+						notes = payload.(redox.Notes)
 					}
 				}
 
 				Expect(redoxClient.Uploaded).To(HaveKey("report.pdf"))
-				Expect(notes).To(MatchFields(IgnoreExtras, Fields{
+				Expect(notes).To(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Meta": MatchFields(IgnoreExtras, Fields{
 						"DataModel": Equal("Notes"),
 						"EventType": Equal("New"),
@@ -140,7 +140,7 @@ var _ = Describe("NewOrderProcessor", func() {
 					"Note": MatchFields(IgnoreExtras, Fields{
 						"FileContents": PointTo(Equal("https://blob.redoxengine.com/upload/report.pdf")),
 					}),
-				}))
+				})))
 
 			})
 		})

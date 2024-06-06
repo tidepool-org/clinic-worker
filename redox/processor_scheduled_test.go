@@ -107,13 +107,13 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
 			Expect(redoxClient.Sent).To(HaveLen(2))
 
-			var notes models.NewNotes
+			var notes redox.Notes
 			var flowsheet models.NewFlowsheet
 
 			for _, payload := range redoxClient.Sent {
 				switch payload.(type) {
-				case models.NewNotes:
-					notes = payload.(models.NewNotes)
+				case redox.Notes:
+					notes = payload.(redox.Notes)
 				case models.NewFlowsheet:
 					flowsheet = payload.(models.NewFlowsheet)
 				}
@@ -126,7 +126,7 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 				}),
 			}))
 
-			Expect(notes).To(MatchFields(IgnoreExtras, Fields{
+			Expect(notes).To(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Meta": MatchFields(IgnoreExtras, Fields{
 					"DataModel": Equal("Notes"),
 					"EventType": Equal("New"),
@@ -134,7 +134,50 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 				"Note": MatchFields(IgnoreExtras, Fields{
 					"FileContents": PointTo(Not(BeEmpty())),
 				}),
+			})))
+
+			Expect(redoxClient.Uploaded).To(BeEmpty())
+		})
+
+		It("it send a new flowsheet and replaces notes when there is a preceding document", func() {
+			scheduled.Id = primitive.NewObjectID()
+			scheduled.PrecedingDocument = &redox.PrecedingDocument{
+				Id:          primitive.NewObjectID(),
+				CreatedTime: time.Now().Add(-5 * time.Minute),
+			}
+			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+			Expect(redoxClient.Sent).To(HaveLen(2))
+
+			var notes redox.Notes
+			var flowsheet models.NewFlowsheet
+
+			for _, payload := range redoxClient.Sent {
+				switch payload.(type) {
+				case redox.Notes:
+					notes = payload.(redox.Notes)
+				case models.NewFlowsheet:
+					flowsheet = payload.(models.NewFlowsheet)
+				}
+			}
+
+			Expect(flowsheet).To(MatchFields(IgnoreExtras, Fields{
+				"Meta": MatchFields(IgnoreExtras, Fields{
+					"DataModel": Equal("Flowsheet"),
+					"EventType": Equal("New"),
+				}),
 			}))
+
+			Expect(notes).To(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Meta": MatchFields(IgnoreExtras, Fields{
+					"DataModel": Equal("Notes"),
+					"EventType": Equal("Replace"),
+				}),
+				"Note": MatchFields(IgnoreExtras, Fields{
+					"DocumentID":         Equal(scheduled.Id.Hex()),
+					"OriginalDocumentID": Equal(scheduled.PrecedingDocument.Id.Hex()),
+					"FileContents":       PointTo(Not(BeEmpty())),
+				}),
+			})))
 
 			Expect(redoxClient.Uploaded).To(BeEmpty())
 		})
@@ -144,17 +187,17 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
 			Expect(redoxClient.Sent).To(HaveLen(2))
 
-			var notes models.NewNotes
+			var notes redox.Notes
 
 			for _, payload := range redoxClient.Sent {
 				switch payload.(type) {
-				case models.NewNotes:
-					notes = payload.(models.NewNotes)
+				case redox.Notes:
+					notes = payload.(redox.Notes)
 				}
 			}
 
 			Expect(redoxClient.Uploaded).To(HaveKey("report.pdf"))
-			Expect(notes).To(MatchFields(IgnoreExtras, Fields{
+			Expect(notes).To(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Meta": MatchFields(IgnoreExtras, Fields{
 					"DataModel": Equal("Notes"),
 					"EventType": Equal("New"),
@@ -162,7 +205,7 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 				"Note": MatchFields(IgnoreExtras, Fields{
 					"FileContents": PointTo(Equal("https://blob.redoxengine.com/upload/report.pdf")),
 				}),
-			}))
+			})))
 
 		})
 
