@@ -4,6 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/mail"
+	"strings"
+	"time"
+
 	"github.com/oapi-codegen/runtime/types"
 	"github.com/tidepool-org/clinic-worker/report"
 	clinics "github.com/tidepool-org/clinic/client"
@@ -11,10 +16,6 @@ import (
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	"go.uber.org/zap"
-	"net/http"
-	"net/mail"
-	"strings"
-	"time"
 )
 
 const (
