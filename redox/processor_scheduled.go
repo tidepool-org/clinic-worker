@@ -14,7 +14,7 @@ import (
 const recentDataCutoff = 14 * 24 * time.Hour
 
 type ScheduledSummaryAndReport struct {
-	Id                primitive.ObjectID     `json:"_id"`
+	Id                primitive.ObjectID     `json:"_id" bson:"_id"`
 	UserId            string                 `json:"userId"`
 	ClinicId          primitive.ObjectID     `json:"clinicId"`
 	LastMatchedOrder  models.MessageEnvelope `json:"lastMatchedOrder"`
@@ -24,7 +24,7 @@ type ScheduledSummaryAndReport struct {
 }
 
 type PrecedingDocument struct {
-	Id          primitive.ObjectID `json:"_id"`
+	Id          primitive.ObjectID `json:"_id" bson:"_id"`
 	CreatedTime time.Time          `json:"createdTime"`
 }
 
