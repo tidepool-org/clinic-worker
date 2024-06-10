@@ -439,10 +439,10 @@ github.com/tdewolff/parse/v2/js
 github.com/tdewolff/parse/v2/json
 github.com/tdewolff/parse/v2/strconv
 github.com/tdewolff/parse/v2/xml
-# github.com/tidepool-org/clinic/client v0.0.0-20240603143458-f4c80de8d392
+# github.com/tidepool-org/clinic/client v0.0.0-20240610133355-3526a7865213
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/client
-# github.com/tidepool-org/clinic/redox_models v0.0.0-20240603143458-f4c80de8d392
+# github.com/tidepool-org/clinic/redox_models v0.0.0-20240610133355-3526a7865213
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/redox_models
 # github.com/tidepool-org/go-common v0.12.1

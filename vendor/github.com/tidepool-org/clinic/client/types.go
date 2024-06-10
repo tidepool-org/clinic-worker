@@ -681,6 +681,13 @@ const (
 	FindPatientsParamsWorkspaceIdTypeEhrSourceId FindPatientsParamsWorkspaceIdType = "ehrSourceId"
 )
 
+// AddServiceAccount defines model for AddServiceAccount.
+type AddServiceAccount struct {
+	ClientId     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	Name         string `json:"name"`
+}
+
 // AssociateClinicianToUser defines model for AssociateClinicianToUser.
 type AssociateClinicianToUser struct {
 	UserId string `json:"userId"`
@@ -884,7 +891,10 @@ type EHRSettings struct {
 	MrnIdType      string              `json:"mrnIdType"`
 	ProcedureCodes EHRProcedureCodes   `json:"procedureCodes"`
 	Provider       EHRSettingsProvider `json:"provider"`
-	SourceId       string              `json:"sourceId"`
+
+	// ScheduledReports Scheduled Report Settings
+	ScheduledReports ScheduledReports `json:"scheduledReports"`
+	SourceId         string           `json:"sourceId"`
 }
 
 // EHRSettingsProvider defines model for EHRSettings.Provider.
@@ -1469,6 +1479,12 @@ type PhoneNumber struct {
 	Type   *string `json:"type,omitempty"`
 }
 
+// ScheduledReports Scheduled Report Settings
+type ScheduledReports struct {
+	// OnUpload Send a PDF Report and a Flowsheet to Redox after a dataset is uploaded.
+	OnUpload bool `json:"onUpload"`
+}
+
 // SuppressedNotifications defines model for SuppressedNotifications.
 type SuppressedNotifications struct {
 	PatientClinicInvitation *bool `json:"patientClinicInvitation,omitempty"`
@@ -1926,6 +1942,9 @@ type UpdatePatientJSONRequestBody = Patient
 
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
 type UpdatePatientPermissionsJSONRequestBody = PatientPermissions
+
+// AddServiceAccountJSONRequestBody defines body for AddServiceAccount for application/json ContentType.
+type AddServiceAccountJSONRequestBody = AddServiceAccount
 
 // UpdateEHRSettingsJSONRequestBody defines body for UpdateEHRSettings for application/json ContentType.
 type UpdateEHRSettingsJSONRequestBody = EHRSettings
