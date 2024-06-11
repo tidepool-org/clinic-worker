@@ -37,7 +37,12 @@ type SummaryAndReportParameters struct {
 }
 
 func (s SummaryAndReportParameters) ShouldReplacePrecedingReport() bool {
-	return s.PrecedingDocumentId != ""
+	if s.Match.Settings.ScheduledReports.OnUploadNoteEventType != nil &&
+		*s.Match.Settings.ScheduledReports.OnUploadNoteEventType == clinics.ScheduledReportsOnUploadNoteEventTypeReplace &&
+		s.PrecedingDocumentId != "" {
+		return true
+	}
+	return false
 }
 
 var (

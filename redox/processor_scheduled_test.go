@@ -139,12 +139,13 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 			Expect(redoxClient.Uploaded).To(BeEmpty())
 		})
 
-		It("it send a new flowsheet and replaces notes when there is a preceding document", func() {
+		It("it sends a new flowsheet and replaces notes when there is a preceding document and clinic settings are configured for note replacement", func() {
 			scheduled.Id = primitive.NewObjectID()
 			scheduled.PrecedingDocument = &redox.PrecedingDocument{
 				Id:          primitive.NewObjectID(),
 				CreatedTime: time.Now().Add(-5 * time.Minute),
 			}
+
 			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
 			Expect(redoxClient.Sent).To(HaveLen(2))
 
@@ -252,6 +253,57 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 			patient.Summary.BgmStats = nil
 
 			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+		})
+	})
+
+	Describe("ShouldReplacePrecedingReport", func() {
+		var response *clinics.EHRMatchResponse
+		var order *models.NewOrder
+
+		BeforeEach(func() {
+			response = &clinics.EHRMatchResponse{}
+			matchFixture, err := test.LoadFixture("test/fixtures/subscriptionmatchresponse.json")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(json.Unmarshal(matchFixture, response)).To(Succeed())
+
+			newOrderFixture, err := test.LoadFixture("test/fixtures/subscriptionorder.json")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(json.Unmarshal(newOrderFixture, &order)).To(Succeed())
+		})
+
+		It("Should be false when there's no preceding document and clinic is not configured for replacement", func() {
+			params := redox.SummaryAndReportParameters{
+				Match:               *response,
+				Order:               *order,
+				DocumentId:          "1234567",
+				PrecedingDocumentId: "",
+			}
+			Expect(params.ShouldReplacePrecedingReport()).To(BeFalse())
+		})
+
+		It("Should be false when there's is preceding document and clinic is not configured for replacement", func() {
+			eventType := clinics.ScheduledReportsOnUploadNoteEventTypeNew
+			response.Settings.ScheduledReports.OnUploadNoteEventType = &eventType
+			params := redox.SummaryAndReportParameters{
+				Match:               *response,
+				Order:               *order,
+				DocumentId:          "1234567",
+				PrecedingDocumentId: "0001111",
+			}
+			Expect(params.ShouldReplacePrecedingReport()).To(BeFalse())
+		})
+
+		It("Should be false true there's is preceding document and clinic is configured for replacement", func() {
+			eventType := clinics.ScheduledReportsOnUploadNoteEventTypeReplace
+			response.Settings.ScheduledReports.OnUploadNoteEventType = &eventType
+
+			params := redox.SummaryAndReportParameters{
+				Match:               *response,
+				Order:               *order,
+				DocumentId:          "1234567",
+				PrecedingDocumentId: "0001111",
+			}
+			Expect(params.ShouldReplacePrecedingReport()).To(BeTrue())
 		})
 	})
 })
