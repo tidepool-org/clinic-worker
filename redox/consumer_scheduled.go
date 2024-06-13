@@ -2,7 +2,7 @@ package redox
 
 import (
 	"context"
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/go-common/events"
 	"go.mongodb.org/mongo-driver/bson"

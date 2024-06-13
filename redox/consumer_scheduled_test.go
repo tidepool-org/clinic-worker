@@ -1,7 +1,7 @@
 package redox_test
 
 import (
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic-worker/cdc"
