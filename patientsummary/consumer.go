@@ -130,6 +130,9 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 			p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
 			return err
 		}
+	} else if *staticEvent.FullDocument.Type == "continuous" {
+		p.logger.Debugw("skipping over continuous type cdc event", "offset", cm.Offset, "userId", *staticEvent.FullDocument.UserID)
+		return nil
 	} else {
 		p.logger.Warnw("unsupported type of unmarshalled message", "offset", cm.Offset, "type", *staticEvent.FullDocument.Type)
 		return fmt.Errorf("unsupported type of unmarshalled message, type: %s", *staticEvent.FullDocument.Type)
