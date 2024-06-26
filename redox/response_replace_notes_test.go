@@ -9,19 +9,22 @@ import (
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/tidepool-org/clinic-worker/redox"
 	"github.com/tidepool-org/clinic-worker/test"
-	api "github.com/tidepool-org/clinic/client"
 	models "github.com/tidepool-org/clinic/redox_models"
 	"time"
 )
 
 var _ = Describe("Notes", func() {
-	Describe("NewNotes", func() {
+	Describe("ReplaceNotes", func() {
 		It("returns a correctly instantiated note", func() {
-			notes := redox.NewNotes()
+			documentId := "01234567890"
+			notes, err := redox.CreateReplaceNotes(documentId)
+			Expect(err).ToNot(HaveOccurred())
+
 			Expect(notes.Meta.DataModel).To(Equal("Notes"))
-			Expect(notes.Meta.EventType).To(Equal("New"))
+			Expect(notes.Meta.EventType).To(Equal("Replace"))
 			Expect(notes.Meta.EventDateTime).ToNot(BeNil())
 
+			Expect(notes.Note.OriginalDocumentID).To(Equal(documentId))
 			eventDateTime, err := time.Parse(time.RFC3339, *notes.Meta.EventDateTime)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(eventDateTime).To(BeTemporally("~", time.Now(), 3*time.Second))
@@ -29,11 +32,11 @@ var _ = Describe("Notes", func() {
 	})
 
 	Context("With order", func() {
-		var notes models.NewNotes
+		var notes redox.ReplaceNotes
 		var order models.NewOrder
 
 		BeforeEach(func() {
-			notes = redox.NewNotes()
+			notes = redox.ReplaceNotes{}
 			fixture, err := test.LoadFixture("test/fixtures/subscriptionorder.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(fixture, &order)).To(Succeed())
@@ -41,7 +44,7 @@ var _ = Describe("Notes", func() {
 
 		Describe("SetNotesPatientFromOrder", func() {
 			It("sets the patient identifier and demographics from the order", func() {
-				redox.SetNotesPatientFromOrder(order, &notes)
+				notes.SetPatientFromOrder(order)
 				Expect(notes.Patient.Identifiers).To(Equal(order.Patient.Identifiers))
 				Expect(notes.Patient.Demographics).To(Equal(order.Patient.Demographics))
 			})
@@ -49,7 +52,7 @@ var _ = Describe("Notes", func() {
 
 		Describe("SetVisitNumberInNotes", func() {
 			It("sets the visit number from the order", func() {
-				redox.SetVisitNumberInNotes(order, &notes)
+				notes.SetVisitNumberFromOrder(order)
 				Expect(notes.Visit).ToNot(BeNil())
 				Expect(notes.Visit.VisitNumber).To(PointTo(Equal(*order.Visit.VisitNumber)))
 			})
@@ -57,7 +60,7 @@ var _ = Describe("Notes", func() {
 
 		Describe("SetOrderIdInNotes", func() {
 			It("sets the order id from the order", func() {
-				redox.SetOrderIdInNotes(order, &notes)
+				notes.SetOrderId(order)
 				Expect(notes.Orders).ToNot(BeNil())
 				Expect(*notes.Orders).To(HaveLen(1))
 				Expect((*notes.Orders)[0].ID).To(PointTo(Equal(order.Order.ID)))
@@ -68,10 +71,9 @@ var _ = Describe("Notes", func() {
 			It("sets the correct metadata", func() {
 				clinciId := "clinic12345"
 				patientId := "patient12345"
-				clinic := api.Clinic{Id: &clinciId}
-				patient := api.Patient{Id: &patientId}
+				documentId := redox.GenerateReportDocumentId(clinciId, patientId)
 
-				redox.SetReportMetadata(clinic, patient, &notes)
+				notes.SetReportMetadata(documentId)
 				Expect(notes.Note.Availability).To(PointTo(Equal("Available")))
 				Expect(notes.Note.DocumentID).To(Equal("Report-clinic12345-patient12345"))
 				Expect(notes.Note.DocumentType).To(Equal("Tidepool Report"))
@@ -92,7 +94,7 @@ var _ = Describe("Notes", func() {
 				fileType := "PDF"
 				reader := bytes.NewReader(content)
 
-				Expect(redox.EmbedFileInNotes(fileName, fileType, reader, &notes)).To(Succeed())
+				Expect(notes.SetEmbeddedFile(fileName, fileType, reader)).To(Succeed())
 				Expect(notes.Note.FileContents).To(PointTo(Equal(expected)))
 				Expect(notes.Note.FileName).To(PointTo(Equal(fileName)))
 				Expect(notes.Note.FileType).To(PointTo(Equal(fileType)))
@@ -106,7 +108,7 @@ var _ = Describe("Notes", func() {
 			uri := "https://test.com/test.pdf"
 			result := redox.UploadResult{URI: uri}
 
-			Expect(redox.SetUploadReferenceInNote(fileName, fileType, result, &notes)).To(Succeed())
+			Expect(notes.SetUploadReference(fileName, fileType, result)).To(Succeed())
 			Expect(notes.Note.FileContents).To(PointTo(Equal(uri)))
 			Expect(notes.Note.FileName).To(PointTo(Equal(fileName)))
 			Expect(notes.Note.FileType).To(PointTo(Equal(fileType)))

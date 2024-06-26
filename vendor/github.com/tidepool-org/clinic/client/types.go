@@ -651,7 +651,7 @@ const (
 
 // Defines values for EHRMatchMessageRefEventType.
 const (
-	New EHRMatchMessageRefEventType = "New"
+	EHRMatchMessageRefEventTypeNew EHRMatchMessageRefEventType = "New"
 )
 
 // Defines values for EHRSettingsProvider.
@@ -667,6 +667,12 @@ const (
 	RUNNING   MigrationStatus = "RUNNING"
 )
 
+// Defines values for ScheduledReportsOnUploadNoteEventType.
+const (
+	ScheduledReportsOnUploadNoteEventTypeNew     ScheduledReportsOnUploadNoteEventType = "New"
+	ScheduledReportsOnUploadNoteEventTypeReplace ScheduledReportsOnUploadNoteEventType = "Replace"
+)
+
 // Defines values for Tier.
 const (
 	Tier0100 Tier = "tier0100"
@@ -680,6 +686,13 @@ const (
 	FindPatientsParamsWorkspaceIdTypeClinicId    FindPatientsParamsWorkspaceIdType = "clinicId"
 	FindPatientsParamsWorkspaceIdTypeEhrSourceId FindPatientsParamsWorkspaceIdType = "ehrSourceId"
 )
+
+// AddServiceAccount defines model for AddServiceAccount.
+type AddServiceAccount struct {
+	ClientId     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	Name         string `json:"name"`
+}
 
 // AssociateClinicianToUser defines model for AssociateClinicianToUser.
 type AssociateClinicianToUser struct {
@@ -884,7 +897,10 @@ type EHRSettings struct {
 	MrnIdType      string              `json:"mrnIdType"`
 	ProcedureCodes EHRProcedureCodes   `json:"procedureCodes"`
 	Provider       EHRSettingsProvider `json:"provider"`
-	SourceId       string              `json:"sourceId"`
+
+	// ScheduledReports Scheduled Report Settings
+	ScheduledReports ScheduledReports `json:"scheduledReports"`
+	SourceId         string           `json:"sourceId"`
 }
 
 // EHRSettingsProvider defines model for EHRSettings.Provider.
@@ -1352,6 +1368,30 @@ type PatientClinicRelationship struct {
 // PatientClinicRelationships defines model for PatientClinicRelationships.
 type PatientClinicRelationships = []PatientClinicRelationship
 
+// PatientCount defines model for PatientCount.
+type PatientCount struct {
+	// PatientCount The patient count for a clinic
+	PatientCount int `json:"patientCount"`
+}
+
+// PatientCountLimit defines model for PatientCountLimit.
+type PatientCountLimit struct {
+	// EndDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	EndDate *DateTime `json:"endDate,omitempty"`
+
+	// PatientCount The patient count limit
+	PatientCount int `json:"patientCount"`
+
+	// StartDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	StartDate *DateTime `json:"startDate,omitempty"`
+}
+
+// PatientCountSettings defines model for PatientCountSettings.
+type PatientCountSettings struct {
+	HardLimit *PatientCountLimit `json:"hardLimit,omitempty"`
+	SoftLimit *PatientCountLimit `json:"softLimit,omitempty"`
+}
+
 // PatientPermissions defines model for PatientPermissions.
 type PatientPermissions struct {
 	Custodian *map[string]interface{} `json:"custodian,omitempty"`
@@ -1444,6 +1484,16 @@ type PhoneNumber struct {
 	Number string  `json:"number"`
 	Type   *string `json:"type,omitempty"`
 }
+
+// ScheduledReports Scheduled Report Settings
+type ScheduledReports struct {
+	// OnUploadEnabled Send a PDF Report and a Flowsheet to Redox after a dataset is uploaded.
+	OnUploadEnabled       bool                                   `json:"onUploadEnabled"`
+	OnUploadNoteEventType *ScheduledReportsOnUploadNoteEventType `json:"onUploadNoteEventType,omitempty"`
+}
+
+// ScheduledReportsOnUploadNoteEventType defines model for ScheduledReports.OnUploadNoteEventType.
+type ScheduledReportsOnUploadNoteEventType string
 
 // SuppressedNotifications defines model for SuppressedNotifications.
 type SuppressedNotifications struct {
@@ -1903,11 +1953,17 @@ type UpdatePatientJSONRequestBody = Patient
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
 type UpdatePatientPermissionsJSONRequestBody = PatientPermissions
 
+// AddServiceAccountJSONRequestBody defines body for AddServiceAccount for application/json ContentType.
+type AddServiceAccountJSONRequestBody = AddServiceAccount
+
 // UpdateEHRSettingsJSONRequestBody defines body for UpdateEHRSettings for application/json ContentType.
 type UpdateEHRSettingsJSONRequestBody = EHRSettings
 
 // UpdateMRNSettingsJSONRequestBody defines body for UpdateMRNSettings for application/json ContentType.
 type UpdateMRNSettingsJSONRequestBody = MRNSettings
+
+// UpdatePatientCountSettingsJSONRequestBody defines body for UpdatePatientCountSettings for application/json ContentType.
+type UpdatePatientCountSettingsJSONRequestBody = PatientCountSettings
 
 // UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
 type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotifications

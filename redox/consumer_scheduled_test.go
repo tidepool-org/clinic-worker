@@ -9,6 +9,7 @@ import (
 	redoxTest "github.com/tidepool-org/clinic-worker/redox/test"
 	"github.com/tidepool-org/clinic-worker/test"
 	"github.com/tidepool-org/go-common/events"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
 
@@ -54,6 +55,9 @@ var _ = Describe("Consumer Scheduled", func() {
 				Value: message,
 			})).To(Succeed())
 			Expect(processor.Scheduled).To(HaveLen(1))
+
+			expectedId, _ := primitive.ObjectIDFromHex("6528ed3121d14252a7855a60")
+			Expect(processor.Scheduled[0].Id).To(Equal(expectedId))
 		})
 
 		It("skips messages with invalid metadata", func() {

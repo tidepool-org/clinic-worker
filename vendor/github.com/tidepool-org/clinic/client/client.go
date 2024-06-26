@@ -183,6 +183,9 @@ type ClientInterface interface {
 
 	UpdateMigration(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetPatientCount request
+	GetPatientCount(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// CreatePatientTagWithBody request with any body
 	CreatePatientTagWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -244,6 +247,11 @@ type ClientInterface interface {
 	// SendUploadReminder request
 	SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AddServiceAccountWithBody request with any body
+	AddServiceAccountWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AddServiceAccount(ctx context.Context, clinicId ClinicId, body AddServiceAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetEHRSettings request
 	GetEHRSettings(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -260,6 +268,14 @@ type ClientInterface interface {
 
 	UpdateMRNSettings(ctx context.Context, clinicId ClinicId, body UpdateMRNSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetPatientCountSettings request
+	GetPatientCountSettings(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdatePatientCountSettingsWithBody request with any body
+	UpdatePatientCountSettingsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdatePatientCountSettings(ctx context.Context, clinicId ClinicId, body UpdatePatientCountSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UpdateSuppressedNotificationsWithBody request with any body
 	UpdateSuppressedNotificationsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -275,6 +291,9 @@ type ClientInterface interface {
 
 	// FindPatients request
 	FindPatients(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SyncEHRDataForPatient request
+	SyncEHRDataForPatient(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdatePatientSummaryWithBody request with any body
 	UpdatePatientSummaryWithBody(ctx context.Context, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -734,6 +753,18 @@ func (c *Client) UpdateMigration(ctx context.Context, clinicId Id, userId UserId
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetPatientCount(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPatientCountRequest(c.Server, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) CreatePatientTagWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreatePatientTagRequestWithBody(c.Server, clinicId, contentType, body)
 	if err != nil {
@@ -1010,6 +1041,30 @@ func (c *Client) SendUploadReminder(ctx context.Context, clinicId ClinicId, pati
 	return c.Client.Do(req)
 }
 
+func (c *Client) AddServiceAccountWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddServiceAccountRequestWithBody(c.Server, clinicId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddServiceAccount(ctx context.Context, clinicId ClinicId, body AddServiceAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddServiceAccountRequest(c.Server, clinicId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetEHRSettings(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetEHRSettingsRequest(c.Server, clinicId)
 	if err != nil {
@@ -1082,6 +1137,42 @@ func (c *Client) UpdateMRNSettings(ctx context.Context, clinicId ClinicId, body 
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetPatientCountSettings(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPatientCountSettingsRequest(c.Server, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdatePatientCountSettingsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePatientCountSettingsRequestWithBody(c.Server, clinicId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdatePatientCountSettings(ctx context.Context, clinicId ClinicId, body UpdatePatientCountSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePatientCountSettingsRequest(c.Server, clinicId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) UpdateSuppressedNotificationsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateSuppressedNotificationsRequestWithBody(c.Server, clinicId, contentType, body)
 	if err != nil {
@@ -1144,6 +1235,18 @@ func (c *Client) UpdateTier(ctx context.Context, clinicId ClinicId, body UpdateT
 
 func (c *Client) FindPatients(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFindPatientsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SyncEHRDataForPatient(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSyncEHRDataForPatientRequest(c.Server, patientId)
 	if err != nil {
 		return nil, err
 	}
@@ -2668,6 +2771,40 @@ func NewUpdateMigrationRequestWithBody(server string, clinicId Id, userId UserId
 	return req, nil
 }
 
+// NewGetPatientCountRequest generates requests for GetPatientCount
+func NewGetPatientCountRequest(server string, clinicId ClinicId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patient_count", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewCreatePatientTagRequest calls the generic CreatePatientTag builder with application/json body
 func NewCreatePatientTagRequest(server string, clinicId ClinicId, body CreatePatientTagJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -4115,6 +4252,53 @@ func NewSendUploadReminderRequest(server string, clinicId ClinicId, patientId Pa
 	return req, nil
 }
 
+// NewAddServiceAccountRequest calls the generic AddServiceAccount builder with application/json body
+func NewAddServiceAccountRequest(server string, clinicId ClinicId, body AddServiceAccountJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddServiceAccountRequestWithBody(server, clinicId, "application/json", bodyReader)
+}
+
+// NewAddServiceAccountRequestWithBody generates requests for AddServiceAccount with any type of body
+func NewAddServiceAccountRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/service_accounts", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetEHRSettingsRequest generates requests for GetEHRSettings
 func NewGetEHRSettingsRequest(server string, clinicId ClinicId) (*http.Request, error) {
 	var err error
@@ -4258,6 +4442,87 @@ func NewUpdateMRNSettingsRequestWithBody(server string, clinicId ClinicId, conte
 	}
 
 	operationPath := fmt.Sprintf("/v1/clinics/%s/settings/mrn", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetPatientCountSettingsRequest generates requests for GetPatientCountSettings
+func NewGetPatientCountSettingsRequest(server string, clinicId ClinicId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/settings/patient_count", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdatePatientCountSettingsRequest calls the generic UpdatePatientCountSettings builder with application/json body
+func NewUpdatePatientCountSettingsRequest(server string, clinicId ClinicId, body UpdatePatientCountSettingsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdatePatientCountSettingsRequestWithBody(server, clinicId, "application/json", bodyReader)
+}
+
+// NewUpdatePatientCountSettingsRequestWithBody generates requests for UpdatePatientCountSettings with any type of body
+func NewUpdatePatientCountSettingsRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/settings/patient_count", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -4597,6 +4862,40 @@ func NewFindPatientsRequest(server string, params *FindPatientsParams) (*http.Re
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSyncEHRDataForPatientRequest generates requests for SyncEHRDataForPatient
+func NewSyncEHRDataForPatientRequest(server string, patientId PatientId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/patients/%s/ehr/sync", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -5271,6 +5570,9 @@ type ClientWithResponsesInterface interface {
 
 	UpdateMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error)
 
+	// GetPatientCountWithResponse request
+	GetPatientCountWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetPatientCountResponse, error)
+
 	// CreatePatientTagWithBodyWithResponse request with any body
 	CreatePatientTagWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePatientTagResponse, error)
 
@@ -5332,6 +5634,11 @@ type ClientWithResponsesInterface interface {
 	// SendUploadReminderWithResponse request
 	SendUploadReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendUploadReminderResponse, error)
 
+	// AddServiceAccountWithBodyWithResponse request with any body
+	AddServiceAccountWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddServiceAccountResponse, error)
+
+	AddServiceAccountWithResponse(ctx context.Context, clinicId ClinicId, body AddServiceAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*AddServiceAccountResponse, error)
+
 	// GetEHRSettingsWithResponse request
 	GetEHRSettingsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetEHRSettingsResponse, error)
 
@@ -5348,6 +5655,14 @@ type ClientWithResponsesInterface interface {
 
 	UpdateMRNSettingsWithResponse(ctx context.Context, clinicId ClinicId, body UpdateMRNSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMRNSettingsResponse, error)
 
+	// GetPatientCountSettingsWithResponse request
+	GetPatientCountSettingsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetPatientCountSettingsResponse, error)
+
+	// UpdatePatientCountSettingsWithBodyWithResponse request with any body
+	UpdatePatientCountSettingsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientCountSettingsResponse, error)
+
+	UpdatePatientCountSettingsWithResponse(ctx context.Context, clinicId ClinicId, body UpdatePatientCountSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientCountSettingsResponse, error)
+
 	// UpdateSuppressedNotificationsWithBodyWithResponse request with any body
 	UpdateSuppressedNotificationsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSuppressedNotificationsResponse, error)
 
@@ -5363,6 +5678,9 @@ type ClientWithResponsesInterface interface {
 
 	// FindPatientsWithResponse request
 	FindPatientsWithResponse(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*FindPatientsResponse, error)
+
+	// SyncEHRDataForPatientWithResponse request
+	SyncEHRDataForPatientWithResponse(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*SyncEHRDataForPatientResponse, error)
 
 	// UpdatePatientSummaryWithBodyWithResponse request with any body
 	UpdatePatientSummaryWithBodyWithResponse(ctx context.Context, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientSummaryResponse, error)
@@ -5962,6 +6280,28 @@ func (r UpdateMigrationResponse) StatusCode() int {
 	return 0
 }
 
+type GetPatientCountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PatientCount
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPatientCountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPatientCountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type CreatePatientTagResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -6284,6 +6624,27 @@ func (r SendUploadReminderResponse) StatusCode() int {
 	return 0
 }
 
+type AddServiceAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r AddServiceAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddServiceAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetEHRSettingsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -6370,6 +6731,49 @@ func (r UpdateMRNSettingsResponse) StatusCode() int {
 	return 0
 }
 
+type GetPatientCountSettingsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PatientCountSettings
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPatientCountSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPatientCountSettingsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdatePatientCountSettingsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdatePatientCountSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdatePatientCountSettingsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type UpdateSuppressedNotificationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -6450,6 +6854,27 @@ func (r FindPatientsResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r FindPatientsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SyncEHRDataForPatientResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r SyncEHRDataForPatientResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SyncEHRDataForPatientResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -7028,6 +7453,15 @@ func (c *ClientWithResponses) UpdateMigrationWithResponse(ctx context.Context, c
 	return ParseUpdateMigrationResponse(rsp)
 }
 
+// GetPatientCountWithResponse request returning *GetPatientCountResponse
+func (c *ClientWithResponses) GetPatientCountWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetPatientCountResponse, error) {
+	rsp, err := c.GetPatientCount(ctx, clinicId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPatientCountResponse(rsp)
+}
+
 // CreatePatientTagWithBodyWithResponse request with arbitrary body returning *CreatePatientTagResponse
 func (c *ClientWithResponses) CreatePatientTagWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePatientTagResponse, error) {
 	rsp, err := c.CreatePatientTagWithBody(ctx, clinicId, contentType, body, reqEditors...)
@@ -7227,6 +7661,23 @@ func (c *ClientWithResponses) SendUploadReminderWithResponse(ctx context.Context
 	return ParseSendUploadReminderResponse(rsp)
 }
 
+// AddServiceAccountWithBodyWithResponse request with arbitrary body returning *AddServiceAccountResponse
+func (c *ClientWithResponses) AddServiceAccountWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddServiceAccountResponse, error) {
+	rsp, err := c.AddServiceAccountWithBody(ctx, clinicId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddServiceAccountResponse(rsp)
+}
+
+func (c *ClientWithResponses) AddServiceAccountWithResponse(ctx context.Context, clinicId ClinicId, body AddServiceAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*AddServiceAccountResponse, error) {
+	rsp, err := c.AddServiceAccount(ctx, clinicId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddServiceAccountResponse(rsp)
+}
+
 // GetEHRSettingsWithResponse request returning *GetEHRSettingsResponse
 func (c *ClientWithResponses) GetEHRSettingsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetEHRSettingsResponse, error) {
 	rsp, err := c.GetEHRSettings(ctx, clinicId, reqEditors...)
@@ -7279,6 +7730,32 @@ func (c *ClientWithResponses) UpdateMRNSettingsWithResponse(ctx context.Context,
 	return ParseUpdateMRNSettingsResponse(rsp)
 }
 
+// GetPatientCountSettingsWithResponse request returning *GetPatientCountSettingsResponse
+func (c *ClientWithResponses) GetPatientCountSettingsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetPatientCountSettingsResponse, error) {
+	rsp, err := c.GetPatientCountSettings(ctx, clinicId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPatientCountSettingsResponse(rsp)
+}
+
+// UpdatePatientCountSettingsWithBodyWithResponse request with arbitrary body returning *UpdatePatientCountSettingsResponse
+func (c *ClientWithResponses) UpdatePatientCountSettingsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientCountSettingsResponse, error) {
+	rsp, err := c.UpdatePatientCountSettingsWithBody(ctx, clinicId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatePatientCountSettingsResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdatePatientCountSettingsWithResponse(ctx context.Context, clinicId ClinicId, body UpdatePatientCountSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientCountSettingsResponse, error) {
+	rsp, err := c.UpdatePatientCountSettings(ctx, clinicId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatePatientCountSettingsResponse(rsp)
+}
+
 // UpdateSuppressedNotificationsWithBodyWithResponse request with arbitrary body returning *UpdateSuppressedNotificationsResponse
 func (c *ClientWithResponses) UpdateSuppressedNotificationsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSuppressedNotificationsResponse, error) {
 	rsp, err := c.UpdateSuppressedNotificationsWithBody(ctx, clinicId, contentType, body, reqEditors...)
@@ -7329,6 +7806,15 @@ func (c *ClientWithResponses) FindPatientsWithResponse(ctx context.Context, para
 		return nil, err
 	}
 	return ParseFindPatientsResponse(rsp)
+}
+
+// SyncEHRDataForPatientWithResponse request returning *SyncEHRDataForPatientResponse
+func (c *ClientWithResponses) SyncEHRDataForPatientWithResponse(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*SyncEHRDataForPatientResponse, error) {
+	rsp, err := c.SyncEHRDataForPatient(ctx, patientId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSyncEHRDataForPatientResponse(rsp)
 }
 
 // UpdatePatientSummaryWithBodyWithResponse request with arbitrary body returning *UpdatePatientSummaryResponse
@@ -8106,6 +8592,32 @@ func ParseUpdateMigrationResponse(rsp *http.Response) (*UpdateMigrationResponse,
 	return response, nil
 }
 
+// ParseGetPatientCountResponse parses an HTTP response from a GetPatientCountWithResponse call
+func ParseGetPatientCountResponse(rsp *http.Response) (*GetPatientCountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPatientCountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PatientCount
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseCreatePatientTagResponse parses an HTTP response from a CreatePatientTagWithResponse call
 func ParseCreatePatientTagResponse(rsp *http.Response) (*CreatePatientTagResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -8416,6 +8928,22 @@ func ParseSendUploadReminderResponse(rsp *http.Response) (*SendUploadReminderRes
 	return response, nil
 }
 
+// ParseAddServiceAccountResponse parses an HTTP response from a AddServiceAccountWithResponse call
+func ParseAddServiceAccountResponse(rsp *http.Response) (*AddServiceAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddServiceAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
 // ParseGetEHRSettingsResponse parses an HTTP response from a GetEHRSettingsWithResponse call
 func ParseGetEHRSettingsResponse(rsp *http.Response) (*GetEHRSettingsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -8493,6 +9021,48 @@ func ParseUpdateMRNSettingsResponse(rsp *http.Response) (*UpdateMRNSettingsRespo
 	}
 
 	response := &UpdateMRNSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetPatientCountSettingsResponse parses an HTTP response from a GetPatientCountSettingsWithResponse call
+func ParseGetPatientCountSettingsResponse(rsp *http.Response) (*GetPatientCountSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPatientCountSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PatientCountSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdatePatientCountSettingsResponse parses an HTTP response from a UpdatePatientCountSettingsWithResponse call
+func ParseUpdatePatientCountSettingsResponse(rsp *http.Response) (*UpdatePatientCountSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdatePatientCountSettingsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -8579,6 +9149,22 @@ func ParseFindPatientsResponse(rsp *http.Response) (*FindPatientsResponse, error
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseSyncEHRDataForPatientResponse parses an HTTP response from a SyncEHRDataForPatientWithResponse call
+func ParseSyncEHRDataForPatientResponse(rsp *http.Response) (*SyncEHRDataForPatientResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SyncEHRDataForPatientResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil
