@@ -170,5 +170,15 @@ func applyPatientSummaryUpdate[T Stats](p *CDCConsumer, event CDCEvent[T]) error
 		return fmt.Errorf("unexpected status code when updating patient summary %v", response.StatusCode())
 	}
 
+	if ShouldTriggerEHRSync(event.FullDocument) {
+		syncResponse, err := p.clinics.SyncEHRDataForPatientWithResponse(ctx, userId)
+		if err != nil {
+			return err
+		}
+		if !(syncResponse.StatusCode() == http.StatusAccepted || syncResponse.StatusCode() == http.StatusNotFound) {
+			return fmt.Errorf("unexpected status code when updating patient summary %v", syncResponse.StatusCode())
+		}
+	}
+
 	return nil
 }

@@ -397,6 +397,10 @@
       "enableSummaryReports": "PRO1090",
       "disableSummaryReports": "PRO1091"
     },
-    "sourceId": "ba31f6d3-8358-4d2c-ac65-d4af5f3db21d"
+    "sourceId": "ba31f6d3-8358-4d2c-ac65-d4af5f3db21d",
+    "scheduledReports": {
+      "onUploadEnabled": true,
+      "onUploadNoteEventType": "Replace"
+    }
   }
 }
