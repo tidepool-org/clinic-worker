@@ -3,7 +3,7 @@ package migration
 import (
 	"context"
 	"encoding/json"
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"

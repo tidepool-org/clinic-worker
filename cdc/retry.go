@@ -1,7 +1,7 @@
 package cdc
 
 import (
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/avast/retry-go"
 	"github.com/tidepool-org/go-common/events"
 	"time"

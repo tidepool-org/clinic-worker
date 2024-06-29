@@ -3,7 +3,7 @@ package worker_test
 import (
 	"os"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
