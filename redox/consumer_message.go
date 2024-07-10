@@ -2,7 +2,7 @@ package redox
 
 import (
 	"context"
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	models "github.com/tidepool-org/clinic/redox_models"
 	"github.com/tidepool-org/go-common/events"
