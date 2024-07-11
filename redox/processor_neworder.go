@@ -92,14 +92,15 @@ func (o *newOrderProcessor) ProcessOrder(ctx context.Context, envelope models.Me
 	if err != nil {
 		o.logger.Warnw("unable to match", "order", order.Meta, zap.Error(err))
 		// Return an error so we can retry the request
-		// TODO this needs to be a dead letter or something which doesnt block forever on bad data
-		return nil
+		return err
 	}
 
 	if response.StatusCode() != http.StatusOK {
 		o.logger.Warnw("unable to match clinic and patient", "order", order.Meta, "status", response.StatusCode())
 		// Return an error so we can retry the request
-		return fmt.Errorf("unable to match clinic and patient. unexpected response: %d", response.StatusCode())
+		// TODO this needs to be a dead letter or something which doesnt block forever on bad data
+		return nil
+		//return fmt.Errorf("unable to match clinic and patient. unexpected response: %d", response.StatusCode())
 	}
 
 	if response.JSON200 == nil {
