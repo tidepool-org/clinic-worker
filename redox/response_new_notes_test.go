@@ -52,6 +52,44 @@ var _ = Describe("Notes", func() {
 				Expect(notes.Visit).ToNot(BeNil())
 				Expect(notes.Visit.VisitNumber).To(PointTo(Equal(*order.Visit.VisitNumber)))
 			})
+
+			Context("with an existing visit", func() {
+				var secondOrder models.NewOrder
+
+				BeforeEach(func() {
+					notes.SetVisitNumberFromOrder(order)
+					Expect(notes.Visit).ToNot(BeNil())
+					Expect(notes.Visit.VisitNumber).To(PointTo(Equal(*order.Visit.VisitNumber)))
+
+					fixture, err := test.LoadFixture("test/fixtures/subscriptionorder.json")
+					Expect(err).ToNot(HaveOccurred())
+					Expect(json.Unmarshal(fixture, &secondOrder)).To(Succeed())
+					*secondOrder.Visit.VisitNumber = "foo"
+				})
+
+				It("sets the visit number", func() {
+					notes.SetVisitNumberFromOrder(secondOrder)
+					Expect(notes.Visit).ToNot(BeNil())
+					Expect(notes.Visit.VisitNumber).To(PointTo(Equal(*secondOrder.Visit.VisitNumber)))
+				})
+			})
+		})
+
+		Describe("SetProcedureFromOrder", func() {
+			Context("with an existing visit", func() {
+				BeforeEach(func(){
+					notes.SetVisitNumberFromOrder(order)
+					Expect(notes.Visit).ToNot(BeNil())
+					Expect(notes.Visit.VisitNumber).To(PointTo(Equal(*order.Visit.VisitNumber)))
+				})
+
+				It("doesn't change an existing Visit's VisitNumber", func() {
+					Expect(notes.Visit).ToNot(BeNil())
+					notes.SetProcedureFromOrder(order)
+					Expect(notes.Visit).ToNot(BeNil())
+					Expect(notes.Visit.VisitNumber).To(PointTo(Equal(*order.Visit.VisitNumber)))
+				})
+			})
 		})
 
 		Describe("SetOrderIdInNotes", func() {
