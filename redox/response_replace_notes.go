@@ -37,13 +37,8 @@ func (n *ReplaceNotes) SetSourceFromClient(client Client) {
 }
 
 func (n *ReplaceNotes) SetDestination(destinationId string) {
-	destinations := []struct {
-		ID   *string `json:"ID"`
-		Name *string `json:"Name"`
-	}{{
-		ID: &destinationId,
-	}}
-	n.Meta.Destinations = &destinations
+	n.Meta.Destinations = types.NewSlicePtr(n.Meta.Destinations, 1)
+	(*n.Meta.Destinations)[0].ID = &destinationId
 }
 
 func (n *ReplaceNotes) SetPatientFromOrder(order models.NewOrder) {
@@ -62,121 +57,16 @@ func (n *ReplaceNotes) SetProviderFromOrder(order models.NewOrder) {
 	}
 }
 
-
 func (n *ReplaceNotes) SetProcedureFromOrder(order models.NewOrder) {
 	if order.Order.Procedure != nil {
-		additionalStaff := []struct {
-			Address *struct {
-				City          *string `json:"City"`
-				Country       *string `json:"Country"`
-				County        *string `json:"County"`
-				State         *string `json:"State"`
-				StreetAddress *string `json:"StreetAddress"`
-				ZIP           *string `json:"ZIP"`
-			} `json:"Address,omitempty"`
-			Credentials    *[]interface{} `json:"Credentials,omitempty"`
-			EmailAddresses *[]interface{} `json:"EmailAddresses,omitempty"`
-			FirstName      *string        `json:"FirstName"`
-			ID             *string        `json:"ID"`
-			IDType         *string        `json:"IDType"`
-			LastName       *string        `json:"LastName"`
-			Location       *struct {
-				Department            *string `json:"Department"`
-				DepartmentIdentifiers *[]struct {
-					ID     *string `json:"ID"`
-					IDType *string `json:"IDType"`
-				} `json:"DepartmentIdentifiers,omitempty"`
-				Facility            *string `json:"Facility"`
-				FacilityIdentifiers *[]struct {
-					ID     *string `json:"ID"`
-					IDType *string `json:"IDType"`
-				} `json:"FacilityIdentifiers,omitempty"`
-				Room *string `json:"Room"`
-				Type *string `json:"Type"`
-			} `json:"Location,omitempty"`
-			PhoneNumber *struct {
-				Office *string `json:"Office"`
-			} `json:"PhoneNumber,omitempty"`
-			Role *struct {
-				Code        *string `json:"Code"`
-				Codeset     *string `json:"Codeset"`
-				Description *string `json:"Description"`
-			} `json:"Role,omitempty"`
-		}{{
-			Role: &struct {
-				Code        *string `json:"Code"`
-				Codeset     *string `json:"Codeset"`
-				Description *string `json:"Description"`
-			}{},
-		}}
-
-		additionalStaff[0].Role.Code = order.Order.Procedure.Code
-		additionalStaff[0].Role.Codeset = order.Order.Procedure.Codeset
-		additionalStaff[0].Role.Description = order.Order.Procedure.Description
-
 		if n.Visit == nil {
-			visit := struct {
-				AccountNumber   *string `json:"AccountNumber"`
-				AdditionalStaff *[]struct {
-					Address *struct {
-						City          *string `json:"City"`
-						Country       *string `json:"Country"`
-						County        *string `json:"County"`
-						State         *string `json:"State"`
-						StreetAddress *string `json:"StreetAddress"`
-						ZIP           *string `json:"ZIP"`
-					} `json:"Address,omitempty"`
-					Credentials    *[]interface{} `json:"Credentials,omitempty"`
-					EmailAddresses *[]interface{} `json:"EmailAddresses,omitempty"`
-					FirstName      *string        `json:"FirstName"`
-					ID             *string        `json:"ID"`
-					IDType         *string        `json:"IDType"`
-					LastName       *string        `json:"LastName"`
-					Location       *struct {
-						Department            *string `json:"Department"`
-						DepartmentIdentifiers *[]struct {
-							ID     *string `json:"ID"`
-							IDType *string `json:"IDType"`
-						} `json:"DepartmentIdentifiers,omitempty"`
-						Facility            *string `json:"Facility"`
-						FacilityIdentifiers *[]struct {
-							ID     *string `json:"ID"`
-							IDType *string `json:"IDType"`
-						} `json:"FacilityIdentifiers,omitempty"`
-						Room *string `json:"Room"`
-						Type *string `json:"Type"`
-					} `json:"Location,omitempty"`
-					PhoneNumber *struct {
-						Office *string `json:"Office"`
-					} `json:"PhoneNumber,omitempty"`
-					Role *struct {
-						Code        *string `json:"Code"`
-						Codeset     *string `json:"Codeset"`
-						Description *string `json:"Description"`
-					} `json:"Role,omitempty"`
-				} `json:"AdditionalStaff,omitempty"`
-				Location *struct {
-					Bed                   *string `json:"Bed"`
-					Department            *string `json:"Department"`
-					DepartmentIdentifiers *[]struct {
-						ID     *string `json:"ID"`
-						IDType *string `json:"IDType"`
-					} `json:"DepartmentIdentifiers,omitempty"`
-					Facility            *string `json:"Facility"`
-					FacilityIdentifiers *[]struct {
-						ID     *string `json:"ID"`
-						IDType *string `json:"IDType"`
-					} `json:"FacilityIdentifiers,omitempty"`
-					Room *string `json:"Room"`
-					Type *string `json:"Type"`
-				} `json:"Location,omitempty"`
-				PatientClass  *string `json:"PatientClass"`
-				VisitDateTime *string `json:"VisitDateTime"`
-				VisitNumber   *string `json:"VisitNumber"`
-			}{}
-			n.Visit = &visit
+			n.Visit = types.NewStructPtr(n.Visit)
 		}
-		n.Visit.AdditionalStaff = &additionalStaff
+		n.Visit.AdditionalStaff = types.NewSlicePtr(n.Visit.AdditionalStaff, 1)
+		(*n.Visit.AdditionalStaff)[0].Role = types.NewStructPtr((*n.Visit.AdditionalStaff)[0].Role)
+		(*n.Visit.AdditionalStaff)[0].Role.Code = order.Order.Procedure.Code
+		(*n.Visit.AdditionalStaff)[0].Role.Codeset = order.Order.Procedure.Codeset
+		(*n.Visit.AdditionalStaff)[0].Role.Description = order.Order.Procedure.Description
 	}
 }
 
@@ -201,13 +91,8 @@ func (n *ReplaceNotes) SetAccountNumberFromOrder(order models.NewOrder) {
 }
 
 func (n *ReplaceNotes) SetOrderId(order models.NewOrder) {
-	orders := []struct {
-		ID   *string `json:"ID"`
-		Name *string `json:"Name"`
-	}{{
-		ID: &order.Order.ID,
-	}}
-	n.Orders = &orders
+	n.Orders = types.NewSlicePtr(n.Orders, 1)
+	(*n.Orders)[0].ID = &order.Order.ID
 }
 
 func (n *ReplaceNotes) SetReportMetadata(documentId string) {

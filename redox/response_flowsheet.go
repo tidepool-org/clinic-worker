@@ -104,21 +104,19 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits cl
 		timeInVeryHigh = period.TimeInVeryHighPercent
 	}
 
-	f.Observations = append(f.Observations,
-		CreateObservation("REPORTING_PERIOD_START_CGM", formatTime(periodStart), "DateTime", nil, "CGM Reporting Period Start", reportingTime),
-		CreateObservation("REPORTING_PERIOD_END_CGM", formatTime(periodEnd), "DateTime", nil, "CGM Reporting Period End", reportingTime),
-		CreateObservation("REPORTING_PERIOD_START_CGM_DATA", formatTime(firstData), "DateTime", nil, "CGM Reporting Period Start Date of actual Data", reportingTime),
+	AppendObservation(f, "REPORTING_PERIOD_START_CGM", formatTime(periodStart), "DateTime", nil, "CGM Reporting Period Start", reportingTime)
+	AppendObservation(f, "REPORTING_PERIOD_END_CGM", formatTime(periodEnd), "DateTime", nil, "CGM Reporting Period End", reportingTime)
+	AppendObservation(f, "REPORTING_PERIOD_START_CGM_DATA", formatTime(firstData), "DateTime", nil, "CGM Reporting Period Start Date of actual Data", reportingTime)
 
-		CreateObservation("ACTIVE_WEAR_TIME_CGM", formatFloat(unitIntervalToPercent(cgmUsePercent)), "Numeric", &unitsPercentage, "Percentage of time CGM worn during reporting period", reportingTime),
-		CreateObservation("AVERAGE_CGM", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, "CGM Average Glucose during reporting period", reportingTime),
-		CreateObservation("GLUCOSE_MANAGEMENT_INDICATOR", formatFloat(gmi), "Numeric", nil, "CGM Glucose Management Indicator during reporting period", reportingTime),
+	AppendObservation(f, "ACTIVE_WEAR_TIME_CGM", formatFloat(unitIntervalToPercent(cgmUsePercent)), "Numeric", &unitsPercentage, "Percentage of time CGM worn during reporting period", reportingTime)
+	AppendObservation(f, "AVERAGE_CGM", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, "CGM Average Glucose during reporting period", reportingTime)
+	AppendObservation(f, "GLUCOSE_MANAGEMENT_INDICATOR", formatFloat(gmi), "Numeric", nil, "CGM Glucose Management Indicator during reporting period", reportingTime)
 
-		CreateObservation("TIME_BELOW_RANGE_VERY_LOW_CGM", formatFloat(unitIntervalToPercent(timeInVeryLow)), "Numeric", &unitsPercentage, "CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)", reportingTime),
-		CreateObservation("TIME_BELOW_RANGE_LOW_CGM", formatFloat(unitIntervalToPercent(timeInLow)), "Numeric", &unitsPercentage, "CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time 54–69 mg/dL (3.0–3.8 mmol/L)", reportingTime),
-		CreateObservation("TIME_IN_RANGE_CGM", formatFloat(unitIntervalToPercent(timeInTarget)), "Numeric", &unitsPercentage, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)", reportingTime),
-		CreateObservation("TIME_ABOVE_RANGE_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInHigh)), "Numeric", &unitsPercentage, "CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)", reportingTime),
-		CreateObservation("TIME_ABOVE_RANGE_VERY_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInVeryHigh)), "Numeric", &unitsPercentage, "CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)", reportingTime),
-	)
+	AppendObservation(f, "TIME_BELOW_RANGE_VERY_LOW_CGM", formatFloat(unitIntervalToPercent(timeInVeryLow)), "Numeric", &unitsPercentage, "CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)", reportingTime)
+	AppendObservation(f, "TIME_BELOW_RANGE_LOW_CGM", formatFloat(unitIntervalToPercent(timeInLow)), "Numeric", &unitsPercentage, "CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time 54–69 mg/dL (3.0–3.8 mmol/L)", reportingTime)
+	AppendObservation(f, "TIME_IN_RANGE_CGM", formatFloat(unitIntervalToPercent(timeInTarget)), "Numeric", &unitsPercentage, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)", reportingTime)
+	AppendObservation(f, "TIME_ABOVE_RANGE_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInHigh)), "Numeric", &unitsPercentage, "CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)", reportingTime)
+	AppendObservation(f, "TIME_ABOVE_RANGE_VERY_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInVeryHigh)), "Numeric", &unitsPercentage, "CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)", reportingTime)
 }
 
 func PopulateBGMObservations(stats *clinics.PatientBGMStats, preferredBgUnits clinics.ClinicPreferredBgUnits, f *models.NewFlowsheet) {
@@ -171,49 +169,26 @@ func PopulateBGMObservations(stats *clinics.PatientBGMStats, preferredBgUnits cl
 		timeInVeryHighRecords = period.TimeInVeryHighRecords
 	}
 
-	f.Observations = append(f.Observations,
-		CreateObservation("REPORTING_PERIOD_START_SMBG", formatTime(periodStart), "DateTime", nil, "SMBG Reporting Period Start", reportingTime),
-		CreateObservation("REPORTING_PERIOD_END_SMBG", formatTime(periodEnd), "DateTime", nil, "SMBG Reporting Period End", reportingTime),
-		CreateObservation("REPORTING_PERIOD_START_SMBG_DATA", formatTime(firstData), "DateTime", nil, "SMBG Reporting Period Start Date of actual Data", reportingTime),
+	AppendObservation(f, "REPORTING_PERIOD_START_SMBG", formatTime(periodStart), "DateTime", nil, "SMBG Reporting Period Start", reportingTime)
+	AppendObservation(f, "REPORTING_PERIOD_END_SMBG", formatTime(periodEnd), "DateTime", nil, "SMBG Reporting Period End", reportingTime)
+	AppendObservation(f, "REPORTING_PERIOD_START_SMBG_DATA", formatTime(firstData), "DateTime", nil, "SMBG Reporting Period Start Date of actual Data", reportingTime)
 
-		CreateObservation("CHECK_RATE_READINGS_DAY_SMBG", formatFloat(averageDailyRecords), "Numeric", nil, "Average Numeric of SMBG readings per day during reporting period", reportingTime),
-		CreateObservation("AVERAGE_SMBG", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, "SMBG Average Glucose during reporting period", reportingTime),
+	AppendObservation(f, "CHECK_RATE_READINGS_DAY_SMBG", formatFloat(averageDailyRecords), "Numeric", nil, "Average Numeric of SMBG readings per day during reporting period", reportingTime)
+	AppendObservation(f, "AVERAGE_SMBG", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, "SMBG Average Glucose during reporting period", reportingTime)
 
-		CreateObservation("READINGS_BELOW_RANGE_VERY_LOW_SMBG", formatInt(timeInVeryLowRecords), "Numeric", nil, "SMBG Level 2 Hypoglycemia Events: Number of readings <54 mg/dL (<3.0 mmol/L) during reporting period", reportingTime),
-		CreateObservation("READINGS_ABOVE_RANGE_VERY_HIGH_SMBG", formatInt(timeInVeryHighRecords), "Numeric", nil, "SMBG Level 2 Hyperglycemia: Number of readings above range (TAR-VH) time >250 mg/dL (>13.9 mmol/L) during reporting period", reportingTime),
-	)
+	AppendObservation(f, "READINGS_BELOW_RANGE_VERY_LOW_SMBG", formatInt(timeInVeryLowRecords), "Numeric", nil, "SMBG Level 2 Hypoglycemia Events: Number of readings <54 mg/dL (<3.0 mmol/L) during reporting period", reportingTime)
+	AppendObservation(f, "READINGS_ABOVE_RANGE_VERY_HIGH_SMBG", formatInt(timeInVeryHighRecords), "Numeric", nil, "SMBG Level 2 Hyperglycemia: Number of readings above range (TAR-VH) time >250 mg/dL (>13.9 mmol/L) during reporting period", reportingTime)
 }
 
-func CreateObservation(code, value, valueType string, units *string, description, dateTime string) (res struct {
-	AbnormalFlag *string        `json:"AbnormalFlag"`
-	Code         string         `json:"Code"`
-	Codeset      *string        `json:"Codeset"`
-	DateTime     string         `json:"DateTime"`
-	Description  *string        `json:"Description"`
-	Notes        *[]interface{} `json:"Notes,omitempty"`
-	Observer     *struct {
-		FirstName *string `json:"FirstName"`
-		ID        *string `json:"ID"`
-		IDType    *string `json:"IDType"`
-		LastName  *string `json:"LastName"`
-	} `json:"Observer,omitempty"`
-	ReferenceRange *struct {
-		High *float32 `json:"High"`
-		Low  *float32 `json:"Low"`
-		Text *string  `json:"Text"`
-	} `json:"ReferenceRange,omitempty"`
-	Status    *string `json:"Status"`
-	Units     *string `json:"Units"`
-	Value     string  `json:"Value"`
-	ValueType string  `json:"ValueType"`
-}) {
-	res.Code = code
-	res.Value = value
-	res.ValueType = valueType
-	res.Units = units
-	res.Description = &description
-	res.DateTime = dateTime
-	return
+func AppendObservation(f *models.NewFlowsheet, code, value, valueType string, units *string, description, dateTime string) {
+	observation := types.NewItemForSlice(f.Observations)
+	observation.Code = code
+	observation.Value = value
+	observation.ValueType = valueType
+	observation.Units = units
+	observation.Description = &description
+	observation.DateTime = dateTime
+	f.Observations = append(f.Observations, observation)
 }
 
 func SetVisitNumberInFlowsheet(order models.NewOrder, flowsheet *models.NewFlowsheet) {
