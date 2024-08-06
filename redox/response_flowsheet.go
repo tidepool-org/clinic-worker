@@ -2,6 +2,7 @@ package redox
 
 import (
 	"fmt"
+	"github.com/tidepool-org/clinic-worker/types"
 	clinics "github.com/tidepool-org/clinic/client"
 	models "github.com/tidepool-org/clinic/redox_models"
 	"strings"
@@ -216,30 +217,20 @@ func CreateObservation(code, value, valueType string, units *string, description
 }
 
 func SetVisitNumberInFlowsheet(order models.NewOrder, flowsheet *models.NewFlowsheet) {
-	if order.Visit != nil && order.Visit.VisitNumber != nil && *order.Visit.VisitNumber != "" {
-		visit := struct {
-			AccountNumber *string `json:"AccountNumber"`
-			Location      *struct {
-				Bed                   *string `json:"Bed"`
-				Department            *string `json:"Department"`
-				DepartmentIdentifiers *[]struct {
-					ID     *string `json:"ID"`
-					IDType *string `json:"IDType"`
-				} `json:"DepartmentIdentifiers,omitempty"`
-				Facility            *string `json:"Facility"`
-				FacilityIdentifiers *[]struct {
-					ID     *string `json:"ID"`
-					IDType *string `json:"IDType"`
-				} `json:"FacilityIdentifiers,omitempty"`
-				Room *string `json:"Room"`
-				Type *string `json:"Type"`
-			} `json:"Location,omitempty"`
-			VisitDateTime *string `json:"VisitDateTime"`
-			VisitNumber   *string `json:"VisitNumber"`
-		}{
-			VisitNumber: order.Visit.VisitNumber,
+	if order.Visit != nil && order.Visit.VisitNumber != nil {
+		if flowsheet.Visit == nil {
+			flowsheet.Visit = types.NewStructPtr(flowsheet.Visit)
 		}
-		flowsheet.Visit = &visit
+		flowsheet.Visit.VisitNumber = order.Visit.VisitNumber
+	}
+}
+
+func SetAccountNumberInFlowsheet(order models.NewOrder, flowsheet *models.NewFlowsheet) {
+	if order.Visit != nil && order.Visit.AccountNumber != nil {
+		if flowsheet.Visit == nil {
+			flowsheet.Visit = types.NewStructPtr(flowsheet.Visit)
+		}
+		flowsheet.Visit.AccountNumber = order.Visit.AccountNumber
 	}
 }
 

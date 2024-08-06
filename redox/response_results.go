@@ -1,6 +1,7 @@
 package redox
 
 import (
+	"github.com/tidepool-org/clinic-worker/types"
 	models "github.com/tidepool-org/clinic/redox_models"
 	"time"
 )
@@ -412,4 +413,22 @@ func SetNotificationResult(notification ResultsNotification, fields Notification
 	results.Orders[0].Results[1].ValueType = "String"
 	results.Orders[0].Results[1].Value = notification.Message
 	results.Orders[0].Results[1].Status = &OrderResultsStatusFinal
+}
+
+func SetVisitNumberInResult(order models.NewOrder, result *models.NewResults) {
+	if order.Visit != nil && order.Visit.VisitNumber != nil {
+		if result.Visit == nil {
+			result.Visit = types.NewStructPtr(result.Visit)
+		}
+		result.Visit.VisitNumber = order.Visit.VisitNumber
+	}
+}
+
+func SetAccountNumberInResult(order models.NewOrder, result *models.NewResults) {
+	if order.Visit != nil && order.Visit.AccountNumber != nil {
+		if result.Visit == nil {
+			result.Visit = types.NewStructPtr(result.Visit)
+		}
+		result.Visit.AccountNumber = order.Visit.AccountNumber
+	}
 }

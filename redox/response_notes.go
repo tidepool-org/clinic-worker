@@ -24,6 +24,7 @@ const (
 )
 
 type Notes interface {
+	SetAccountNumberFromOrder(order models.NewOrder)
 	SetSourceFromClient(client Client)
 	SetDestination(destinationId string)
 	SetPatientFromOrder(order models.NewOrder)

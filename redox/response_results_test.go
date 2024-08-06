@@ -36,6 +36,22 @@ var _ = Describe("Results", func() {
 			Expect(json.Unmarshal(fixture, &order)).To(Succeed())
 		})
 
+		Describe("SetAccountNumberFromOrder", func() {
+			It("sets the account number from the order", func() {
+				redox.SetAccountNumberInResult(order, &results)
+				Expect(results.Visit).ToNot(BeNil())
+				Expect(results.Visit.AccountNumber).To(PointTo(Equal(*order.Visit.AccountNumber)))
+			})
+		})
+
+		Describe("SetVisitNumberFromOrder", func() {
+			It("sets the visit number from the order", func() {
+				redox.SetVisitNumberInResult(order, &results)
+				Expect(results.Visit).ToNot(BeNil())
+				Expect(results.Visit.VisitNumber).To(PointTo(Equal(*order.Visit.VisitNumber)))
+			})
+		})
+
 		Describe("SetResultsPatientFromOrder", func() {
 			It("sets the patient identifier and demographics from the order", func() {
 				redox.SetResultsPatientFromOrder(order, &results)

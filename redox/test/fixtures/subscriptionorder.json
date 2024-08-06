@@ -71,7 +71,7 @@
   },
   "Visit": {
     "VisitNumber": "1234",
-    "AccountNumber": null,
+    "AccountNumber": "9988",
     "PatientClass": null,
     "VisitDateTime": "2015-04-21T13:54:49.863Z",
     "AttendingProvider": {
