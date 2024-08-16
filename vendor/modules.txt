@@ -204,7 +204,7 @@ github.com/rcrowley/go-metrics
 # github.com/tidepool-org/clinic/client v0.0.0-20240802193352-3f912afe2109
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/client
-# github.com/tidepool-org/clinic/redox_models v0.0.0-20240709232430-e9a50876175b
+# github.com/tidepool-org/clinic/redox_models v0.0.0-20240802193352-3f912afe2109
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/redox_models
 # github.com/tidepool-org/go-common v0.12.2-0.20240612192926-de6d5c5a742c
