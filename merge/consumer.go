@@ -122,7 +122,7 @@ func (s *MergePlansCDCConsumer) handleCDCEvent(event cdc.Event[PersistentPlan[bs
 
 func (s *MergePlansCDCConsumer) handlePatientPlan(event cdc.Event[PersistentPlan[bson.Raw]]) error {
 	plan := PatientPlan{}
-	if err := bson.UnmarshalExtJSON(event.FullDocument.Plan, true, event); err != nil {
+	if err := UnmarshalPlan(event, &plan); err != nil {
 		return err
 	}
 
@@ -157,7 +157,7 @@ func (s *MergePlansCDCConsumer) handlePatientPlan(event cdc.Event[PersistentPlan
 
 func (s *MergePlansCDCConsumer) handleClinicianPlan(event cdc.Event[PersistentPlan[bson.Raw]]) error {
 	plan := ClinicianPlan{}
-	if err := bson.UnmarshalExtJSON(event.FullDocument.Plan, true, event); err != nil {
+	if err := UnmarshalPlan(event, &plan); err != nil {
 		return err
 	}
 
@@ -205,6 +205,10 @@ func (s *MergePlansCDCConsumer) getUserEmail(userId string) (string, error) {
 
 func UnmarshalEvent(value []byte, event *cdc.Event[PersistentPlan[bson.Raw]]) error {
 	return bson.UnmarshalExtJSON(value, true, event)
+}
+
+func UnmarshalPlan[PT *T, T any](event cdc.Event[PersistentPlan[bson.Raw]], plan PT) error {
+	return bson.Unmarshal(event.FullDocument.Plan, plan)
 }
 
 func GetClinicianEmailNotificationTemplate(plan ClinicianPlan) string {

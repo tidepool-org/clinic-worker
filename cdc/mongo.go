@@ -1,8 +1,7 @@
 package cdc
 
 import (
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"encoding/hex"
 )
 
 type ObjectId struct {
@@ -10,12 +9,7 @@ type ObjectId struct {
 }
 
 func (o *ObjectId) UnmarshalBSON(data []byte) error {
-	var id primitive.ObjectID
-	err := bson.Unmarshal(data, &id)
-	if err != nil {
-		return err
-	}
-	o.Value = id.Hex()
+	o.Value = hex.EncodeToString(data)
 	return nil
 }
 
