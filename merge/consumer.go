@@ -139,7 +139,7 @@ func (s *MergePlansCDCConsumer) handlePatientPlan(event cdc.Event[PersistentPlan
 
 		template := events.SendEmailTemplateEvent{
 			Recipient: recipient,
-			Template:  "patient_migrated",
+			Template:  "clinic_merged_patient_notification",
 			Variables: map[string]string{
 				"SourceClinicName": plan.SourceClinicName,
 				"TargetClinicName": plan.TargetClinicName,
@@ -210,11 +210,11 @@ func UnmarshalEvent(value []byte, event *cdc.Event[PersistentPlan[bson.Raw]]) er
 func GetClinicianEmailNotificationTemplate(plan ClinicianPlan) string {
 	switch plan.ClinicianAction {
 	case ClinicianActionRetain, ClinicianActionMergeInto:
-		return "source_clinic_merged_notification"
-	case ClinicianActionMove, ClinicianActionMerge:
 		if slices.Contains(plan.ResultingRoles, "CLINIC_ADMIN") {
-			return "target_clinic_admins_merger_notification"
+			return "clinic_merged_target_admin_notification"
 		}
+	case ClinicianActionMove, ClinicianActionMerge:
+		return "clinic_merged_source_clinician_notification"
 	}
 	return ""
 }
