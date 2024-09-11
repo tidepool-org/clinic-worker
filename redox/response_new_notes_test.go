@@ -75,6 +75,35 @@ var _ = Describe("Notes", func() {
 			})
 		})
 
+		Describe("SetAccountNumberInNotes", func() {
+			It("sets the visit number from the order", func() {
+				notes.SetAccountNumberFromOrder(order)
+				Expect(notes.Visit).ToNot(BeNil())
+				Expect(notes.Visit.AccountNumber).To(PointTo(Equal(*order.Visit.AccountNumber)))
+			})
+
+			Context("with an existing visit", func() {
+				var secondOrder models.NewOrder
+
+				BeforeEach(func() {
+					notes.SetAccountNumberFromOrder(order)
+					Expect(notes.Visit).ToNot(BeNil())
+					Expect(notes.Visit.AccountNumber).To(PointTo(Equal(*order.Visit.AccountNumber)))
+
+					fixture, err := test.LoadFixture("test/fixtures/subscriptionorder.json")
+					Expect(err).ToNot(HaveOccurred())
+					Expect(json.Unmarshal(fixture, &secondOrder)).To(Succeed())
+					*secondOrder.Visit.AccountNumber = "foo"
+				})
+
+				It("sets the account number", func() {
+					notes.SetAccountNumberFromOrder(secondOrder)
+					Expect(notes.Visit).ToNot(BeNil())
+					Expect(notes.Visit.AccountNumber).To(PointTo(Equal(*secondOrder.Visit.AccountNumber)))
+				})
+			})
+		})
+
 		Describe("SetProcedureFromOrder", func() {
 			Context("with an existing visit", func() {
 				BeforeEach(func(){
