@@ -16,15 +16,15 @@ func (p PatientCDCEvent) ShouldApplyUpdates() bool {
 }
 
 type Clinician struct {
-	Id           *cdc.ObjectId `json:"_id"`
-	ClinicId     *cdc.ObjectId `json:"clinicId"`
-	UserId       string        `json:"userId"`
-	RolesUpdates []RolesUpdate `json:"rolesUpdates"`
+	Id           *cdc.ObjectId `json:"_id" bson:"id"`
+	ClinicId     *cdc.ObjectId `json:"clinicId" bson:"clinicId"`
+	UserId       string        `json:"userId" bson:"userId"`
+	RolesUpdates []RolesUpdate `json:"rolesUpdates" bson:"rolesUpdates"`
 }
 
 type RolesUpdate struct {
-	UpdatedBy string   `json:"updatedBy"`
-	Roles     []string `json:"roles"`
+	UpdatedBy string   `json:"updatedBy" bson:"updatedBy"`
+	Roles     []string `json:"roles" bson:"roles"`
 }
 
 type UpdateDescription struct {
