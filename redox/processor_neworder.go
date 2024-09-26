@@ -226,6 +226,12 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, order model
 		}
 	}
 
+	createPatient.Tags, err = o.createTagsForPatient(ctx, order, match)
+	if err != nil {
+		o.logger.Errorw("unexpected error when creating tags for patient", "order", order.Meta, "error", err)
+		return err
+	}
+
 	resp, err := o.clinics.CreatePatientAccountWithResponse(ctx, *match.Clinic.Id, createPatient)
 	if err != nil {
 		// Retry in case of unexpected failure
@@ -240,6 +246,96 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, order model
 
 	o.logger.Infow("patient account was successfully created", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", resp.JSON200.Id)
 	return o.handleAccountCreationSuccess(ctx, order, match)
+}
+
+func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) (*clinics.PatientTagIds, error) {
+	separator := o.getPatientTagsSeparator(match)
+	codes := o.getPatientTagCodes(match)
+	if len(codes) == 0 {
+		return nil, nil
+	}
+
+	tagNames := make([]string, 0)
+	if order.Order.ClinicalInfo == nil {
+		for _, info := range *order.Order.ClinicalInfo {
+			if info.Code != nil && info.Value != nil {
+				if _, ok := codes[*info.Code]; ok {
+					if separator != nil || *separator == "" {
+						tagNames = append(tagNames, strings.TrimSpace(*info.Value))
+					} else {
+						for _, tag := range strings.Split(*info.Value, *separator) {
+							tagNames = append(tagNames,  strings.TrimSpace(tag))
+						}
+					}
+				}
+			}
+		}
+	}
+
+	existingTags := o.getExistingTags(match.Clinic)
+	for _, tagName := range tagNames {
+		_, exists := existingTags[tagName]
+		if !exists {
+			if _, ok := existingTags[tagName]; !ok {
+				createTag := clinics.CreatePatientTagJSONRequestBody{
+					Name: tagName,
+				}
+				resp, err := o.clinics.CreatePatientTagWithResponse(ctx, *match.Clinic.Id, createTag)
+				if err != nil {
+					return nil, err
+				}
+				if resp.StatusCode() != http.StatusOK || resp.StatusCode() != http.StatusCreated{
+					return nil, fmt.Errorf("unexpected status code %v when creating tagName %s", resp.StatusCode(), tagName)
+				}
+			}
+		}
+	}
+
+	resp, err := o.clinics.GetClinicWithResponse(ctx, *match.Clinic.Id)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code %vwhen fetching clinic with id %s", resp.StatusCode(), *match.Clinic.Id)
+	}
+
+	existingTags = o.getExistingTags(*resp.JSON200)
+	patientTagIds := clinics.PatientTagIds{}
+	for _, tagName := range tagNames {
+		patientTag, ok := existingTags[tagName]
+		if !ok {
+			// The tag should have been created. If it was deleted in the mean time returning an error will result in a retry
+			return nil, fmt.Errorf("patient tag doesn't exist")
+		}
+		patientTagIds = append(patientTagIds, *patientTag.Id)
+	}
+
+	return &patientTagIds, nil
+}
+
+func (o *newOrderProcessor) getPatientTagCodes(match clinics.EHRMatchResponse) map[string]struct{} {
+	result := make(map[string]struct{})
+	if match.Settings.Tags.Codes != nil {
+		for _, code := range *match.Settings.Tags.Codes {
+			result[code] = struct{}{}
+		}
+	}
+    return result
+}
+
+func (o *newOrderProcessor) getPatientTagsSeparator(match clinics.EHRMatchResponse) *string {
+	return match.Settings.Tags.Separator
+}
+
+func (o *newOrderProcessor) getExistingTags(clinic clinics.Clinic) map[string]clinics.PatientTag {
+	tags := make(map[string]clinics.PatientTag)
+	if clinic.PatientTags != nil {
+		for _, tag := range *clinic.PatientTags {
+			tags[tag.Name] = tag
+		}
+	}
+
+	return tags
 }
 
 func (o *newOrderProcessor) emailExists(email string) (bool, error) {
