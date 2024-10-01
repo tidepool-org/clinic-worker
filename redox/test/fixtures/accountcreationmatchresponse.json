@@ -23,7 +23,17 @@
     "tier": "tier0100",
     "tierDescription": "Free",
     "updatedTime": "2023-07-24T22:35:41.069Z",
-    "website": ""
+    "website": "",
+    "patientTags": [
+      {
+        "id": "1",
+        "name": "T1D"
+      },
+      {
+        "id": "2",
+        "name": "ADULT"
+      }
+    ]
   },
   "patients": [],
   "settings": {
@@ -38,6 +48,10 @@
       "enableSummaryReports": "PRO1090",
       "disableSummaryReports": "PRO1091",
       "createAccount": "PRO1092"
+    },
+    "tags": {
+      "codes": ["TIDEPOOL_TAGS"],
+      "separator": ","
     },
     "sourceId": "ba31f6d3-8358-4d2c-ac65-d4af5f3db21d"
   }

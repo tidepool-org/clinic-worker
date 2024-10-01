@@ -338,6 +338,15 @@
     ],
     "ClinicalInfo": [
       {
+        "Code": "TIDEPOOL_TAGS",
+        "Codeset": null,
+        "Description": "Tidepool Patient Tags",
+        "Value": "T1D,ADULT",
+        "Units": null,
+        "Abbreviation": null,
+        "Notes": []
+      },
+      {
         "Code": "QUESTION001",
         "Codeset": null,
         "Description": "Estimated Due Date",

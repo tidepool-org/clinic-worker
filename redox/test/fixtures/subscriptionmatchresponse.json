@@ -23,7 +23,17 @@
     "tier": "tier0100",
     "tierDescription": "Free",
     "updatedTime": "2023-07-24T22:35:41.069Z",
-    "website": ""
+    "website": "",
+    "patientTags": [
+      {
+        "id": "1",
+        "name": "T1D"
+      },
+      {
+        "id": "2",
+        "name": "ADULT"
+      }
+    ]
   },
   "patients": [
     {
