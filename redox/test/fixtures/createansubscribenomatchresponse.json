@@ -1,0 +1,56 @@
+{
+  "clinic": {
+    "address": "1 Todd's Way",
+    "canMigrate": false,
+    "city": "Birmingham",
+    "clinicSize": "0-249",
+    "clinicType": "provider_practice",
+    "country": "US",
+    "createdTime": "2023-07-24T12:57:54.655Z",
+    "id": "64be7552870a78a30d290c8c",
+    "name": "Todd EHR Integrated Clinic",
+    "phoneNumbers": [
+      {
+        "number": "(555) 555-5555",
+        "type": "Office"
+      }
+    ],
+    "postalCode": "90210",
+    "preferredBgUnits": "mmol/L",
+    "shareCode": "V5TF-P4NJ-QSPN",
+    "state": "AL",
+    "suppressedNotifications": {},
+    "tier": "tier0100",
+    "tierDescription": "Free",
+    "updatedTime": "2023-07-24T22:35:41.069Z",
+    "website": "",
+    "patientTags": [
+      {
+        "id": "1",
+        "name": "T1D"
+      },
+      {
+        "id": "2",
+        "name": "ADULT"
+      }
+    ]
+  },
+  "patients": [],
+  "settings": {
+    "destinationIds": {
+      "default": "534dafdb-943a-4a11-8042-86a5841c6cb2",
+      "flowsheet": "534dafdb-943a-4a11-8042-86a5841c6cb2",
+      "notes": "1f163909-787f-445b-8159-a0add48a1b1e",
+      "results": "cf86b7e2-7097-41bf-b3db-3f7180cce0c5"
+    },
+    "enabled": true,
+    "procedureCodes": {
+      "createAccountAndEnableReports": "PRO1093"
+    },
+    "sourceId": "ba31f6d3-8358-4d2c-ac65-d4af5f3db21d",
+    "scheduledReports": {
+      "onUploadEnabled": true,
+      "onUploadNoteEventType": "Replace"
+    }
+  }
+}

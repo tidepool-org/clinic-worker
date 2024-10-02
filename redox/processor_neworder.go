@@ -81,34 +81,11 @@ func NewNewOrderProcessor(clinics clinics.ClientWithResponsesInterface, redox Cl
 }
 
 func (o *newOrderProcessor) ProcessOrder(ctx context.Context, envelope models.MessageEnvelope, order models.NewOrder) error {
-	matchRequest := clinics.EHRMatchRequest{
-		MessageRef: &clinics.EHRMatchMessageRef{
-			DocumentId: envelope.Id.Hex(),
-			DataModel:  clinics.EHRMatchMessageRefDataModel(order.Meta.DataModel),
-			EventType:  clinics.EHRMatchMessageRefEventType(order.Meta.EventType),
-		},
-	}
-	response, err := o.clinics.MatchClinicAndPatientWithResponse(ctx, matchRequest)
+	match, err := o.matchOrder(ctx, envelope.Id.Hex(), order)
 	if err != nil {
-		o.logger.Warnw("unable to match", "order", order.Meta, zap.Error(err))
-		// Return an error so we can retry the request
 		return err
 	}
-
-	if response.StatusCode() != http.StatusOK {
-		o.logger.Warnw("unable to match clinic and patient", "order", order.Meta, "status", response.StatusCode())
-		// Return an error so we can retry the request
-		return fmt.Errorf("unable to match clinic and patient. unexpected response: %d", response.StatusCode())
-	}
-
-	if response.JSON200 == nil {
-		// Return an error so we can retry the request
-		return fmt.Errorf("unable to match clinic and patient: %d", errors.New("response body is nil"))
-	}
-
-	match := response.JSON200
 	procedureCode := GetProcedureCode(order)
-
 	params := SummaryAndReportParameters{
 		Match: *match,
 		Order: order,
@@ -120,9 +97,41 @@ func (o *newOrderProcessor) ProcessOrder(ctx context.Context, envelope models.Me
 		return o.handleDisableSummaryReports(ctx, params)
 	} else if ProcedureCodesMatch(procedureCode, match.Settings.ProcedureCodes.CreateAccount) {
 		return o.handleCreateAccount(ctx, order, *match)
+	} else if ProcedureCodesMatch(procedureCode, match.Settings.ProcedureCodes.CreateAccountAndEnableReports) {
+		return o.handleCreateAccountAndEnableSummaryReports(ctx, envelope.Id.Hex(), params)
 	}
 
 	return o.handleUnknownProcedure(ctx, order, *match)
+}
+
+func (o *newOrderProcessor) matchOrder(ctx context.Context, id string, order models.NewOrder) (*clinics.EHRMatchResponse, error) {
+	matchRequest := clinics.EHRMatchRequest{
+		MessageRef: &clinics.EHRMatchMessageRef{
+			DocumentId: id,
+			DataModel:  clinics.EHRMatchMessageRefDataModel(order.Meta.DataModel),
+			EventType:  clinics.EHRMatchMessageRefEventType(order.Meta.EventType),
+		},
+	}
+
+	response, err := o.clinics.MatchClinicAndPatientWithResponse(ctx, matchRequest)
+	if err != nil {
+		o.logger.Warnw("unable to match", "order", order.Meta, zap.Error(err))
+		// Return an error so we can retry the request
+		return nil, err
+	}
+
+	if response.StatusCode() != http.StatusOK {
+		o.logger.Warnw("unable to match clinic and patient", "order", order.Meta, "status", response.StatusCode())
+		// Return an error so we can retry the request
+		return nil, fmt.Errorf("unable to match clinic and patient. unexpected response: %d", response.StatusCode())
+	}
+
+	if response.JSON200 == nil {
+		// Return an error so we can retry the request
+		return nil, fmt.Errorf("unable to match clinic and patient: %d", errors.New("response body is nil"))
+	}
+
+	return response.JSON200, nil
 }
 
 func GetProcedureCode(order models.NewOrder) string {
@@ -257,6 +266,22 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, order model
 
 	o.logger.Infow("patient account was successfully created", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", resp.JSON200.Id)
 	return o.handleAccountCreationSuccess(ctx, order, match)
+}
+
+func (o *newOrderProcessor) handleCreateAccountAndEnableSummaryReports(ctx context.Context, id string, params SummaryAndReportParameters) error {
+	if params.Match.Patients == nil || len(*params.Match.Patients) == 0 {
+		if err := o.handleCreateAccount(ctx, params.Order, params.Match); err != nil {
+			return err
+		}
+
+		// Match the order again, after the account is created
+		match, err := o.matchOrder(ctx, id, params.Order)
+		if err != nil {
+			return err
+		}
+		params.Match = *match
+	}
+	return o.handleEnableSummaryReports(ctx, params)
 }
 
 func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) (*clinics.PatientTagIds, error) {

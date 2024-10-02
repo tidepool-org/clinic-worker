@@ -252,6 +252,200 @@ var _ = Describe("NewOrderProcessor", func() {
 			})
 		})
 
+		Context("with create account and subscrive order", func() {
+			var order models.NewOrder
+			var envelope models.MessageEnvelope
+			var matchResponse *clinics.MatchClinicAndPatientResponse
+
+			BeforeEach(func() {
+				newOrderFixture, err := test.LoadFixture("test/fixtures/createandsubscribeorder.json")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(json.Unmarshal(newOrderFixture, &order)).To(Succeed())
+
+				message := bson.Raw{}
+				Expect(bson.UnmarshalExtJSON(newOrderFixture, true, &message)).To(Succeed())
+
+				envelope = models.MessageEnvelope{
+					Id:      primitive.NewObjectID(),
+					Meta:    order.Meta,
+					Message: message,
+				}
+				response := &clinics.EHRMatchResponse{}
+				matchFixture, err := test.LoadFixture("test/fixtures/createansubscribematchresponse.json")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(json.Unmarshal(matchFixture, response)).To(Succeed())
+
+				matchResponse = &clinics.MatchClinicAndPatientResponse{
+					Body: nil,
+					HTTPResponse: &http.Response{
+						StatusCode: http.StatusOK,
+					},
+					JSON200: response,
+				}
+
+			})
+
+			When("patient exists", func() {
+				BeforeEach(func() {
+					clinicClient.EXPECT().
+						MatchClinicAndPatientWithResponse(gomock.Any(), gomock.Any(), gomock.Any()).
+						Return(matchResponse, nil)
+				})
+
+				It("send results, flowsheet and notes when patient and clinic successfully matched", func() {
+					Expect(processor.ProcessOrder(context.Background(), envelope, order)).To(Succeed())
+					Expect(redoxClient.Sent).To(HaveLen(3))
+
+					var results models.NewResults
+					var notes redox.Notes
+					var flowsheet models.NewFlowsheet
+
+					for _, payload := range redoxClient.Sent {
+						switch payload.(type) {
+						case models.NewResults:
+							results = payload.(models.NewResults)
+						case redox.Notes:
+							notes = payload.(redox.Notes)
+						case models.NewFlowsheet:
+							flowsheet = payload.(models.NewFlowsheet)
+						}
+					}
+
+					Expect(results).To(MatchFields(IgnoreExtras, Fields{
+						"Meta": MatchFields(IgnoreExtras, Fields{
+							"DataModel": Equal("Results"),
+							"EventType": Equal("New"),
+						}),
+					}))
+
+					Expect(flowsheet).To(MatchFields(IgnoreExtras, Fields{
+						"Meta": MatchFields(IgnoreExtras, Fields{
+							"DataModel": Equal("Flowsheet"),
+							"EventType": Equal("New"),
+						}),
+					}))
+
+					Expect(notes).To(PointTo(MatchFields(IgnoreExtras, Fields{
+						"Meta": MatchFields(IgnoreExtras, Fields{
+							"DataModel": Equal("Notes"),
+							"EventType": Equal("New"),
+						}),
+						"Note": MatchFields(IgnoreExtras, Fields{
+							"FileContents": PointTo(Not(BeEmpty())),
+						}),
+					})))
+
+					Expect(redoxClient.Uploaded).To(BeEmpty())
+				})
+			})
+
+			When("patient doesn't exist", func() {
+				var noMatchResponse *clinics.MatchClinicAndPatientResponse
+
+				BeforeEach(func() {
+					response := &clinics.EHRMatchResponse{}
+					matchFixture, err := test.LoadFixture("test/fixtures/createansubscribenomatchresponse.json")
+					Expect(err).ToNot(HaveOccurred())
+					Expect(json.Unmarshal(matchFixture, response)).To(Succeed())
+
+					noMatchResponse = &clinics.MatchClinicAndPatientResponse{
+						Body: nil,
+						HTTPResponse: &http.Response{
+							StatusCode: http.StatusOK,
+						},
+						JSON200: response,
+					}
+
+					clinicClient.EXPECT().
+						MatchClinicAndPatientWithResponse(gomock.Any(), gomock.Any(), gomock.Any()).
+						Return(noMatchResponse, nil).Times(1)
+
+					clinicClient.EXPECT().
+						MatchClinicAndPatientWithResponse(gomock.Any(), gomock.Any(), gomock.Any()).
+						Return(matchResponse, nil).Times(1)
+				})
+
+				It("creates the account, send results, flowsheet and notes", func() {
+					patient := (*matchResponse.JSON200.Patients)[0]
+					clinicClient.EXPECT().CreatePatientAccountWithResponse(
+						gomock.Any(),
+						*matchResponse.JSON200.Clinic.Id,
+						testRedox.MatchArg(func(body clinics.CreatePatientAccountJSONRequestBody) bool {
+							if body.Mrn == nil || *body.Mrn != "0000000001" {
+								return false
+							}
+							if body.FullName != "Timothy Bixby" {
+								return false
+							}
+							if body.Email == nil || *body.Email != "timothy@bixby.com" {
+								return false
+							}
+							if body.BirthDate.String() != "2008-01-06" {
+								return false
+							}
+							return true
+						}),
+					).Return( &clinics.CreatePatientAccountResponse{
+						HTTPResponse: &http.Response{
+							StatusCode: http.StatusOK,
+						},
+						JSON200: &patient,
+					}, nil)
+
+					Expect(processor.ProcessOrder(context.Background(), envelope, order)).To(Succeed())
+					Expect(redoxClient.Sent).To(HaveLen(4))
+
+					var results []models.NewResults
+					var notes redox.Notes
+					var flowsheet models.NewFlowsheet
+
+					for _, payload := range redoxClient.Sent {
+						switch payload.(type) {
+						case models.NewResults:
+							results = append(results, payload.(models.NewResults))
+						case redox.Notes:
+							notes = payload.(redox.Notes)
+						case models.NewFlowsheet:
+							flowsheet = payload.(models.NewFlowsheet)
+						}
+					}
+
+					Expect(results).To(HaveLen(2))
+					Expect(results[0]).To(MatchFields(IgnoreExtras, Fields{
+						"Meta": MatchFields(IgnoreExtras, Fields{
+							"DataModel": Equal("Results"),
+							"EventType": Equal("New"),
+						}),
+					}))
+					Expect(results[1]).To(MatchFields(IgnoreExtras, Fields{
+						"Meta": MatchFields(IgnoreExtras, Fields{
+							"DataModel": Equal("Results"),
+							"EventType": Equal("New"),
+						}),
+					}))
+
+					Expect(flowsheet).To(MatchFields(IgnoreExtras, Fields{
+						"Meta": MatchFields(IgnoreExtras, Fields{
+							"DataModel": Equal("Flowsheet"),
+							"EventType": Equal("New"),
+						}),
+					}))
+
+					Expect(notes).To(PointTo(MatchFields(IgnoreExtras, Fields{
+						"Meta": MatchFields(IgnoreExtras, Fields{
+							"DataModel": Equal("Notes"),
+							"EventType": Equal("New"),
+						}),
+						"Note": MatchFields(IgnoreExtras, Fields{
+							"FileContents": PointTo(Not(BeEmpty())),
+						}),
+					})))
+
+					Expect(redoxClient.Uploaded).To(BeEmpty())
+				})
+			})
+		})
+
 		Context("with account creation order", func() {
 			var order models.NewOrder
 			var envelope models.MessageEnvelope
