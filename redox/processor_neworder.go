@@ -374,20 +374,24 @@ func (o *newOrderProcessor) getTagNamesFromOrder(order models.NewOrder, match cl
 		return nil
 	}
 
+	if *order.Order.ClinicalInfo == nil {
+		return nil
+	}
+
 	tagNames := make([]string, 0)
-	if order.Order.ClinicalInfo != nil {
-		for _, info := range *order.Order.ClinicalInfo {
-			if info.Code != nil && info.Value != nil {
-				if _, ok := codes[*info.Code]; ok {
-					if separator == nil || *separator == "" {
-						tagNames = append(tagNames, strings.TrimSpace(*info.Value))
-					} else {
-						for _, tag := range strings.Split(*info.Value, *separator) {
-							tagNames = append(tagNames,  strings.TrimSpace(tag))
-						}
-					}
-				}
-			}
+	for _, info := range *order.Order.ClinicalInfo {
+		if info.Code == nil || info.Value == nil {
+			continue
+		}
+		if _, found := codes[*info.Code]; !found {
+			continue
+		}
+		if separator == nil || *separator == "" {
+			tagNames = append(tagNames, strings.TrimSpace(*info.Value))
+			continue
+		}
+		for _, tag := range strings.Split(*info.Value, *separator) {
+			tagNames = append(tagNames, strings.TrimSpace(tag))
 		}
 	}
 
