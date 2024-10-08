@@ -81,34 +81,11 @@ func NewNewOrderProcessor(clinics clinics.ClientWithResponsesInterface, redox Cl
 }
 
 func (o *newOrderProcessor) ProcessOrder(ctx context.Context, envelope models.MessageEnvelope, order models.NewOrder) error {
-	matchRequest := clinics.EHRMatchRequest{
-		MessageRef: &clinics.EHRMatchMessageRef{
-			DocumentId: envelope.Id.Hex(),
-			DataModel:  clinics.EHRMatchMessageRefDataModel(order.Meta.DataModel),
-			EventType:  clinics.EHRMatchMessageRefEventType(order.Meta.EventType),
-		},
-	}
-	response, err := o.clinics.MatchClinicAndPatientWithResponse(ctx, matchRequest)
+	match, err := o.matchOrder(ctx, envelope.Id.Hex(), order)
 	if err != nil {
-		o.logger.Warnw("unable to match", "order", order.Meta, zap.Error(err))
-		// Return an error so we can retry the request
 		return err
 	}
-
-	if response.StatusCode() != http.StatusOK {
-		o.logger.Warnw("unable to match clinic and patient", "order", order.Meta, "status", response.StatusCode())
-		// Return an error so we can retry the request
-		return fmt.Errorf("unable to match clinic and patient. unexpected response: %d", response.StatusCode())
-	}
-
-	if response.JSON200 == nil {
-		// Return an error so we can retry the request
-		return fmt.Errorf("unable to match clinic and patient: %d", errors.New("response body is nil"))
-	}
-
-	match := response.JSON200
 	procedureCode := GetProcedureCode(order)
-
 	params := SummaryAndReportParameters{
 		Match: *match,
 		Order: order,
@@ -120,9 +97,41 @@ func (o *newOrderProcessor) ProcessOrder(ctx context.Context, envelope models.Me
 		return o.handleDisableSummaryReports(ctx, params)
 	} else if ProcedureCodesMatch(procedureCode, match.Settings.ProcedureCodes.CreateAccount) {
 		return o.handleCreateAccount(ctx, order, *match)
+	} else if ProcedureCodesMatch(procedureCode, match.Settings.ProcedureCodes.CreateAccountAndEnableReports) {
+		return o.handleCreateAccountAndEnableSummaryReports(ctx, envelope.Id.Hex(), params)
 	}
 
 	return o.handleUnknownProcedure(ctx, order, *match)
+}
+
+func (o *newOrderProcessor) matchOrder(ctx context.Context, id string, order models.NewOrder) (*clinics.EHRMatchResponse, error) {
+	matchRequest := clinics.EHRMatchRequest{
+		MessageRef: &clinics.EHRMatchMessageRef{
+			DocumentId: id,
+			DataModel:  clinics.EHRMatchMessageRefDataModel(order.Meta.DataModel),
+			EventType:  clinics.EHRMatchMessageRefEventType(order.Meta.EventType),
+		},
+	}
+
+	response, err := o.clinics.MatchClinicAndPatientWithResponse(ctx, matchRequest)
+	if err != nil {
+		o.logger.Warnw("unable to match", "order", order.Meta, zap.Error(err))
+		// Return an error so we can retry the request
+		return nil, err
+	}
+
+	if response.StatusCode() != http.StatusOK {
+		o.logger.Warnw("unable to match clinic and patient", "order", order.Meta, "status", response.StatusCode())
+		// Return an error so we can retry the request
+		return nil, fmt.Errorf("unable to match clinic and patient. unexpected response: %d", response.StatusCode())
+	}
+
+	if response.JSON200 == nil {
+		// Return an error so we can retry the request
+		return nil, fmt.Errorf("unable to match clinic and patient: %d", errors.New("response body is nil"))
+	}
+
+	return response.JSON200, nil
 }
 
 func GetProcedureCode(order models.NewOrder) string {
@@ -149,6 +158,17 @@ func (o *newOrderProcessor) handleEnableSummaryReports(ctx context.Context, para
 
 	patient := (*params.Match.Patients)[0]
 	o.logger.Infow("successfully matched clinic and patient", "order", params.Order.Meta, "clinicId", params.Match.Clinic.Id, "patientId", patient.Id)
+
+	tags, err := o.createTagsForPatient(ctx, params.Order, params.Match)
+	if err != nil {
+		return err
+	}
+	if tags != nil {
+		err = o.replacePatientTags(ctx, params.Match, tags)
+		if err != nil {
+			return err
+		}
+	}
 	if err := o.handleSuccessfulPatientMatch(ctx, params); err != nil {
 		return err
 	}
@@ -226,6 +246,12 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, order model
 		}
 	}
 
+	createPatient.Tags, err = o.createTagsForPatient(ctx, order, match)
+	if err != nil {
+		o.logger.Errorw("unexpected error when creating tags for patient", "order", order.Meta, "error", err)
+		return err
+	}
+
 	resp, err := o.clinics.CreatePatientAccountWithResponse(ctx, *match.Clinic.Id, createPatient)
 	if err != nil {
 		// Retry in case of unexpected failure
@@ -240,6 +266,147 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, order model
 
 	o.logger.Infow("patient account was successfully created", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", resp.JSON200.Id)
 	return o.handleAccountCreationSuccess(ctx, order, match)
+}
+
+func (o *newOrderProcessor) handleCreateAccountAndEnableSummaryReports(ctx context.Context, id string, params SummaryAndReportParameters) error {
+	if params.Match.Patients == nil || len(*params.Match.Patients) == 0 {
+		if err := o.handleCreateAccount(ctx, params.Order, params.Match); err != nil {
+			return err
+		}
+
+		// Match the order again, after the account is created
+		match, err := o.matchOrder(ctx, id, params.Order)
+		if err != nil {
+			return err
+		}
+		params.Match = *match
+	}
+	return o.handleEnableSummaryReports(ctx, params)
+}
+
+func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) (*clinics.PatientTagIds, error) {
+	tagNames := o.getTagNamesFromOrder(order, match)
+	if tagNames == nil {
+		return nil, nil
+	}
+
+	existingTags := o.getExistingTags(match.Clinic)
+	for _, tagName := range tagNames {
+		_, exists := existingTags[tagName]
+		if !exists {
+			createTag := clinics.CreatePatientTagJSONRequestBody{
+				Name: tagName,
+			}
+			resp, err := o.clinics.CreatePatientTagWithResponse(ctx, *match.Clinic.Id, createTag)
+			if err != nil {
+				return nil, err
+			}
+			if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
+				return nil, fmt.Errorf("unexpected status code %v when creating tagName %s", resp.StatusCode(), tagName)
+			}
+		}
+	}
+
+	resp, err := o.clinics.GetClinicWithResponse(ctx, *match.Clinic.Id)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code %vwhen fetching clinic with id %s", resp.StatusCode(), *match.Clinic.Id)
+	}
+
+	existingTags = o.getExistingTags(*resp.JSON200)
+	patientTagIds := clinics.PatientTagIds{}
+	for _, tagName := range tagNames {
+		patientTag, ok := existingTags[tagName]
+		if !ok {
+			// The tag should have been created. If it was deleted in the meantime returning an error will result in a retry
+			return nil, fmt.Errorf("patient tag doesn't exist")
+		}
+		patientTagIds = append(patientTagIds, *patientTag.Id)
+	}
+
+	return &patientTagIds, nil
+}
+
+func (o *newOrderProcessor) replacePatientTags(ctx context.Context, match clinics.EHRMatchResponse, tagIds *clinics.PatientTagIds) error {
+	if tagIds == nil {
+		return nil
+	}
+
+	patient := (*match.Patients)[0]
+	update := clinics.UpdatePatientJSONRequestBody{
+		Email:                          patient.Email,
+		BirthDate:                      patient.BirthDate,
+		FullName:                       patient.FullName,
+		Mrn:                            patient.Mrn,
+		TargetDevices:                  patient.TargetDevices,
+		Tags:                           tagIds,
+	}
+	resp, err := o.clinics.UpdatePatientWithResponse(ctx, *match.Clinic.Id, *patient.Id, update)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("unexpected status code %v replacing tags for patient %s", resp.StatusCode(), *patient.Id)
+	}
+	return nil
+}
+
+func (o *newOrderProcessor) getPatientTagCodes(match clinics.EHRMatchResponse) map[string]struct{} {
+	result := make(map[string]struct{})
+	if match.Settings.Tags.Codes != nil {
+		for _, code := range *match.Settings.Tags.Codes {
+			result[code] = struct{}{}
+		}
+	}
+    return result
+}
+
+func (o *newOrderProcessor) getPatientTagsSeparator(match clinics.EHRMatchResponse) *string {
+	return match.Settings.Tags.Separator
+}
+
+func (o *newOrderProcessor) getTagNamesFromOrder(order models.NewOrder, match clinics.EHRMatchResponse) []string {
+	separator := o.getPatientTagsSeparator(match)
+	codes := o.getPatientTagCodes(match)
+	if len(codes) == 0 {
+		return nil
+	}
+
+	if *order.Order.ClinicalInfo == nil {
+		return nil
+	}
+
+	tagNames := make([]string, 0)
+	for _, info := range *order.Order.ClinicalInfo {
+		if info.Code == nil || info.Value == nil {
+			continue
+		}
+		if _, found := codes[*info.Code]; !found {
+			continue
+		}
+		if separator == nil || *separator == "" {
+			tagNames = append(tagNames, strings.TrimSpace(*info.Value))
+			continue
+		}
+		for _, tag := range strings.Split(*info.Value, *separator) {
+			tagNames = append(tagNames, strings.TrimSpace(tag))
+		}
+	}
+
+	return tagNames
+}
+
+func (o *newOrderProcessor) getExistingTags(clinic clinics.Clinic) map[string]clinics.PatientTag {
+	tags := make(map[string]clinics.PatientTag)
+	if clinic.PatientTags != nil {
+		for _, tag := range *clinic.PatientTags {
+			tags[tag.Name] = tag
+		}
+	}
+
+	return tags
 }
 
 func (o *newOrderProcessor) emailExists(email string) (bool, error) {
