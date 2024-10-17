@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"github.com/tidepool-org/clinic-worker/merge"
 	"github.com/tidepool-org/clinic-worker/redox"
 	"net/http"
 
@@ -40,6 +41,7 @@ var Modules = []fx.Option{
 	patientsummary.Module,
 	clinics.Module,
 	clinicians.Module,
+	merge.Module,
 	migration.Module,
 	redox.Module,
 	users.Module,
