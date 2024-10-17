@@ -33,6 +33,14 @@ var _ = Describe("NewMergePlansConsumerCDCConsumer", func() {
 			Expect(plan.SourcePatient.UserId).ToNot(BeNil())
 			Expect(plan.SourcePatient.Id).ToNot(BeNil())
 			Expect(plan.SourcePatient.Id.Value).To(Equal("66ceef8d03b01ff45f5e7d81"))
+
+			Expect(plan.TargetPatient.LastRequestedDexcomConnectTime).ToNot(BeNil())
+			Expect(plan.TargetPatient.LastRequestedDexcomConnectTime.Value).ToNot(BeZero())
+
+			Expect(plan.TargetPatient.DataSources).ToNot(BeNil())
+			Expect(*plan.TargetPatient.DataSources).ToNot(BeEmpty())
+			Expect((*plan.TargetPatient.DataSources)[0].ModifiedTime).ToNot(BeNil())
+			Expect((*plan.TargetPatient.DataSources)[0].ModifiedTime.Value).To(Equal(int64(1728067517947)))
 		})
 	})
 })

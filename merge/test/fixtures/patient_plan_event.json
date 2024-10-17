@@ -89,7 +89,28 @@
             "$numberLong": "1724837685904"
           }
         },
-        "requireUniqueMrn": false
+        "requireUniqueMrn": false,
+        "lastRequestedDexcomConnectTime": {
+          "$date": {
+            "$numberLong": "1728067517947"
+          }
+        },
+        "dataSources": [
+          {
+            "modifiedTime": {
+              "$date": {
+                "$numberLong": "1728067517947"
+              }
+            },
+            "expirationTime": {
+              "$date": {
+                "$numberLong": "1730659517947"
+              }
+            },
+            "providerName": "dexcom",
+            "state": "pendingReconnect"
+          }
+        ]
       },
       "conflicts": {
         "Duplicate Accounts": [

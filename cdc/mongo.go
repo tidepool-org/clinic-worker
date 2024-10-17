@@ -1,6 +1,7 @@
 package cdc
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 )
 
@@ -15,4 +16,9 @@ func (o *ObjectId) UnmarshalBSON(data []byte) error {
 
 type Date struct {
 	Value int64 `json:"$date"`
+}
+
+func (o *Date) UnmarshalBSON(data []byte) error {
+	o.Value = int64(binary.LittleEndian.Uint64(data))
+	return nil
 }

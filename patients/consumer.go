@@ -117,7 +117,7 @@ func (p *PatientCDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 	event := PatientCDCEvent{
 		Offset: cm.Offset,
 	}
-	if err := p.unmarshalEvent(cm.Value, &event); err != nil {
+	if err := UnmarshalEvent(cm.Value, &event); err != nil {
 		p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
 		return err
 	}
@@ -129,7 +129,7 @@ func (p *PatientCDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 	return nil
 }
 
-func (p *PatientCDCConsumer) unmarshalEvent(value []byte, event *PatientCDCEvent) error {
+func UnmarshalEvent(value []byte, event *PatientCDCEvent) error {
 	message, err := strconv.Unquote(string(value))
 	if err != nil {
 		return err
