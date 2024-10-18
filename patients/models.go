@@ -30,16 +30,6 @@ func (p PatientCDCEvent) IsUploadReminderEvent() bool {
 	return lastUploadReminderTime != nil && lastUploadReminderTime.Value > 0
 }
 
-func (p PatientCDCEvent) IsRequestDexcomConnectEvent() bool {
-	if p.OperationType != cdc.OperationTypeUpdate && p.OperationType != cdc.OperationTypeReplace {
-		return false
-	}
-	if p.FullDocument.UserId == nil || p.UpdateDescription.UpdatedFields.LastRequestedDexcomConnectTime == nil {
-		return false
-	}
-	return p.UpdateDescription.UpdatedFields.LastRequestedDexcomConnectTime.Value > 0
-}
-
 func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
 	if p.OperationType != cdc.OperationTypeInsert && p.OperationType != cdc.OperationTypeUpdate && p.OperationType != cdc.OperationTypeReplace {
 		return false
@@ -55,10 +45,10 @@ func (p PatientCDCEvent) IsPatientCreateFromExistingUserEvent() bool {
 	return p.OperationType == cdc.OperationTypeInsert && !p.FullDocument.IsCustodial()
 }
 
-func (p PatientCDCEvent) PatientHasPendingDexcomConnection() bool {
+func (p PatientCDCEvent) PatientHasPendingConnection() bool {
 	if p.FullDocument.DataSources != nil {
 		for _, dataSource := range *p.FullDocument.DataSources {
-			if *dataSource.ProviderName == DexcomDataSourceProviderName && *dataSource.State == string(clinics.DataSourceStatePending) {
+			if *dataSource.State == string(clinics.DataSourceStatePending) {
 				return true
 			}
 		}
@@ -110,21 +100,31 @@ type CDCSummary struct {
 }
 
 type Patient struct {
-	Id                             *cdc.ObjectId        `json:"_id" bson:"_id"`
-	ClinicId                       *cdc.ObjectId        `json:"clinicId" bson:"clinicId"`
-	UserId                         *string              `json:"userId" bson:"userId"`
-	BirthDate                      *string              `json:"birthDate" bson:"birthDate"`
-	Email                          *string              `json:"email" bson:"email"`
-	FullName                       *string              `json:"fullName" bson:"fullName"`
-	Mrn                            *string              `json:"mrn" bson:"mrn"`
-	TargetDevices                  *[]string            `json:"targetDevices" bson:"targetDevices"`
-	DataSources                    *[]PatientDataSource `json:"dataSources" bson:"dataSources"`
-	Permissions                    *Permissions         `json:"permissions" bson:"permissions"`
-	IsMigrated                     bool                 `json:"isMigrated" bson:"isMigrated"`
-	InvitedBy                      *string              `json:"invitedBy" bson:"invitedBy"`
-	LastRequestedDexcomConnectTime *cdc.Date            `json:"lastRequestedDexcomConnectTime" bson:"lastRequestedDexcomConnectTime"`
-	LastUploadReminderTime         *cdc.Date            `json:"lastUploadReminderTime" bson:"lastUploadReminderTime"`
-	Summary                        *CDCSummary          `json:"summary" bson:"summary"`
+	Id                             *cdc.ObjectId                `json:"_id" bson:"_id"`
+	ClinicId                       *cdc.ObjectId                `json:"clinicId" bson:"clinicId"`
+	UserId                         *string                      `json:"userId" bson:"userId"`
+	BirthDate                      *string                      `json:"birthDate" bson:"birthDate"`
+	Email                          *string                      `json:"email" bson:"email"`
+	FullName                       *string                      `json:"fullName" bson:"fullName"`
+	Mrn                            *string                      `json:"mrn" bson:"mrn"`
+	TargetDevices                  *[]string                    `json:"targetDevices" bson:"targetDevices"`
+	DataSources                    *[]PatientDataSource         `json:"dataSources" bson:"dataSources"`
+	Permissions                    *Permissions                 `json:"permissions" bson:"permissions"`
+	IsMigrated                     bool                         `json:"isMigrated" bson:"isMigrated"`
+	InvitedBy                      *string                      `json:"invitedBy" bson:"invitedBy"`
+	LastRequestedDexcomConnectTime *cdc.Date                    `json:"lastRequestedDexcomConnectTime" bson:"lastRequestedDexcomConnectTime"`
+	LastUploadReminderTime         *cdc.Date                    `json:"lastUploadReminderTime" bson:"lastUploadReminderTime"`
+	Summary                        *CDCSummary                  `json:"summary" bson:"summary"`
+	ProviderConnectionRequests     ProviderConnectionRequests `json:"providerConnectionRequests" bson:"providerConnectionRequests"`
+}
+
+type ProviderConnectionRequests map[string]ConnectionRequests
+
+type ConnectionRequests []ConnectionRequest
+
+type ConnectionRequest struct {
+	ProviderName string    `json:"providerName" bson:"providerName"`
+	CreatedTime  cdc.Date `json:"createdTime" bson:"createdTime"`
 }
 
 func (p PatientCDCEvent) CreateDataSourceBody(source clients.DataSource) clinics.DataSource {
@@ -170,4 +170,27 @@ func (u UpdateDescription) applyUpdatesToExistingProfile(profile map[string]inte
 
 type UpdatedFields struct {
 	Patient
+
+	// Partial updates to nested fields are encoded using dot notation in CDC events
+	ProviderConnectionRequestsDexcom ConnectionRequests `bson:"providerConnectionRequests.dexcom"`
+	ProviderConnectionRequestsTwiist ConnectionRequests `bson:"providerConnectionRequests.twiist"`
 }
+
+func (u UpdatedFields) GetUpdatedConnectionRequests() ConnectionRequests {
+	var requests ConnectionRequests
+	if u.ProviderConnectionRequests != nil {
+		for _, r := range u.ProviderConnectionRequests {
+			for _, v := range  r {
+				requests = append(requests, v)
+			}
+		}
+	}
+	for _, v := range  u.ProviderConnectionRequestsDexcom {
+		requests = append(requests, v)
+	}
+	for _, v := range  u.ProviderConnectionRequestsTwiist {
+		requests = append(requests, v)
+	}
+	return requests
+}
+
