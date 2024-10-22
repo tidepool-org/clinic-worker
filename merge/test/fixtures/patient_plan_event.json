@@ -1,0 +1,174 @@
+{
+  "_id": {
+    "_data": "8266CEF1E0000000032B022C0100296E5A1004A8F67BF904A440B89E94A7825E82BE9646645F6964006466CEF1E003B01FF45F5E7D840004"
+  },
+  "operationType": "insert",
+  "clusterTime": {
+    "$timestamp": {
+      "t": 1724838368,
+      "i": 3
+    }
+  },
+  "wallTime": {
+    "$date": {
+      "$numberLong": "1724838368478"
+    }
+  },
+  "fullDocument": {
+    "_id": {
+      "$oid": "66cef1e003b01ff45f5e7d84"
+    },
+    "plan": {
+      "sourceClinicId": {
+        "$oid": "66ceef8d03b01ff45f5e7d7f"
+      },
+      "targetClinicId": {
+        "$oid": "66ceef3503b01ff45f5e7d7c"
+      },
+      "sourceClinicName": "Source 1",
+      "targetClinicName": "Todd's Target Clinic",
+      "sourcePatient": {
+        "_id": {
+          "$oid": "66ceef8d03b01ff45f5e7d81"
+        },
+        "clinicId": {
+          "$oid": "66ceef8d03b01ff45f5e7d7f"
+        },
+        "userId": "676404ec56",
+        "birthDate": "2000-01-01",
+        "email": "demo+jill@tidepool.org",
+        "fullName": "Jilly Jellyfish",
+        "mrn": null,
+        "targetDevices": [
+          "dexcom",
+          "omnipod"
+        ],
+        "permissions": {
+          "view": {}
+        },
+        "isMigrated": true,
+        "createdTime": {
+          "$date": {
+            "$numberLong": "1724837773784"
+          }
+        },
+        "updatedTime": {
+          "$date": {
+            "$numberLong": "1724837773784"
+          }
+        },
+        "requireUniqueMrn": false
+      },
+      "targetPatient": {
+        "_id": {
+          "$oid": "66ceef3503b01ff45f5e7d7e"
+        },
+        "clinicId": {
+          "$oid": "66ceef3503b01ff45f5e7d7c"
+        },
+        "userId": "676404ec56",
+        "birthDate": "2000-01-01",
+        "email": "demo+jill@tidepool.org",
+        "fullName": "Jilly Jellyfish",
+        "mrn": null,
+        "targetDevices": [
+          "dexcom",
+          "omnipod"
+        ],
+        "permissions": {
+          "view": {}
+        },
+        "isMigrated": true,
+        "createdTime": {
+          "$date": {
+            "$numberLong": "1724837685904"
+          }
+        },
+        "updatedTime": {
+          "$date": {
+            "$numberLong": "1724837685904"
+          }
+        },
+        "requireUniqueMrn": false,
+        "lastRequestedDexcomConnectTime": {
+          "$date": {
+            "$numberLong": "1728067517947"
+          }
+        },
+        "dataSources": [
+          {
+            "modifiedTime": {
+              "$date": {
+                "$numberLong": "1728067517947"
+              }
+            },
+            "expirationTime": {
+              "$date": {
+                "$numberLong": "1730659517947"
+              }
+            },
+            "providerName": "dexcom",
+            "state": "pendingReconnect"
+          }
+        ]
+      },
+      "conflicts": {
+        "Duplicate Accounts": [
+          {
+            "category": "Duplicate Accounts",
+            "patient": {
+              "_id": {
+                "$oid": "66ceef3503b01ff45f5e7d7e"
+              },
+              "clinicId": {
+                "$oid": "66ceef3503b01ff45f5e7d7c"
+              },
+              "userId": "676404ec56",
+              "birthDate": "2000-01-01",
+              "email": "demo+jill@tidepool.org",
+              "fullName": "Jilly Jellyfish",
+              "mrn": null,
+              "targetDevices": [
+                "dexcom",
+                "omnipod"
+              ],
+              "permissions": {
+                "view": {}
+              },
+              "isMigrated": true,
+              "createdTime": {
+                "$date": {
+                  "$numberLong": "1724837685904"
+                }
+              },
+              "updatedTime": {
+                "$date": {
+                  "$numberLong": "1724837685904"
+                }
+              },
+              "requireUniqueMrn": false
+            }
+          }
+        ]
+      },
+      "patientAction": "MERGE",
+      "sourceTagNames": null,
+      "targetTagNames": null,
+      "postMigrationTagNames": [],
+      "canExecuteAction": true
+    },
+    "planId": {
+      "$oid": "66cef1e003b01ff45f5e7d83"
+    },
+    "type": "patient"
+  },
+  "ns": {
+    "db": "clinic",
+    "coll": "merge_plans"
+  },
+  "documentKey": {
+    "_id": {
+      "$oid": "66cef1e003b01ff45f5e7d84"
+    }
+  }
+}
