@@ -205,7 +205,7 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		}
 
 		errs := make([]error, 0, len(providers))
-		for providerName, _ := range providers {
+		for providerName := range providers {
 			templatePrefix := fmt.Sprintf("request_%s_", providerName)
 			action := "connect"
 			if event.FullDocument.IsCustodial() {

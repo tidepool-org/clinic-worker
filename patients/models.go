@@ -178,19 +178,12 @@ type UpdatedFields struct {
 
 func (u UpdatedFields) GetUpdatedConnectionRequests() ConnectionRequests {
 	var requests ConnectionRequests
-	if u.ProviderConnectionRequests != nil {
-		for _, r := range u.ProviderConnectionRequests {
-			for _, v := range  r {
-				requests = append(requests, v)
-			}
-		}
+	for _, r := range u.ProviderConnectionRequests {
+		requests = append(requests, r...)
 	}
-	for _, v := range  u.ProviderConnectionRequestsDexcom {
-		requests = append(requests, v)
-	}
-	for _, v := range  u.ProviderConnectionRequestsTwiist {
-		requests = append(requests, v)
-	}
+	requests = append(requests, u.ProviderConnectionRequestsDexcom...)
+	requests = append(requests, u.ProviderConnectionRequestsTwiist...)
+
 	return requests
 }
 
