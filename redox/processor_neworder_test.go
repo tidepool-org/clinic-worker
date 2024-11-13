@@ -36,6 +36,24 @@ var _ = Describe("NewOrderProcessor", func() {
 	})
 
 	Describe("ProcessOrder", func() {
+		BeforeEach(func() {
+			response := &clinics.EHRMatchResponse{}
+			matchFixture, err := test.LoadFixture("test/fixtures/clinic_match_response.json")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(json.Unmarshal(matchFixture, response)).To(Succeed())
+
+			matchResponse := &clinics.MatchClinicAndPatientResponse{
+				Body: nil,
+				HTTPResponse: &http.Response{
+					StatusCode: http.StatusOK,
+				},
+				JSON200: response,
+			}
+			clinicClient.EXPECT().
+				MatchClinicAndPatientWithResponse(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(matchResponse, nil)
+		})
+
 		Context("with subscription order", func() {
 			var order models.NewOrder
 			var envelope models.MessageEnvelope
@@ -252,7 +270,7 @@ var _ = Describe("NewOrderProcessor", func() {
 			})
 		})
 
-		Context("with create account and subscrive order", func() {
+		Context("with create account and enable reports order", func() {
 			var order models.NewOrder
 			var envelope models.MessageEnvelope
 			var matchResponse *clinics.MatchClinicAndPatientResponse
@@ -289,7 +307,7 @@ var _ = Describe("NewOrderProcessor", func() {
 				BeforeEach(func() {
 					clinicClient.EXPECT().
 						MatchClinicAndPatientWithResponse(gomock.Any(), gomock.Any(), gomock.Any()).
-						Return(matchResponse, nil)
+						Return(matchResponse, nil).Times(2)
 				})
 
 				It("send results, flowsheet and notes when patient and clinic successfully matched", func() {
@@ -356,10 +374,12 @@ var _ = Describe("NewOrderProcessor", func() {
 						JSON200: response,
 					}
 
+					// Check if match exists
 					clinicClient.EXPECT().
 						MatchClinicAndPatientWithResponse(gomock.Any(), gomock.Any(), gomock.Any()).
-						Return(noMatchResponse, nil).Times(1)
+						Return(noMatchResponse, nil).Times(2)
 
+					// Check create account
 					clinicClient.EXPECT().
 						MatchClinicAndPatientWithResponse(gomock.Any(), gomock.Any(), gomock.Any()).
 						Return(matchResponse, nil).Times(1)
@@ -393,16 +413,16 @@ var _ = Describe("NewOrderProcessor", func() {
 					}, nil)
 
 					Expect(processor.ProcessOrder(context.Background(), envelope, order)).To(Succeed())
-					Expect(redoxClient.Sent).To(HaveLen(4))
+					Expect(redoxClient.Sent).To(HaveLen(3))
 
-					var results []models.NewResults
+					var results models.NewResults
 					var notes redox.Notes
 					var flowsheet models.NewFlowsheet
 
 					for _, payload := range redoxClient.Sent {
 						switch payload.(type) {
 						case models.NewResults:
-							results = append(results, payload.(models.NewResults))
+							results = payload.(models.NewResults)
 						case redox.Notes:
 							notes = payload.(redox.Notes)
 						case models.NewFlowsheet:
@@ -410,14 +430,7 @@ var _ = Describe("NewOrderProcessor", func() {
 						}
 					}
 
-					Expect(results).To(HaveLen(2))
-					Expect(results[0]).To(MatchFields(IgnoreExtras, Fields{
-						"Meta": MatchFields(IgnoreExtras, Fields{
-							"DataModel": Equal("Results"),
-							"EventType": Equal("New"),
-						}),
-					}))
-					Expect(results[1]).To(MatchFields(IgnoreExtras, Fields{
+					Expect(results).To(MatchFields(IgnoreExtras, Fields{
 						"Meta": MatchFields(IgnoreExtras, Fields{
 							"DataModel": Equal("Results"),
 							"EventType": Equal("New"),

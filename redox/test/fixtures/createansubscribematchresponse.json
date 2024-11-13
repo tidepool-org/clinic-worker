@@ -404,6 +404,9 @@
     },
     "enabled": true,
     "procedureCodes": {
+      "enableSummaryReports": "PRO1090",
+      "disableSummaryReports": "PRO1091",
+      "createAccount": "PRO1092",
       "createAccountAndEnableReports": "PRO1093"
     },
     "sourceId": "ba31f6d3-8358-4d2c-ac65-d4af5f3db21d",

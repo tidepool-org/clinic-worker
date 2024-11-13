@@ -654,6 +654,19 @@ const (
 	EHRMatchMessageRefEventTypeNew EHRMatchMessageRefEventType = "New"
 )
 
+// Defines values for EHRMatchRequestPatientsCriteria.
+const (
+	DOBFULLNAME EHRMatchRequestPatientsCriteria = "DOB_FULLNAME"
+	MRN         EHRMatchRequestPatientsCriteria = "MRN"
+	MRNDOB      EHRMatchRequestPatientsCriteria = "MRN_DOB"
+)
+
+// Defines values for EHRMatchRequestPatientsOnUniqueMatch.
+const (
+	DISABLEREPORTS EHRMatchRequestPatientsOnUniqueMatch = "DISABLE_REPORTS"
+	ENABLEREPORTS  EHRMatchRequestPatientsOnUniqueMatch = "ENABLE_REPORTS"
+)
+
 // Defines values for EHRSettingsProvider.
 const (
 	Redox  EHRSettingsProvider = "redox"
@@ -875,7 +888,22 @@ type EHRMatchMessageRefEventType string
 // EHRMatchRequest defines model for EHRMatchRequest.
 type EHRMatchRequest struct {
 	MessageRef *EHRMatchMessageRef `json:"messageRef,omitempty"`
+
+	// Patients Patient matching options
+	Patients *struct {
+		// Criteria Performs an "OR" match for each item in the array
+		Criteria []EHRMatchRequestPatientsCriteria `json:"criteria"`
+
+		// OnUniqueMatch Optional action to be performed when a unique match has been found
+		OnUniqueMatch *EHRMatchRequestPatientsOnUniqueMatch `json:"onUniqueMatch,omitempty"`
+	} `json:"patients,omitempty"`
 }
+
+// EHRMatchRequestPatientsCriteria defines model for EHRMatchRequest.Patients.Criteria.
+type EHRMatchRequestPatientsCriteria string
+
+// EHRMatchRequestPatientsOnUniqueMatch Optional action to be performed when a unique match has been found
+type EHRMatchRequestPatientsOnUniqueMatch string
 
 // EHRMatchResponse defines model for EHRMatchResponse.
 type EHRMatchResponse struct {
@@ -919,7 +947,7 @@ type EHRSettingsProvider string
 
 // EHRTagsSettings This configuration only applies to integrations using Redox Data Model
 type EHRTagsSettings struct {
-	// Codes The code of the additional clinical info item of the order which will be used to select which tags to associate to the patient. If this is defined, all tags of a patient will be replaced every time an enrollment order for the patient is processed.
+	// Codes Codes of the clinical info items used to select the tags to associate with the patient. If defined, all tags of a patient will be replaced every time an enrollment order for the patient is processed.
 	Codes *[]string `json:"codes,omitempty"`
 
 	// Separator If set to a non-empty string, the tag values will be split using this separator
@@ -968,6 +996,12 @@ type MembershipRestriction struct {
 // MembershipRestrictions A user joining a clinic must match at least one of the specified membership restrictions
 type MembershipRestrictions struct {
 	Restrictions *[]MembershipRestriction `json:"restrictions,omitempty"`
+}
+
+// MergeClinic defines model for MergeClinic.
+type MergeClinic struct {
+	// SourceId Clinic identifier.
+	SourceId *Id `json:"sourceId,omitempty"`
 }
 
 // Meta defines model for Meta.
@@ -2224,6 +2258,9 @@ type AssociateClinicianToUserJSONRequestBody = AssociateClinicianToUser
 
 // UpdateMembershipRestrictionsJSONRequestBody defines body for UpdateMembershipRestrictions for application/json ContentType.
 type UpdateMembershipRestrictionsJSONRequestBody = MembershipRestrictions
+
+// MergeClinicJSONRequestBody defines body for MergeClinic for application/json ContentType.
+type MergeClinicJSONRequestBody = MergeClinic
 
 // TriggerInitialMigrationJSONRequestBody defines body for TriggerInitialMigration for application/json ContentType.
 type TriggerInitialMigrationJSONRequestBody = TriggerMigration
