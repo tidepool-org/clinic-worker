@@ -4,13 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	t "github.com/tidepool-org/clinic-worker/types"
 	"net/http"
 	"net/mail"
 	"strings"
 	"time"
 
-	"github.com/oapi-codegen/runtime/types"
+	codegentypes "github.com/oapi-codegen/runtime/types"
 	"github.com/tidepool-org/clinic-worker/report"
 	clinics "github.com/tidepool-org/clinic/client"
 	models "github.com/tidepool-org/clinic/redox_models"
@@ -108,7 +107,8 @@ func (o *newOrderProcessor) ProcessOrder(ctx context.Context, envelope models.Me
 			DocumentId: documentId,
 			Order:      order,
 		}
-		return o.handleCreateAccount(ctx, create)
+		_, err = o.handleCreateAccount(ctx, create)
+		return err
 	} else if ProcedureCodesMatch(procedureCode, match.Settings.ProcedureCodes.CreateAccountAndEnableReports) {
 		createAndEnable := CreateAccountEnableReports{
 			DocumentId: documentId,
@@ -210,11 +210,11 @@ func (o *newOrderProcessor) handleDisableSummaryReports(ctx context.Context, dis
 
 
 
-func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, create CreateAccount) error {
+func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, create CreateAccount) (bool, error) {
 	order := create.Order
 	match, err := o.matchOrder(ctx, create.GetMatchRequest(), order)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if match.Patients != nil && len(*match.Patients) > 0 {
@@ -231,7 +231,7 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, create Crea
 		)
 
 		err = fmt.Errorf("patient already exists")
-		return o.handleAccountCreationError(ctx, err, order, *match)
+		return false, o.handleAccountCreationError(ctx, err, order, *match)
 	}
 
 	permission := make(map[string]interface{})
@@ -246,67 +246,68 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, create Crea
 
 	createPatient.Email, err = GetEmailAddressFromOrder(order)
 	if err != nil {
-		return o.handleAccountCreationError(ctx, err, order, *match)
+		return false, o.handleAccountCreationError(ctx, err, order, *match)
 	}
 	createPatient.BirthDate, err = GetBirthDateFromOrder(order)
 	if err != nil {
-		return o.handleAccountCreationError(ctx, err, order, *match)
+		return false, o.handleAccountCreationError(ctx, err, order, *match)
 	}
 	createPatient.FullName, err = GetFullNameFromOrder(order)
 	if err != nil {
-		return o.handleAccountCreationError(ctx, err, order, *match)
+		return false, o.handleAccountCreationError(ctx, err, order, *match)
 	}
 	createPatient.Mrn, err = GetMrnFromOrder(order)
 	if err != nil {
-		return o.handleAccountCreationError(ctx, err, order, *match)
+		return false, o.handleAccountCreationError(ctx, err, order, *match)
 	}
 
 	if createPatient.Email != nil {
 		if exists, err := o.emailExists(*createPatient.Email); err != nil {
 			o.logger.Errorw("unexpected error when checking for duplicate emails", "order", order.Meta, "error", err)
-			return err
+			return false, err
 		} else if exists {
 			err = fmt.Errorf("the email address is already in use")
-			return o.handleAccountCreationError(ctx, err, order, *match)
+			return false, o.handleAccountCreationError(ctx, err, order, *match)
 		}
 	}
 
 	createPatient.Tags, err = o.createTagsForPatient(ctx, order, *match)
 	if err != nil {
 		o.logger.Errorw("unexpected error when creating tags for patient", "order", order.Meta, "error", err)
-		return err
+		return false, err
 	}
 
 	resp, err := o.clinics.CreatePatientAccountWithResponse(ctx, *match.Clinic.Id, createPatient)
 	if err != nil {
 		// Retry in case of unexpected failure
 		o.logger.Errorw("unable to create patient account", "order", order.Meta, "error", err)
-		return err
+		return false, err
 	}
 	if (resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusConflict) || resp.JSON200 == nil {
 		// Retry in case of failure
 		o.logger.Errorw("unexpected response when creating patient account", "order", order.Meta, "statusCode", resp.StatusCode())
-		return err
+		return false, err
 	}
 
 	o.logger.Infow("patient account was successfully created", "order", order.Meta, "clinicId", match.Clinic.Id, "patientId", resp.JSON200.Id)
-	return o.handleAccountCreationSuccess(ctx, order, *match)
+	return true, o.handleAccountCreationSuccess(ctx, order, *match)
 }
 
-func (o *newOrderProcessor) handleCreateAccountAndEnableSummaryReports(ctx context.Context, createAndEnable CreateAccountEnableReports) error {
+func (o *newOrderProcessor) handleCreateAccountAndEnableSummaryReports(ctx context.Context, createAndEnable 	CreateAccountEnableReports) error {
 	// Checks if a matching account already exists without enabling reports
 	match, err := o.matchOrder(ctx, createAndEnable.GetMatchRequest(), createAndEnable.Order)
 	if err != nil {
 		return err
 	}
+
 	accountCreated := false
 	if match.Patients == nil || len(*match.Patients) == 0 {
-		create := CreateAccount{
-			DocumentId: createAndEnable.DocumentId,
-			Order:      createAndEnable.Order,
-		}
-		if err := o.handleCreateAccount(ctx, create); err != nil {
+		create := CreateAccount(createAndEnable)
+		if successfullyCreated, err := o.handleCreateAccount(ctx, create); err != nil {
 			return err
+		} else if !successfullyCreated {
+			// There was an error when creating the account, but a result was already sent
+			return nil
 		}
 		accountCreated = true
 	}
@@ -726,12 +727,12 @@ func (o *newOrderProcessor) sendAccountCreationResultsNotification(ctx context.C
 	return nil
 }
 
-func GetBirthDateFromOrder(order models.NewOrder) (types.Date, error) {
+func GetBirthDateFromOrder(order models.NewOrder) (codegentypes.Date, error) {
 	if order.Patient.Demographics == nil || order.Patient.Demographics.DOB == nil {
-		return types.Date{}, fmt.Errorf("date of birth is missing")
+		return codegentypes.Date{}, fmt.Errorf("date of birth is missing")
 	}
 
-	birthDate := &types.Date{}
+	birthDate := &codegentypes.Date{}
 	err := birthDate.UnmarshalText([]byte(*order.Patient.Demographics.DOB))
 	if err != nil {
 		return *birthDate, err
@@ -770,7 +771,7 @@ func GetEmailAddressFromOrder(order models.NewOrder) (*string, error) {
 	return &addr.Address, nil
 }
 
-func shouldUseGuarantorEmail(birthDate types.Date) bool {
+func shouldUseGuarantorEmail(birthDate codegentypes.Date) bool {
 	now := time.Now()
 	cutoff := birthDate.AddDate(MinimumAgeSelfOwnedAccountYears, 0, 0)
 	return !cutoff.Before(now)
@@ -854,8 +855,9 @@ type EnableReports struct {
 func (e EnableReports) GetMatchRequest() clinics.EHRMatchRequest {
 	action := clinics.ENABLEREPORTS
 	request := NewMatchRequest(e.DocumentId, e.Order)
-	request.Patients = t.NewStructPtr(request.Patients)
-	request.Patients.Criteria = []clinics.EHRMatchRequestPatientsCriteria{clinics.MRNDOB}
+	request.Patients = &clinics.EHRMatchRequestPatientsOptions{
+		Criteria: []clinics.EHRMatchRequestPatientsOptionsCriteria{clinics.MRNDOB},
+	}
 	request.Patients.OnUniqueMatch = &action
 	return request
 }
@@ -868,8 +870,9 @@ type DisableReports struct {
 func (d DisableReports) GetMatchRequest() clinics.EHRMatchRequest {
 	action := clinics.DISABLEREPORTS
 	request := NewMatchRequest(d.DocumentId, d.Order)
-	request.Patients = t.NewStructPtr(request.Patients)
-	request.Patients.Criteria = []clinics.EHRMatchRequestPatientsCriteria{clinics.MRNDOB}
+	request.Patients = &clinics.EHRMatchRequestPatientsOptions{
+		Criteria: []clinics.EHRMatchRequestPatientsOptionsCriteria{clinics.MRNDOB},
+	}
 	request.Patients.OnUniqueMatch = &action
 	return request
 }
@@ -881,8 +884,9 @@ type CreateAccount struct {
 
 func (c CreateAccount) GetMatchRequest() clinics.EHRMatchRequest {
 	request := NewMatchRequest(c.DocumentId, c.Order)
-	request.Patients = t.NewStructPtr(request.Patients)
-	request.Patients.Criteria = []clinics.EHRMatchRequestPatientsCriteria{clinics.MRN, clinics.DOBFULLNAME}
+	request.Patients = &clinics.EHRMatchRequestPatientsOptions{
+		Criteria: []clinics.EHRMatchRequestPatientsOptionsCriteria{clinics.MRN, clinics.DOBFULLNAME},
+	}
 	return request
 }
 
@@ -893,8 +897,9 @@ type CreateAccountEnableReports struct {
 
 func (c CreateAccountEnableReports) GetMatchRequest() clinics.EHRMatchRequest {
 	request := NewMatchRequest(c.DocumentId, c.Order)
-	request.Patients = t.NewStructPtr(request.Patients)
-	request.Patients.Criteria = []clinics.EHRMatchRequestPatientsCriteria{clinics.MRNDOB}
+	request.Patients = &clinics.EHRMatchRequestPatientsOptions{
+		Criteria: []clinics.EHRMatchRequestPatientsOptionsCriteria{clinics.MRNDOB},
+	}
 	return request
 }
 
