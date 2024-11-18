@@ -19,6 +19,8 @@ const (
 	missingValue = "NOT AVAILABLE"
 	days14       = 14 * 24 * time.Hour
 	percentage   = "%"
+	day          = "day"
+	hour         = "hour"
 )
 
 func NewFlowsheet() models.NewFlowsheet {
@@ -73,16 +75,23 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits cl
 	}
 
 	unitsPercentage := percentage
+	unitsDay := day
+	unitsHour := hour
 
 	var cgmUsePercent *float64
 	var averageGlucose *float64
 	var averageGlucoseUnits *string
 	var gmi *float64
+	var cgmStdDev *float64
+	var cgmCoeffVar *float64
+	var cgmDaysWithData *int
+	var cgmHoursWithData *int
 	var timeInVeryLow *float64
 	var timeInLow *float64
 	var timeInTarget *float64
 	var timeInHigh *float64
 	var timeInVeryHigh *float64
+	var timeInExtremeHigh *float64
 
 	if period != nil {
 		if period.AverageGlucoseMmol != nil {
@@ -96,12 +105,17 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits cl
 			averageGlucoseUnits = &units
 		}
 		cgmUsePercent = period.TimeCGMUsePercent
+		cgmStdDev = &period.StandardDeviation
+		cgmCoeffVar = &period.CoefficientOfVariation
+		cgmDaysWithData = &period.DaysWithData
+		cgmHoursWithData = &period.HoursWithData
 		gmi = period.GlucoseManagementIndicator
 		timeInVeryLow = period.TimeInVeryLowPercent
 		timeInLow = period.TimeInLowPercent
 		timeInTarget = period.TimeInTargetPercent
 		timeInHigh = period.TimeInHighPercent
 		timeInVeryHigh = period.TimeInVeryHighPercent
+		timeInExtremeHigh = period.TimeInExtremeHighPercent
 	}
 
 	AppendObservation(f, "REPORTING_PERIOD_START_CGM", formatTime(periodStart), "DateTime", nil, "CGM Reporting Period Start", reportingTime)
@@ -110,6 +124,10 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits cl
 
 	AppendObservation(f, "ACTIVE_WEAR_TIME_CGM", formatFloat(unitIntervalToPercent(cgmUsePercent)), "Numeric", &unitsPercentage, "Percentage of time CGM worn during reporting period", reportingTime)
 	AppendObservation(f, "AVERAGE_CGM", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, "CGM Average Glucose during reporting period", reportingTime)
+	AppendObservation(f, "STANDARD_DEVIATION_CGM", formatFloat(cgmStdDev), "Numeric", nil, "The standard deviation of CGM measurements during the reporting period", reportingTime)
+	AppendObservation(f, "COEFFICIENT_OF_VARIATION_CGM", formatFloat(cgmCoeffVar), "Numeric", nil, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period", reportingTime)
+	AppendObservation(f, "DAYS_WITH_DATA_CGM", formatInt(cgmDaysWithData), "Numeric", &unitsDay, "Number of days with at least one CGM datum during the reporting period", reportingTime)
+	AppendObservation(f, "HOURS_WITH_DATA_CGM", formatInt(cgmHoursWithData), "Numeric", &unitsHour, "Number of hours with at least one CGM datum during the reporting period", reportingTime)
 	AppendObservation(f, "GLUCOSE_MANAGEMENT_INDICATOR", formatFloat(gmi), "Numeric", nil, "CGM Glucose Management Indicator during reporting period", reportingTime)
 
 	AppendObservation(f, "TIME_BELOW_RANGE_VERY_LOW_CGM", formatFloat(unitIntervalToPercent(timeInVeryLow)), "Numeric", &unitsPercentage, "CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)", reportingTime)
@@ -117,6 +135,7 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits cl
 	AppendObservation(f, "TIME_IN_RANGE_CGM", formatFloat(unitIntervalToPercent(timeInTarget)), "Numeric", &unitsPercentage, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)", reportingTime)
 	AppendObservation(f, "TIME_ABOVE_RANGE_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInHigh)), "Numeric", &unitsPercentage, "CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)", reportingTime)
 	AppendObservation(f, "TIME_ABOVE_RANGE_VERY_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInVeryHigh)), "Numeric", &unitsPercentage, "CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)", reportingTime)
+	AppendObservation(f, "TIME_IN_EXTREME_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInExtremeHigh)), "Numeric", &unitsPercentage, "The percentage of time during the reporting period that CGM data was greater than or equal to 350 mg/dl", reportingTime)
 }
 
 func PopulateBGMObservations(stats *clinics.PatientBGMStats, preferredBgUnits clinics.ClinicPreferredBgUnits, f *models.NewFlowsheet) {
