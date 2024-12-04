@@ -55,7 +55,7 @@
         "Office": null,
         "Mobile": null
       },
-      "EmailAddresses": ["tim@test.com"],
+      "EmailAddresses": ["timothy@bixby.com"],
       "Language": "en",
       "Citizenship": [],
       "Address": {
@@ -71,7 +71,7 @@
   },
   "Visit": {
     "VisitNumber": "1234",
-    "AccountNumber": null,
+    "AccountNumber": "9988",
     "PatientClass": null,
     "VisitDateTime": "2015-04-21T13:54:49.863Z",
     "AttendingProvider": {
@@ -187,7 +187,7 @@
         "Business": null,
         "Mobile": null
       },
-      "EmailAddresses": ["kent@test.com"],
+      "EmailAddresses": [],
       "Type": null,
       "RelationToPatient": "Father",
       "Employer": {
@@ -276,9 +276,9 @@
       "ID": null
     },
     "Procedure": {
-      "Code": "PRO1092",
+      "Code": "PRO1093",
       "Codeset": null,
-      "Description": "Enable Tidepool"
+      "Description": "Create account and enable Tidepool"
     },
     "Provider": {
       "NPI": "4356789876",
@@ -341,7 +341,7 @@
         "Code": "TIDEPOOL_TAGS",
         "Codeset": null,
         "Description": "Tidepool Patient Tags",
-        "Value": "T1D, ADULT",
+        "Value": "T1D,ADULT",
         "Units": null,
         "Abbreviation": null,
         "Notes": []

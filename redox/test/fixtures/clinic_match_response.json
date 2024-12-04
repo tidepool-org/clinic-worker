@@ -35,7 +35,6 @@
       }
     ]
   },
-  "patients": [],
   "settings": {
     "destinationIds": {
       "default": "534dafdb-943a-4a11-8042-86a5841c6cb2",
@@ -47,7 +46,8 @@
     "procedureCodes": {
       "enableSummaryReports": "PRO1090",
       "disableSummaryReports": "PRO1091",
-      "createAccount": "PRO1092"
+      "createAccount": "PRO1092",
+      "createAccountAndEnableReports": "PRO1093"
     },
     "tags": {
       "codes": ["TIDEPOOL_TAGS"],
