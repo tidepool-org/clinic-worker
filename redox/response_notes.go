@@ -31,6 +31,7 @@ type Notes interface {
 	SetProviderFromOrder(order models.NewOrder)
 	SetProcedureFromOrder(order models.NewOrder)
 	SetVisitNumberFromOrder(order models.NewOrder)
+	SetVisitLocationFromOrder(order models.NewOrder)
 	SetOrderId(order models.NewOrder)
 	SetReportMetadata(documentId string)
 	SetEmbeddedFile(fileName string, fileType string, reader io.Reader) error
