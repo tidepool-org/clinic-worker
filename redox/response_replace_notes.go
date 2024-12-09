@@ -80,6 +80,17 @@ func (n *ReplaceNotes) SetVisitNumberFromOrder(order models.NewOrder) {
 	}
 }
 
+func (n *ReplaceNotes) SetVisitLocationFromOrder(order models.NewOrder) {
+	if order.Visit == nil {
+		return
+	}
+
+	if n.Visit == nil {
+		n.Visit = types.NewStructPtr(n.Visit)
+	}
+	n.Visit.Location = order.Visit.Location
+}
+
 func (n *ReplaceNotes) SetAccountNumberFromOrder(order models.NewOrder) {
 	if order.Visit != nil && order.Visit.AccountNumber != nil {
 		if n.Visit == nil {

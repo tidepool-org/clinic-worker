@@ -45,6 +45,14 @@ var _ = Describe("Flowsheet", func() {
 			Expect(flowsheet.Visit).ToNot(BeNil())
 			Expect(flowsheet.Visit.VisitNumber).To(PointTo(Equal(*order.Visit.VisitNumber)))
 		})
+
+		Describe("SetVisitLocationFromOrder", func() {
+			It("sets the visit location from the order", func() {
+				redox.SetVisitLocationInFlowsheet(order, &flowsheet)
+				Expect(flowsheet.Visit).ToNot(BeNil())
+				Expect(flowsheet.Visit.Location).To(PointTo(Equal(*order.Visit.Location)))
+			})
+		})
 	})
 
 	Context("With EHR Match Response", func() {
