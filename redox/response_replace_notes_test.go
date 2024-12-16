@@ -58,6 +58,14 @@ var _ = Describe("Notes", func() {
 			})
 		})
 
+		Describe("SetVisitLocationFromOrder", func() {
+			It("sets the visit location from the order", func() {
+				notes.SetVisitLocationFromOrder(order)
+				Expect(notes.Visit).ToNot(BeNil())
+				Expect(notes.Visit.Location).To(PointTo(Equal(*order.Visit.Location)))
+			})
+		})
+
 		Describe("SetAccountNumberInNotes", func() {
 			It("sets the account number from the order", func() {
 				notes.SetAccountNumberFromOrder(order)

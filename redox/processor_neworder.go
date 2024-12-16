@@ -519,6 +519,7 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 	flowsheet.Patient.Demographics = params.Order.Patient.Demographics
 
 	SetVisitNumberInFlowsheet(params.Order, &flowsheet)
+	SetVisitLocationInFlowsheet(params.Order, &flowsheet)
 	SetAccountNumberInFlowsheet(params.Order, &flowsheet)
 	PopulateSummaryStatistics(patient, params.Match.Clinic, &flowsheet)
 
@@ -561,6 +562,7 @@ func (o *newOrderProcessor) createReportNote(ctx context.Context, params Summary
 	notes.SetDestination(params.Match.Settings.DestinationIds.Notes)
 
 	notes.SetOrderId(params.Order)
+	notes.SetVisitLocationFromOrder(params.Order)
 	notes.SetVisitNumberFromOrder(params.Order)
 	notes.SetAccountNumberFromOrder(params.Order)
 
@@ -691,6 +693,7 @@ func (o *newOrderProcessor) sendMatchingResultsNotification(ctx context.Context,
 	SetMatchingResult(notification, params.Order, &results)
 	SetAccountNumberInResult(params.Order, &results)
 	SetVisitNumberInResult(params.Order, &results)
+	SetVisitLocationInResult(params.Order, &results)
 
 	if err := o.client.Send(ctx, results); err != nil {
 		// Return an error so we can retry the request
@@ -718,6 +721,7 @@ func (o *newOrderProcessor) sendAccountCreationResultsNotification(ctx context.C
 	SetAccountCreationResults(notification, order, &results)
 	SetAccountNumberInResult(order, &results)
 	SetVisitNumberInResult(order, &results)
+	SetVisitLocationInResult(order, &results)
 
 	if err := o.client.Send(ctx, results); err != nil {
 		// Return an error so we can retry the request

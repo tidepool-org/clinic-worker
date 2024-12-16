@@ -216,6 +216,17 @@ func SetVisitNumberInFlowsheet(order models.NewOrder, flowsheet *models.NewFlows
 	}
 }
 
+func SetVisitLocationInFlowsheet(order models.NewOrder, flowsheet *models.NewFlowsheet) {
+	if order.Visit == nil {
+		return
+	}
+
+	if flowsheet.Visit == nil {
+		flowsheet.Visit = types.NewStructPtr(flowsheet.Visit)
+	}
+	flowsheet.Visit.Location = order.Visit.Location
+}
+
 func SetAccountNumberInFlowsheet(order models.NewOrder, flowsheet *models.NewFlowsheet) {
 	if order.Visit != nil && order.Visit.AccountNumber != nil {
 		if flowsheet.Visit == nil {
