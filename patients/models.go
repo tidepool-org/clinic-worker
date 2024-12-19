@@ -115,7 +115,7 @@ type Patient struct {
 	LastRequestedDexcomConnectTime *cdc.Date                    `json:"lastRequestedDexcomConnectTime" bson:"lastRequestedDexcomConnectTime"`
 	LastUploadReminderTime         *cdc.Date                    `json:"lastUploadReminderTime" bson:"lastUploadReminderTime"`
 	Summary                        *CDCSummary                  `json:"summary" bson:"summary"`
-	ProviderConnectionRequests     ProviderConnectionRequests `json:"providerConnectionRequests" bson:"providerConnectionRequests"`
+	ProviderConnectionRequests     ProviderConnectionRequests   `json:"providerConnectionRequests" bson:"providerConnectionRequests"`
 }
 
 type ProviderConnectionRequests map[string]ConnectionRequests
@@ -172,18 +172,28 @@ type UpdatedFields struct {
 	Patient
 
 	// Partial updates to nested fields are encoded using dot notation in CDC events
-	ProviderConnectionRequestsDexcom ConnectionRequests `bson:"providerConnectionRequests.dexcom"`
-	ProviderConnectionRequestsTwiist ConnectionRequests `bson:"providerConnectionRequests.twiist"`
+	ProviderConnectionRequestsDexcom ConnectionRequests `json:"providerConnectionRequests.dexcom"`
+	ProviderConnectionRequestsTwiist ConnectionRequests `json:"providerConnectionRequests.twiist"`
+	ProviderConnectionRequestsAbbott ConnectionRequests `json:"providerConnectionRequests.abbott"`
 }
 
 func (u UpdatedFields) GetUpdatedConnectionRequests() ConnectionRequests {
 	var requests ConnectionRequests
 	for _, r := range u.ProviderConnectionRequests {
-		requests = append(requests, r...)
+		requests = AppendMostRecentConnectionRequest(requests, r)
 	}
-	requests = append(requests, u.ProviderConnectionRequestsDexcom...)
-	requests = append(requests, u.ProviderConnectionRequestsTwiist...)
+	requests = AppendMostRecentConnectionRequest(requests, u.ProviderConnectionRequestsDexcom)
+	requests = AppendMostRecentConnectionRequest(requests, u.ProviderConnectionRequestsTwiist)
+	requests = AppendMostRecentConnectionRequest(requests, u.ProviderConnectionRequestsAbbott)
 
 	return requests
+}
+
+func AppendMostRecentConnectionRequest(requests ConnectionRequests, updated ConnectionRequests) ConnectionRequests {
+	if len(updated) == 0 {
+		return requests
+	}
+
+	return append(requests, updated[0])
 }
 

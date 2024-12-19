@@ -220,7 +220,8 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			}
 
 			templateName := templatePrefix + action
-			errs = append(errs, p.sendDexcomConnectEmail(
+			errs = append(errs, p.sendProviderConnectEmail(
+				providerName,
 				*event.FullDocument.UserId,
 				event.FullDocument.ClinicId.Value,
 				*event.FullDocument.FullName,
@@ -304,7 +305,7 @@ func (p *PatientCDCConsumer) sendUploadReminder(userId string) error {
 	return p.mailer.SendEmailTemplate(ctx, template)
 }
 
-func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, patientName, templateName string) error {
+func (p *PatientCDCConsumer) sendProviderConnectEmail(providerName, userId, clinicId, patientName, templateName string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
@@ -326,7 +327,7 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, patientNam
 		return err
 	}
 
-	restrictedTokenPaths := []string{"/v1/oauth/dexcom"}
+	restrictedTokenPaths := []string{"/v1/oauth/" + providerName}
 	restrictedTokenExpirationTime := time.Now().Add(restrictedTokenExpirationDuration)
 
 	// Create new or update existing restricted token for this path and user
@@ -372,6 +373,7 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, patientNam
 			"ClinicName":        clinicName,
 			"RestrictedTokenId": restrictedToken.ID,
 			"PatientName":       patientName,
+			"ProviderName":      providerName,
 		},
 	}
 
