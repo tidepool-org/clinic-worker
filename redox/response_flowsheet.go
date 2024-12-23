@@ -16,12 +16,25 @@ const (
 	MmolLToMgdLConversionFactor float64 = 18.01559
 	MmolLToMgdLPrecisionFactor  float64 = 100000.0
 
+	AdditionalIdentifierURI         string = "https://api.redoxengine.com/extensions/additional-identifier"
+	AdditionalIdentifierTypeOrderId string = "orderId"
+
 	missingValue = "NOT AVAILABLE"
 	days14       = 14 * 24 * time.Hour
 	percentage   = "%"
 	day          = "day"
 	hour         = "hour"
 )
+
+type AdditionalIdentifierExtension struct {
+	URL        string               `json:"url"`
+	Identifier AdditionalIdentifier `json:"identifier"`
+}
+
+type AdditionalIdentifier struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
+}
 
 func NewFlowsheet() models.NewFlowsheet {
 	flowsheet := models.NewFlowsheet{}
@@ -233,6 +246,19 @@ func SetAccountNumberInFlowsheet(order models.NewOrder, flowsheet *models.NewFlo
 			flowsheet.Visit = types.NewStructPtr(flowsheet.Visit)
 		}
 		flowsheet.Visit.AccountNumber = order.Visit.AccountNumber
+	}
+}
+
+func SetOrderIdInFlowsheet(order models.NewOrder, flowsheet *models.NewFlowsheet) {
+	if order.Order.ID != "" {
+		extensions := []any{AdditionalIdentifierExtension{
+			URL: AdditionalIdentifierURI,
+			Identifier: AdditionalIdentifier{
+				Type:  AdditionalIdentifierTypeOrderId,
+				Value: order.Order.ID,
+			},
+		}}
+		flowsheet.Visit.Extensions = &extensions
 	}
 }
 
