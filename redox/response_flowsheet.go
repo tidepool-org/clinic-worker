@@ -16,6 +16,7 @@ const (
 	MmolLToMgdLConversionFactor float64 = 18.01559
 	MmolLToMgdLPrecisionFactor  float64 = 100000.0
 
+	AdditionalIdentifierExtensionId string = "additional-identifier"
 	AdditionalIdentifierURI         string = "https://api.redoxengine.com/extensions/additional-identifier"
 	AdditionalIdentifierTypeOrderId string = "orderId"
 
@@ -251,13 +252,14 @@ func SetAccountNumberInFlowsheet(order models.NewOrder, flowsheet *models.NewFlo
 
 func SetOrderIdInFlowsheet(order models.NewOrder, flowsheet *models.NewFlowsheet) {
 	if order.Order.ID != "" {
-		extensions := []any{AdditionalIdentifierExtension{
-			URL: AdditionalIdentifierURI,
-			Identifier: AdditionalIdentifier{
-				Type:  AdditionalIdentifierTypeOrderId,
-				Value: order.Order.ID,
-			},
-		}}
+		extensions := map[string]any{
+			AdditionalIdentifierExtensionId: AdditionalIdentifierExtension{
+				URL: AdditionalIdentifierURI,
+				Identifier: AdditionalIdentifier{
+					Type:  AdditionalIdentifierTypeOrderId,
+					Value: order.Order.ID,
+				},
+			}}
 		flowsheet.Visit.Extensions = &extensions
 	}
 }
