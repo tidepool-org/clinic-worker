@@ -340,8 +340,18 @@ func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order mode
 			if err != nil {
 				return nil, err
 			}
+			if resp.StatusCode() == http.StatusBadRequest {
+				o.logger.Warnw(
+					"ignoring tag because it doesn't conform to tag schema",
+					"tag", tagName,
+					"order", order.Meta,
+					"clinicId", match.Clinic.Id,
+				)
+				continue
+			}
+
 			if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
-				return nil, fmt.Errorf("unexpected status code %v when creating tagName %s", resp.StatusCode(), tagName)
+				return nil, fmt.Errorf("unexpected status code %v when creating tag %s", resp.StatusCode(), tagName)
 			}
 		}
 	}
@@ -359,8 +369,8 @@ func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order mode
 	for _, tagName := range tagNames {
 		patientTag, ok := existingTags[tagName]
 		if !ok {
-			// The tag should have been created. If it was deleted in the meantime returning an error will result in a retry
-			return nil, fmt.Errorf("patient tag doesn't exist")
+			// Ignore the tag if the creation wasn't successful
+			continue
 		}
 		patientTagIds = append(patientTagIds, *patientTag.Id)
 	}
