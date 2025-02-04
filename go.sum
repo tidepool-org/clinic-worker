@@ -107,12 +107,16 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/tidepool-org/clinic/client v0.0.0-20241126104542-715a2a8b0a0f h1:RUVq1p3w0FUG5Y32frtkzBOQRc23S/WJDf+vn7ZECFA=
 github.com/tidepool-org/clinic/client v0.0.0-20241126104542-715a2a8b0a0f/go.mod h1:7BpAdFdGJNB3aw/xvCz5XnWjSWRoUtWIX4xcMc4Bsko=
+github.com/tidepool-org/clinic/client v0.0.0-20250204095937-863b79a60c42 h1:bjmGKTWHyyps/nyCRVabDYGmAc7G+PwctPhtLKJLp1s=
+github.com/tidepool-org/clinic/client v0.0.0-20250204095937-863b79a60c42/go.mod h1:7BpAdFdGJNB3aw/xvCz5XnWjSWRoUtWIX4xcMc4Bsko=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20240802193352-3f912afe2109 h1:NVsWq93dgv1mQ/ELrJW1lv4pwMQaoSO0BLaK4qHZ8Xc=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20240802193352-3f912afe2109/go.mod h1:bQ9DZxk015RhmGG1tR6jRScP9KxyHvS8tzPbVtr82DE=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20241223102045-e1ade5167fb9 h1:2gB+zOEey9/cTEF1doveudDncRfq2FtZThU5jWMDBsc=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20241223102045-e1ade5167fb9/go.mod h1:bQ9DZxk015RhmGG1tR6jRScP9KxyHvS8tzPbVtr82DE=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20250110131311-70b99601f0b3 h1:Y8nTwbDBJiX6002WJx2V6iWLxFyT+LVSHEPHIedaXdE=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20250110131311-70b99601f0b3/go.mod h1:bQ9DZxk015RhmGG1tR6jRScP9KxyHvS8tzPbVtr82DE=
+github.com/tidepool-org/clinic/redox_models v0.0.0-20250204095937-863b79a60c42 h1:IZHbissruy0CqHnuuW+/f9sWNXPJKDx6gntfB8o1mKI=
+github.com/tidepool-org/clinic/redox_models v0.0.0-20250204095937-863b79a60c42/go.mod h1:bQ9DZxk015RhmGG1tR6jRScP9KxyHvS8tzPbVtr82DE=
 github.com/tidepool-org/go-common v0.12.2-0.20240612192926-de6d5c5a742c h1:hJZyiHNGeqyLA/5p60/0H9CZtJi4fAuzOuyQF0TpF7E=
 github.com/tidepool-org/go-common v0.12.2-0.20240612192926-de6d5c5a742c/go.mod h1:mIzYteUyPf//fhee4e2KEZhmcm2iE4IQ/2dyQr5pRKA=
 github.com/tidepool-org/hydrophone/client v0.0.0-20240613035211-756659d74c0d h1:iGbmFspW6X9S67U4FO6chcoLalCOPBudWNCn0oHvP4Q=

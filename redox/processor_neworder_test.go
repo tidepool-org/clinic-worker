@@ -186,6 +186,58 @@ var _ = Describe("NewOrderProcessor", func() {
 
 					Expect(processor.ProcessOrder(context.Background(), envelope, order)).To(Succeed())
 				})
+
+				It("ignores tags if creation fails with bad request", func() {
+					t1dId := "1"
+					t1dName := "T1D"
+					adultName := "ADULT"
+
+					matchResponse.JSON200.Clinic.PatientTags = &[]clinics.PatientTag{
+						{&t1dId, t1dName},
+					}
+
+					clinicClient.EXPECT().
+						CreatePatientTagWithResponse(gomock.Any(), *matchResponse.JSON200.Clinic.Id, testRedox.MatchArg(func(body clinics.CreatePatientTagJSONRequestBody) bool {
+							return body.Name == adultName
+						})).
+						Return(&clinics.CreatePatientTagResponse{
+							Body: nil,
+							HTTPResponse: &http.Response{
+								StatusCode: http.StatusBadRequest,
+							},
+						}, nil)
+
+					updatedClinic := matchResponse.JSON200.Clinic
+					updatedClinic.PatientTags = &[]clinics.PatientTag{
+						{&t1dId, t1dName},
+					}
+
+					clinicClient.EXPECT().
+						GetClinicWithResponse(gomock.Any(), *matchResponse.JSON200.Clinic.Id).
+						Return(&clinics.GetClinicResponse{
+							Body: nil,
+							HTTPResponse: &http.Response{
+								StatusCode: http.StatusOK,
+							},
+							JSON200: &updatedClinic,
+						}, nil)
+
+					clinicClient.EXPECT().UpdatePatientWithResponse(gomock.Any(),
+						gomock.Eq(*matchResponse.JSON200.Clinic.Id),
+						gomock.Eq(*((*matchResponse.JSON200.Patients)[0]).Id),
+						testRedox.MatchArg(func(body clinics.UpdatePatientJSONRequestBody) bool {
+							return testRedox.PatientHasTags(body.Tags, []string{"1"})
+						}),
+					).Return(&clinics.UpdatePatientResponse{
+						Body: nil,
+						HTTPResponse: &http.Response{
+							StatusCode: http.StatusOK,
+						},
+						JSON200: &(*matchResponse.JSON200.Patients)[0],
+					}, nil)
+
+					Expect(processor.ProcessOrder(context.Background(), envelope, order)).To(Succeed())
+				})
 			})
 
 			When("clinic settings don't have ehr tag settings", func() {
