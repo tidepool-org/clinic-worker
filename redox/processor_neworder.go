@@ -532,6 +532,7 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 	SetVisitLocationInFlowsheet(params.Order, &flowsheet)
 	SetAccountNumberInFlowsheet(params.Order, &flowsheet)
 	SetOrderIdInFlowsheet(params.Order, &flowsheet)
+	SetProviderInFlowsheet(params.Order, &flowsheet)
 	PopulateSummaryStatistics(patient, params.Match.Clinic, &flowsheet)
 
 	return flowsheet, nil
