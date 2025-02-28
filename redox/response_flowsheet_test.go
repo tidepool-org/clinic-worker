@@ -53,6 +53,27 @@ var _ = Describe("Flowsheet", func() {
 				Expect(flowsheet.Visit.Location).To(PointTo(Equal(*order.Visit.Location)))
 			})
 		})
+
+		Describe("SetVisitLocationFromOrder", func() {
+			It("sets the visit location from the order", func() {
+				expectedProviderExtension := Fields{
+					"URL": Equal("https://api.redoxengine.com/extensions/additional-provider-info"),
+					"Participants": ContainElements(MatchFields(IgnoreExtras, Fields{
+						"Id": Equal("4356789876"),
+						"IdType": Equal("NPI"),
+						"Person": MatchFields(IgnoreExtras, Fields{
+							"Name": MatchFields(IgnoreExtras, Fields{
+								"Given": ConsistOf(Equal("Pat")),
+								"Family": Equal("Granite"),
+							}),
+						}),
+					})),
+				}
+				redox.SetProviderInFlowsheet(order, &flowsheet)
+				Expect(flowsheet.Visit).ToNot(BeNil())
+				Expect(flowsheet.Visit.Extensions).To(PointTo(HaveKeyWithValue("additional-provider-info", MatchFields(IgnoreExtras, expectedProviderExtension))))
+			})
+		})
 	})
 
 	Context("With EHR Match Response", func() {
