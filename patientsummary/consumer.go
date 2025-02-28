@@ -3,13 +3,13 @@ package patientsummary
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/IBM/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/events"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"net/http"
@@ -149,7 +149,7 @@ func (p *CDCConsumer) unmarshalEvent(value []byte, event interface{}) error {
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal([]byte(message), event)
+	return bson.Unmarshal([]byte(message), event)
 }
 
 func applyPatientSummaryUpdate[T Stats](p *CDCConsumer, event CDCEvent[T]) error {
