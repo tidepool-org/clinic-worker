@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -143,6 +144,8 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 
 func (p *CDCConsumer) unmarshalEvent(value []byte, event interface{}) error {
 	message, err := strconv.Unquote(string(value))
+	strings.ReplaceAll(message, "NaN", "null")
+
 	if err != nil {
 		return err
 	}
