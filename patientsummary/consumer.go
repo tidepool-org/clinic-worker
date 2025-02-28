@@ -3,13 +3,13 @@ package patientsummary
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/IBM/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/events"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"net/http"
@@ -143,13 +143,13 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 }
 
 func (p *CDCConsumer) unmarshalEvent(value []byte, event interface{}) error {
-	value = bytes.Replace(value, []byte(":NaN"), []byte(":null"), -1)
+	value = bytes.Replace(value, []byte(": NaN"), []byte(": null"), -1)
 	message, err := strconv.Unquote(string(value))
 
 	if err != nil {
 		return err
 	}
-	return bson.Unmarshal([]byte(message), event)
+	return json.Unmarshal([]byte(message), event)
 }
 
 func applyPatientSummaryUpdate[T Stats](p *CDCConsumer, event CDCEvent[T]) error {
