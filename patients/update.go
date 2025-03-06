@@ -62,7 +62,7 @@ func EnsurePatientProfileExists(profile map[string]interface{}) map[string]inter
 	}
 }
 
-func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summaries.Summary) (clinics.UpdatePatientSummaryJSONRequestBody, error) {
+func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summaries.SummaryV5) (clinics.UpdatePatientSummaryJSONRequestBody, error) {
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{}
 
 	if cgmSummary != nil {
