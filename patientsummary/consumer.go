@@ -97,17 +97,10 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 		return nil
 	}
 
-	if staticEvent.FullDocument.Type == nil {
-		// we only log this for now to skip any pre-bgmstats events
-		p.logger.Warnw("unable to get type of unmarshalled message", "offset", cm.Offset)
-		return nil
-		//return errors.New("unable to get type of unmarshalled message, summary without type")
-	}
-
 	// the flow get pretty ugly from here on, we need to jump out of methods as generic params
 	// are not yet possible on methods, and we don't want to deviate too much from other event handlers
-	if *staticEvent.FullDocument.Type == "cgm" {
-		event := CDCEvent[CGMStats]{
+	if staticEvent.FullDocument.Type == "cgm" {
+		event := CDCEvent[CGMPeriods]{
 			Offset: cm.Offset,
 		}
 		if err := p.unmarshalEvent(cm.Value, &event); err != nil {
@@ -118,8 +111,8 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 			p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
 			return err
 		}
-	} else if *staticEvent.FullDocument.Type == "bgm" {
-		event := CDCEvent[BGMStats]{
+	} else if staticEvent.FullDocument.Type == "bgm" {
+		event := CDCEvent[BGMPeriods]{
 			Offset: cm.Offset,
 		}
 		if err := p.unmarshalEvent(cm.Value, &event); err != nil {
@@ -130,12 +123,12 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 			p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
 			return err
 		}
-	} else if *staticEvent.FullDocument.Type == "continuous" {
-		p.logger.Debugw("skipping over continuous type cdc event", "offset", cm.Offset, "userId", *staticEvent.FullDocument.UserID)
+	} else if staticEvent.FullDocument.Type == "continuous" {
+		p.logger.Debugw("skipping over continuous type cdc event", "offset", cm.Offset, "userId", staticEvent.FullDocument.UserID)
 		return nil
 	} else {
-		p.logger.Warnw("unsupported type of unmarshalled message", "offset", cm.Offset, "type", *staticEvent.FullDocument.Type)
-		return fmt.Errorf("unsupported type of unmarshalled message, type: %s", *staticEvent.FullDocument.Type)
+		p.logger.Warnw("unsupported type of unmarshalled message", "offset", cm.Offset, "type", staticEvent.FullDocument.Type)
+		return fmt.Errorf("unsupported type of unmarshalled message, type: %s", staticEvent.FullDocument.Type)
 	}
 
 	return nil
@@ -149,13 +142,13 @@ func (p *CDCConsumer) unmarshalEvent(value []byte, event interface{}) error {
 	return json.Unmarshal([]byte(message), event)
 }
 
-func applyPatientSummaryUpdate[T Stats](p *CDCConsumer, event CDCEvent[T]) error {
+func applyPatientSummaryUpdate[P Periods](p *CDCConsumer, event CDCEvent[P]) error {
 	p.logger.Debugw("applying patient summary update", "offset", event.Offset)
-	if event.FullDocument.UserID == nil {
+	if event.FullDocument.UserID == "" {
 		return errors.New("expected user id to be defined")
 	}
 
-	userId := clinics.PatientId(*event.FullDocument.UserID)
+	userId := clinics.PatientId(event.FullDocument.UserID)
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
