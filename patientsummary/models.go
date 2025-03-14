@@ -113,6 +113,10 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 		p.FullDocument.Dates.OutdatedReason = []string{}
 	}
 
+	if p.FullDocument.Dates.LastUpdatedReason == nil {
+		p.FullDocument.Dates.LastUpdatedReason = []string{}
+	}
+
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{}
 	if p.FullDocument.Type == "cgm" {
 		patientUpdate.CgmStats = &clinics.PatientCGMStats{}

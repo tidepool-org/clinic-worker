@@ -94,6 +94,10 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 			cgmSummary.Dates.OutdatedReason = []string{}
 		}
 
+		if cgmSummary.Dates.LastUpdatedReason == nil {
+			cgmSummary.Dates.LastUpdatedReason = []string{}
+		}
+
 		patientUpdate.CgmStats = &clinics.PatientCGMStats{
 			Dates: clinics.PatientSummaryDates{
 				LastUpdatedDate:   lastUpdatedDate,
@@ -153,6 +157,10 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 
 		if bgmSummary.Dates.OutdatedReason == nil {
 			bgmSummary.Dates.OutdatedReason = []string{}
+		}
+
+		if bgmSummary.Dates.LastUpdatedReason == nil {
+			bgmSummary.Dates.LastUpdatedReason = []string{}
 		}
 
 		patientUpdate.BgmStats = &clinics.PatientBGMStats{
