@@ -50,13 +50,9 @@ type Dates struct {
 	OutdatedSince     *cdc.Date `json:"outdatedSince,omitempty"`
 }
 
-type CGMPeriods struct {
-	summaries.CgmperiodsV5
-}
+type CGMPeriods summaries.CgmperiodsV5
 
-type BGMPeriods struct {
-	summaries.BgmperiodsV5
-}
+type BGMPeriods summaries.BgmperiodsV5
 
 type Periods interface {
 	CGMPeriods | BGMPeriods
@@ -174,13 +170,13 @@ func (s CGMPeriods) ExportPeriods(destStatsInt interface{}) {
 
 	daysRe := regexp.MustCompile("(\\d+)d")
 
-	if s.CgmperiodsV5 != nil {
+	if s != nil {
 		destStats.Periods = clinics.PatientCGMPeriods{}
-		for k := range s.CgmperiodsV5 {
+		for k := range s {
 			// get integer portion of 1d/7d/14d/30d map string
 			i, _ := strconv.Atoi(daysRe.FindStringSubmatch(k)[1])
 
-			destStats.Periods[k] = ExportCGMPeriod(s.CgmperiodsV5[k], i)
+			destStats.Periods[k] = ExportCGMPeriod(s[k], i)
 		}
 	}
 }
@@ -322,10 +318,10 @@ func ExportCGMPeriod(period summaries.GlucoseperiodV5, i int) clinics.PatientCGM
 func (s BGMPeriods) ExportPeriods(destStatsInt interface{}) {
 	destStats := destStatsInt.(*clinics.PatientBGMStats)
 
-	if s.BgmperiodsV5 != nil {
+	if s != nil {
 		destStats.Periods = clinics.PatientBGMPeriods{}
-		for k := range s.BgmperiodsV5 {
-			destStats.Periods[k] = ExportBGMPeriod(s.BgmperiodsV5[k])
+		for k := range s {
+			destStats.Periods[k] = ExportBGMPeriod(s[k])
 		}
 	}
 }
