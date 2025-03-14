@@ -123,7 +123,7 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 			p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
 			return err
 		}
-	} else if staticEvent.FullDocument.Type == "continuous" {
+	} else if staticEvent.FullDocument.Type == "con" {
 		p.logger.Debugw("skipping over continuous type cdc event", "offset", cm.Offset, "userId", staticEvent.FullDocument.UserID)
 		return nil
 	} else {
