@@ -168,7 +168,6 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 
 func (s CGMPeriods) ExportPeriods(destStatsInt interface{}) {
 	destStats := destStatsInt.(*clinics.PatientCGMStats)
-
 	daysRe := regexp.MustCompile("(\\d+)d")
 
 	if s != nil {
@@ -177,9 +176,11 @@ func (s CGMPeriods) ExportPeriods(destStatsInt interface{}) {
 		for k := range s {
 			fmt.Println("processing period", k)
 			// get integer portion of 1d/7d/14d/30d map string
-			i, _ := strconv.Atoi(daysRe.FindStringSubmatch(k)[1])
-
-			destStats.Periods[k] = ExportCGMPeriod(s[k], i)
+			m := daysRe.FindStringSubmatch(k)
+			if len(m) >= 2 {
+				i, _ := strconv.Atoi(m[1])
+				destStats.Periods[k] = ExportCGMPeriod(s[k], i)
+			}
 		}
 	}
 }
@@ -320,11 +321,18 @@ func ExportCGMPeriod(period summaries.GlucoseperiodV5, i int) clinics.PatientCGM
 
 func (s BGMPeriods) ExportPeriods(destStatsInt interface{}) {
 	destStats := destStatsInt.(*clinics.PatientBGMStats)
+	daysRe := regexp.MustCompile("(\\d+)d")
 
 	if s != nil {
 		destStats.Periods = clinics.PatientBGMPeriods{}
+		fmt.Printf("exporting periods of object %+v\n", s)
 		for k := range s {
-			destStats.Periods[k] = ExportBGMPeriod(s[k])
+			fmt.Println("processing period", k)
+			// get integer portion of 1d/7d/14d/30d map string
+			m := daysRe.FindStringSubmatch(k)
+			if len(m) >= 2 {
+				destStats.Periods[k] = ExportBGMPeriod(s[k])
+			}
 		}
 	}
 }
