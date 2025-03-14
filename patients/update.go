@@ -121,8 +121,11 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 			patientUpdate.CgmStats.Periods = clinics.PatientCGMPeriods{}
 			for k := range cgmPeriods {
 				// get integer portion of 1d/7d/14d/30d map string
-				i, _ := strconv.Atoi(daysRe.FindStringSubmatch(k)[1])
-				patientUpdate.CgmStats.Periods[k] = patientsummary.ExportCGMPeriod(cgmPeriods[k], i)
+				m := daysRe.FindStringSubmatch(k)
+				if len(m) >= 2 {
+					i, _ := strconv.Atoi(m[1])
+					patientUpdate.CgmStats.Periods[k] = patientsummary.ExportCGMPeriod(cgmPeriods[k], i)
+				}
 			}
 		}
 	}
@@ -175,9 +178,13 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 				return clinics.UpdatePatientSummaryJSONRequestBody{}, errors.Wrapf(err, "unable to unserialize BGM summary stats for userId %s", *bgmSummary.UserId)
 			}
 
+			daysRe := regexp.MustCompile("(\\d+)d")
 			patientUpdate.BgmStats.Periods = clinics.PatientBGMPeriods{}
 			for k := range bgmPeriods {
-				patientUpdate.BgmStats.Periods[k] = patientsummary.ExportBGMPeriod(bgmPeriods[k])
+				m := daysRe.FindStringSubmatch(k)
+				if len(m) >= 2 {
+					patientUpdate.BgmStats.Periods[k] = patientsummary.ExportBGMPeriod(bgmPeriods[k])
+				}
 			}
 
 		}
