@@ -1,6 +1,7 @@
 package patientsummary
 
 import (
+	"fmt"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
@@ -172,7 +173,9 @@ func (s CGMPeriods) ExportPeriods(destStatsInt interface{}) {
 
 	if s != nil {
 		destStats.Periods = clinics.PatientCGMPeriods{}
+		fmt.Printf("exporting periods of object %+v\n", s)
 		for k := range s {
+			fmt.Println("processing period", k)
 			// get integer portion of 1d/7d/14d/30d map string
 			i, _ := strconv.Atoi(daysRe.FindStringSubmatch(k)[1])
 
