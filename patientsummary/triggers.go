@@ -12,7 +12,7 @@ var (
 	}
 )
 
-func ShouldTriggerEHRSync[P Periods](s Summary[P]) bool {
+func ShouldTriggerEHRSync(s Summary) bool {
 	if s.Type == "" {
 		return false
 	}

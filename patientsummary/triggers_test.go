@@ -8,8 +8,8 @@ import (
 
 var _ = Describe("ShouldTriggerEHRSync", func() {
 	var dates *patientsummary.Dates
-	var bgmSummary *patientsummary.Summary[patientsummary.BGMPeriods]
-	var cgmSummary *patientsummary.Summary[patientsummary.CGMPeriods]
+	var bgmSummary *patientsummary.Summary
+	var cgmSummary *patientsummary.Summary
 
 	BeforeEach(func() {
 		lastUpdatedReason := []string{"UPLOAD_COMPLETED"}
@@ -18,13 +18,13 @@ var _ = Describe("ShouldTriggerEHRSync", func() {
 		}
 		cgm := "cgm"
 		bgm := "bgm"
-		bgmSummary = &patientsummary.Summary[patientsummary.BGMPeriods]{
+		bgmSummary = &patientsummary.Summary{
 			BaseSummary: patientsummary.BaseSummary{
 				Type:  bgm,
 				Dates: *dates,
 			},
 		}
-		cgmSummary = &patientsummary.Summary[patientsummary.CGMPeriods]{
+		cgmSummary = &patientsummary.Summary{
 			BaseSummary: patientsummary.BaseSummary{
 				Type:  cgm,
 				Dates: *dates,

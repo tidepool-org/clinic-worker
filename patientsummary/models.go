@@ -1,7 +1,6 @@
 package patientsummary
 
 import (
-	"fmt"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
@@ -10,19 +9,13 @@ import (
 	"time"
 )
 
-type CDCEvent[P Periods] struct {
-	Offset        int64      `json:"-"`
-	FullDocument  Summary[P] `json:"fullDocument"`
-	OperationType string     `json:"operationType"`
+type CDCEvent struct {
+	Offset        int64   `json:"-"`
+	FullDocument  Summary `json:"fullDocument"`
+	OperationType string  `json:"operationType"`
 }
 
-type StaticCDCEvent struct {
-	Offset        int64         `json:"-"`
-	FullDocument  StaticSummary `json:"fullDocument"`
-	OperationType string        `json:"operationType"`
-}
-
-func (p StaticCDCEvent) ShouldApplyUpdates() bool {
+func (p CDCEvent) ShouldApplyUpdates() bool {
 	if p.OperationType != cdc.OperationTypeInsert &&
 		p.OperationType != cdc.OperationTypeUpdate &&
 		p.OperationType != cdc.OperationTypeReplace {
@@ -51,16 +44,6 @@ type Dates struct {
 	OutdatedSince     *cdc.Date `json:"outdatedSince,omitempty"`
 }
 
-type CGMPeriods summaries.CgmperiodsV5
-
-type BGMPeriods summaries.BgmperiodsV5
-
-type Periods interface {
-	CGMPeriods | BGMPeriods
-
-	ExportPeriods(stats interface{})
-}
-
 type BaseSummary struct {
 	ID     cdc.ObjectId       `json:"_id"`
 	Type   string             `json:"type"`
@@ -69,16 +52,12 @@ type BaseSummary struct {
 	Dates  Dates              `json:"dates"`
 }
 
-type Summary[P Periods] struct {
+type Summary struct {
 	BaseSummary `json:",inline"`
-	Periods     *P `json:"periods"`
+	Periods     *summaries.SummaryV5_Periods `json:"periods"`
 }
 
-type StaticSummary struct {
-	BaseSummary `json:",inline"`
-}
-
-func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestBody {
+func (p CDCEvent) CreateUpdateBody() (*clinics.UpdatePatientSummaryJSONRequestBody, error) {
 	var firstData *time.Time
 	firstDataVal := time.UnixMilli(p.FullDocument.Dates.FirstData.Value)
 	if !firstDataVal.IsZero() {
@@ -117,7 +96,7 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 		p.FullDocument.Dates.LastUpdatedReason = []string{}
 	}
 
-	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{}
+	patientUpdate := &clinics.UpdatePatientSummaryJSONRequestBody{}
 	if p.FullDocument.Type == "cgm" {
 		patientUpdate.CgmStats = &clinics.PatientCGMStats{}
 
@@ -139,7 +118,11 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 		patientUpdate.CgmStats.Config = config
 
 		if p.FullDocument.Periods != nil {
-			(*p.FullDocument.Periods).ExportPeriods(patientUpdate.CgmStats)
+			sourceCGMPeriod, err := p.FullDocument.Periods.AsCgmperiodsV5()
+			if err != nil {
+				return nil, err
+			}
+			ExportCGMPeriods(sourceCGMPeriod, patientUpdate.CgmStats)
 		}
 
 	} else if p.FullDocument.Type == "bgm" {
@@ -163,27 +146,28 @@ func (p CDCEvent[T]) CreateUpdateBody() clinics.UpdatePatientSummaryJSONRequestB
 		patientUpdate.BgmStats.Config = config
 
 		if p.FullDocument.Periods != nil {
-			(*p.FullDocument.Periods).ExportPeriods(patientUpdate.BgmStats)
+			sourceBGMPeriod, err := p.FullDocument.Periods.AsBgmperiodsV5()
+			if err != nil {
+				return nil, err
+			}
+			ExportBGMPeriods(sourceBGMPeriod, patientUpdate.BgmStats)
 		}
 	}
 
-	return patientUpdate
+	return patientUpdate, nil
 }
 
-func (s CGMPeriods) ExportPeriods(destStatsInt interface{}) {
-	destStats := destStatsInt.(*clinics.PatientCGMStats)
+func ExportCGMPeriods(sourcePeriods summaries.CgmperiodsV5, destPeriods *clinics.PatientCGMStats) {
 	daysRe := regexp.MustCompile("(\\d+)d")
 
-	if s != nil {
-		destStats.Periods = clinics.PatientCGMPeriods{}
-		fmt.Printf("exporting periods of object %+v\n", s)
-		for k := range s {
-			fmt.Println("processing period", k)
+	if sourcePeriods != nil {
+		destPeriods.Periods = clinics.PatientCGMPeriods{}
+		for k := range sourcePeriods {
 			// get integer portion of 1d/7d/14d/30d map string
 			m := daysRe.FindStringSubmatch(k)
 			if len(m) >= 2 {
 				i, _ := strconv.Atoi(m[1])
-				destStats.Periods[k] = ExportCGMPeriod(s[k], i)
+				destPeriods.Periods[k] = ExportCGMPeriod(sourcePeriods[k], i)
 			}
 		}
 	}
@@ -323,19 +307,16 @@ func ExportCGMPeriod(period summaries.GlucoseperiodV5, i int) clinics.PatientCGM
 	return destPeriod
 }
 
-func (s BGMPeriods) ExportPeriods(destStatsInt interface{}) {
-	destStats := destStatsInt.(*clinics.PatientBGMStats)
+func ExportBGMPeriods(sourcePeriods summaries.BgmperiodsV5, destPeriods *clinics.PatientBGMStats) {
 	daysRe := regexp.MustCompile("(\\d+)d")
 
-	if s != nil {
-		destStats.Periods = clinics.PatientBGMPeriods{}
-		fmt.Printf("exporting periods of object %+v\n", s)
-		for k := range s {
-			fmt.Println("processing period", k)
+	if sourcePeriods != nil {
+		destPeriods.Periods = clinics.PatientBGMPeriods{}
+		for k := range sourcePeriods {
 			// get integer portion of 1d/7d/14d/30d map string
 			m := daysRe.FindStringSubmatch(k)
 			if len(m) >= 2 {
-				destStats.Periods[k] = ExportBGMPeriod(s[k])
+				destPeriods.Periods[k] = ExportBGMPeriod(sourcePeriods[k])
 			}
 		}
 	}
