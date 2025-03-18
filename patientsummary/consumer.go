@@ -90,7 +90,7 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 		return err
 	}
 
-	p.logger.Debugw("event being processed", "event", event)
+	p.logger.Debugw("event being processed", "event", event.FullDocument.BaseSummary)
 
 	if !event.ShouldApplyUpdates() {
 		p.logger.Debugw("skipping handling of event", "offset", event.Offset)
