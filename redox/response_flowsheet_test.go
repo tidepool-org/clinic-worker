@@ -96,7 +96,11 @@ var _ = Describe("Flowsheet", func() {
 				expetedHourUnits := "hour"
 
 				flowsheet := redox.NewFlowsheet()
-				redox.PopulateSummaryStatistics((*response.Patients)[0], response.Clinic, &flowsheet)
+				settings := redox.FlowsheetSettings{
+					PreferredBGUnits:                 string(response.Clinic.PreferredBgUnits),
+					CoefficientOfVariationPercentage: true,
+				}
+				redox.PopulateSummaryStatistics((*response.Patients)[0], settings, &flowsheet)
 
 				observations := Observations(flowsheet)
 				Expect(observations).To(ContainObservation(Observation{"REPORTING_PERIOD_START_CGM", "2023-04-09T17:44:09Z", "DateTime", nil, "CGM Reporting Period Start"}))
@@ -105,7 +109,7 @@ var _ = Describe("Flowsheet", func() {
 				Expect(observations).To(ContainObservation(Observation{"ACTIVE_WEAR_TIME_CGM", "50.1262", "Numeric", &expectedPercentageUnits, "Percentage of time CGM worn during reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_CGM", "7.9212", "Numeric", &expectedBgUnits, "CGM Average Glucose during reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"STANDARD_DEVIATION_CGM", "1.4697", "Numeric", nil, "The standard deviation of CGM measurements during the reporting period"}))
-				Expect(observations).To(ContainObservation(Observation{"COEFFICIENT_OF_VARIATION_CGM", "0.2004", "Numeric", nil, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period"}))
+				Expect(observations).To(ContainObservation(Observation{"COEFFICIENT_OF_VARIATION_CGM", "20.0", "Numeric", &expectedPercentageUnits, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"DAYS_WITH_DATA_CGM", "2", "Numeric", &expectedDayUnits, "Number of days with at least one CGM datum during the reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"HOURS_WITH_DATA_CGM", "28", "Numeric", &expetedHourUnits, "Number of hours with at least one CGM datum during the reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"GLUCOSE_MANAGEMENT_INDICATOR", "NOT AVAILABLE", "Numeric", nil, "CGM Glucose Management Indicator during reporting period"}))
@@ -133,7 +137,11 @@ var _ = Describe("Flowsheet", func() {
 				patient.Summary.BgmStats = nil
 				patient.Summary.CgmStats = nil
 
-				redox.PopulateSummaryStatistics(patient, response.Clinic, &flowsheet)
+				settings := redox.FlowsheetSettings{
+					PreferredBGUnits:                 string(response.Clinic.PreferredBgUnits),
+					CoefficientOfVariationPercentage: true,
+				}
+				redox.PopulateSummaryStatistics(patient, settings, &flowsheet)
 
 				observations := Observations(flowsheet)
 				Expect(observations).To(ContainObservation(Observation{"REPORTING_PERIOD_START_CGM", "NOT AVAILABLE", "DateTime", nil, "CGM Reporting Period Start"}))
@@ -142,7 +150,7 @@ var _ = Describe("Flowsheet", func() {
 				Expect(observations).To(ContainObservation(Observation{"ACTIVE_WEAR_TIME_CGM", "NOT AVAILABLE", "Numeric", &expectedPercentageUnits, "Percentage of time CGM worn during reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_CGM", "NOT AVAILABLE", "Numeric", nil, "CGM Average Glucose during reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"STANDARD_DEVIATION_CGM", "NOT AVAILABLE", "Numeric", nil, "The standard deviation of CGM measurements during the reporting period"}))
-				Expect(observations).To(ContainObservation(Observation{"COEFFICIENT_OF_VARIATION_CGM", "NOT AVAILABLE", "Numeric", nil, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period"}))
+				Expect(observations).To(ContainObservation(Observation{"COEFFICIENT_OF_VARIATION_CGM", "NOT AVAILABLE", "Numeric", &expectedPercentageUnits, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"DAYS_WITH_DATA_CGM", "NOT AVAILABLE", "Numeric", &expectedDayUnits, "Number of days with at least one CGM datum during the reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"HOURS_WITH_DATA_CGM", "NOT AVAILABLE", "Numeric", &expetedHourUnits, "Number of hours with at least one CGM datum during the reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"GLUCOSE_MANAGEMENT_INDICATOR", "NOT AVAILABLE", "Numeric", nil, "CGM Glucose Management Indicator during reporting period"}))
@@ -167,7 +175,10 @@ var _ = Describe("Flowsheet", func() {
 				patient := (*response.Patients)[0]
 				response.Clinic.PreferredBgUnits = api.MgdL
 
-				redox.PopulateSummaryStatistics(patient, response.Clinic, &flowsheet)
+				settings := redox.FlowsheetSettings{
+					PreferredBGUnits:                 string(response.Clinic.PreferredBgUnits),
+				}
+				redox.PopulateSummaryStatistics(patient, settings, &flowsheet)
 
 				observations := Observations(flowsheet)
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_CGM", "142.7052", "Numeric", &expectedBgUnits, "CGM Average Glucose during reporting period"}))

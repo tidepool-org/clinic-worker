@@ -522,6 +522,11 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 		ID: &destinationId,
 	}}
 
+	settings := FlowsheetSettings{
+		PreferredBGUnits:                 string(params.Match.Clinic.PreferredBgUnits),
+		CoefficientOfVariationPercentage: params.Match.Settings.Flowsheets.CoefficientOfVariationUnits == clinics.PERCENTAGE,
+	}
+
 	flowsheet := NewFlowsheet()
 	flowsheet.Meta.Source = &source
 	flowsheet.Meta.Destinations = &destinations
@@ -533,7 +538,7 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 	SetAccountNumberInFlowsheet(params.Order, &flowsheet)
 	SetOrderIdInFlowsheet(params.Order, &flowsheet)
 	SetProviderInFlowsheet(params.Order, &flowsheet)
-	PopulateSummaryStatistics(patient, params.Match.Clinic, &flowsheet)
+	PopulateSummaryStatistics(patient, settings, &flowsheet)
 
 	return flowsheet, nil
 }
