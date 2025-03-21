@@ -66,9 +66,14 @@ func NewFlowsheet() models.NewFlowsheet {
 	return flowsheet
 }
 
+type FlowsheetSettings struct {
+	PreferredBGUnits                 string
+	CoefficientOfVariationPercentage bool
+}
+
 // PopulateSummaryStatistics populates a flowsheet with patient summary statistics. If summary statistics are not available,
 // the flowsheet items will be populated with 'NOT AVAILABLE'.
-func PopulateSummaryStatistics(patient clinics.Patient, clinic clinics.Clinic, flowsheet *models.NewFlowsheet) {
+func PopulateSummaryStatistics(patient clinics.Patient, settings FlowsheetSettings, flowsheet *models.NewFlowsheet) {
 	var cgmStats *clinics.PatientCGMStats
 	var bgmStats *clinics.PatientBGMStats
 	if patient.Summary != nil {
@@ -76,11 +81,11 @@ func PopulateSummaryStatistics(patient clinics.Patient, clinic clinics.Clinic, f
 		bgmStats = patient.Summary.BgmStats
 	}
 
-	PopulateCGMObservations(cgmStats, clinic.PreferredBgUnits, flowsheet)
-	PopulateBGMObservations(bgmStats, clinic.PreferredBgUnits, flowsheet)
+	PopulateCGMObservations(cgmStats, settings, flowsheet)
+	PopulateBGMObservations(bgmStats, settings, flowsheet)
 }
 
-func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits clinics.ClinicPreferredBgUnits, f *models.NewFlowsheet) {
+func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetSettings, f *models.NewFlowsheet) {
 	now := time.Now()
 
 	var period *clinics.PatientCGMPeriod
@@ -131,7 +136,7 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits cl
 			units := string(clinics.MmolL)
 
 			// Convert blood glucose to preferred units
-			val, units = bgInUnits(val, units, string(preferredBgUnits))
+			val, units = bgInUnits(val, units, settings.PreferredBGUnits)
 
 			averageGlucose = &val
 			averageGlucoseUnits = &units
@@ -156,7 +161,13 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits cl
 	AppendObservation(f, "ACTIVE_WEAR_TIME_CGM", formatFloat(unitIntervalToPercent(cgmUsePercent)), "Numeric", &unitsPercentage, "Percentage of time CGM worn during reporting period", reportingTime)
 	AppendObservation(f, "AVERAGE_CGM", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, "CGM Average Glucose during reporting period", reportingTime)
 	AppendObservation(f, "STANDARD_DEVIATION_CGM", formatFloat(cgmStdDev), "Numeric", nil, "The standard deviation of CGM measurements during the reporting period", reportingTime)
-	AppendObservation(f, "COEFFICIENT_OF_VARIATION_CGM", formatFloat(cgmCoeffVar), "Numeric", nil, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period", reportingTime)
+
+	if settings.CoefficientOfVariationPercentage {
+		AppendObservation(f, "COEFFICIENT_OF_VARIATION_CGM", formatFloatWithPrecision(unitIntervalToPercent(cgmCoeffVar), 1), "Numeric", &unitsPercentage, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period", reportingTime)
+	} else {
+		AppendObservation(f, "COEFFICIENT_OF_VARIATION_CGM", formatFloat(cgmCoeffVar), "Numeric", nil, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period", reportingTime)
+	}
+
 	AppendObservation(f, "DAYS_WITH_DATA_CGM", formatInt(cgmDaysWithData), "Numeric", &unitsDay, "Number of days with at least one CGM datum during the reporting period", reportingTime)
 	AppendObservation(f, "HOURS_WITH_DATA_CGM", formatInt(cgmHoursWithData), "Numeric", &unitsHour, "Number of hours with at least one CGM datum during the reporting period", reportingTime)
 	AppendObservation(f, "GLUCOSE_MANAGEMENT_INDICATOR", formatFloat(gmi), "Numeric", nil, "CGM Glucose Management Indicator during reporting period", reportingTime)
@@ -168,7 +179,7 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits cl
 	AppendObservation(f, "TIME_ABOVE_RANGE_VERY_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInVeryHigh)), "Numeric", &unitsPercentage, "CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)", reportingTime)
 }
 
-func PopulateBGMObservations(stats *clinics.PatientBGMStats, preferredBgUnits clinics.ClinicPreferredBgUnits, f *models.NewFlowsheet) {
+func PopulateBGMObservations(stats *clinics.PatientBGMStats, settings FlowsheetSettings, f *models.NewFlowsheet) {
 	now := time.Now()
 
 	var period *clinics.PatientBGMPeriod
@@ -207,7 +218,7 @@ func PopulateBGMObservations(stats *clinics.PatientBGMStats, preferredBgUnits cl
 			units := string(clinics.MmolL)
 
 			// Convert blood glucose to preferred units
-			val, units = bgInUnits(val, units, string(preferredBgUnits))
+			val, units = bgInUnits(val, units, settings.PreferredBGUnits)
 
 			averageGlucose = &val
 			averageGlucoseUnits = &units
@@ -341,10 +352,15 @@ func formatInt(val *int) string {
 }
 
 func formatFloat(val *float64) string {
+	return formatFloatWithPrecision(val, 4)
+}
+
+func formatFloatWithPrecision(val *float64, decimalPlaces int) string {
 	if val == nil {
 		return missingValue
 	}
-	return fmt.Sprintf("%.4f", *val)
+	tpl := fmt.Sprintf("%%.%df", decimalPlaces)
+	return fmt.Sprintf(tpl, *val)
 }
 
 // unitIntervalToPercent converts a unit interval (0.0 - 1.0) to a percentage (0.0 - 100.0)
