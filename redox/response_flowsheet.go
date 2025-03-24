@@ -2,11 +2,12 @@ package redox
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/tidepool-org/clinic-worker/types"
 	clinics "github.com/tidepool-org/clinic/client"
 	models "github.com/tidepool-org/clinic/redox_models"
-	"strings"
-	"time"
 )
 
 const (
@@ -121,6 +122,7 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetS
 	var averageGlucoseUnits *string
 	var gmi *float64
 	var cgmStdDev *float64
+	var cgmStdDevUnits *string
 	var cgmCoeffVar *float64
 	var cgmDaysWithData *int
 	var cgmHoursWithData *int
@@ -141,8 +143,15 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetS
 			averageGlucose = &val
 			averageGlucoseUnits = &units
 		}
+
+		{
+			// Convert standard deviation to preferred units
+			val, units := bgInUnits(period.StandardDeviation, string(clinics.MmolL), string(settings.PreferredBGUnits))
+			cgmStdDev = &val
+			cgmStdDevUnits = &units
+		}
+
 		cgmUsePercent = period.TimeCGMUsePercent
-		cgmStdDev = &period.StandardDeviation
 		cgmCoeffVar = &period.CoefficientOfVariation
 		cgmDaysWithData = &period.DaysWithData
 		cgmHoursWithData = &period.HoursWithData
@@ -160,7 +169,7 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetS
 
 	AppendObservation(f, "ACTIVE_WEAR_TIME_CGM", formatFloat(unitIntervalToPercent(cgmUsePercent)), "Numeric", &unitsPercentage, "Percentage of time CGM worn during reporting period", reportingTime)
 	AppendObservation(f, "AVERAGE_CGM", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, "CGM Average Glucose during reporting period", reportingTime)
-	AppendObservation(f, "STANDARD_DEVIATION_CGM", formatFloat(cgmStdDev), "Numeric", nil, "The standard deviation of CGM measurements during the reporting period", reportingTime)
+	AppendObservation(f, "STANDARD_DEVIATION_CGM", formatFloat(cgmStdDev), "Numeric", cgmStdDevUnits, "The standard deviation of CGM measurements during the reporting period", reportingTime)
 
 	if settings.CoefficientOfVariationPercentage {
 		AppendObservation(f, "COEFFICIENT_OF_VARIATION_CGM", formatFloatWithPrecision(unitIntervalToPercent(cgmCoeffVar), 1), "Numeric", &unitsPercentage, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period", reportingTime)
