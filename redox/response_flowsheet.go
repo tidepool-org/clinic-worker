@@ -68,8 +68,16 @@ func NewFlowsheet() models.NewFlowsheet {
 }
 
 type FlowsheetSettings struct {
-	PreferredBGUnits                 string
-	CoefficientOfVariationPercentage bool
+	PreferredBGUnits string
+	ICode            bool
+}
+
+type Observation struct {
+	code        string
+	value       string
+	valueType   string
+	units       *string
+	description string
 }
 
 // PopulateSummaryStatistics populates a flowsheet with patient summary statistics. If summary statistics are not available,
@@ -163,29 +171,36 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetS
 		timeInVeryHigh = period.TimeInVeryHighPercent
 	}
 
+	observations := []Observation{
+		{"REPORTING_PERIOD_START_CGM", formatTime(periodStart), "DateTime", nil, "CGM Reporting Period Start"},
+		{"REPORTING_PERIOD_END_CGM", formatTime(periodEnd), "DateTime", nil, "CGM Reporting Period End"},
+		{"REPORTING_PERIOD_START_CGM_DATA", formatTime(firstData), "DateTime", nil, "CGM Reporting Period Start Date of actual Data"},
+
+		{"DAYS_WITH_DATA_CGM", formatInt(cgmDaysWithData), "Numeric", &unitsDay, "Number of days with at least one CGM datum during the reporting period"},
+		{"HOURS_WITH_DATA_CGM", formatInt(cgmHoursWithData), "Numeric", &unitsHour, "Number of hours with at least one CGM datum during the reporting period"},
+	}
+
 	AppendObservation(f, "REPORTING_PERIOD_START_CGM", formatTime(periodStart), "DateTime", nil, "CGM Reporting Period Start", reportingTime)
 	AppendObservation(f, "REPORTING_PERIOD_END_CGM", formatTime(periodEnd), "DateTime", nil, "CGM Reporting Period End", reportingTime)
 	AppendObservation(f, "REPORTING_PERIOD_START_CGM_DATA", formatTime(firstData), "DateTime", nil, "CGM Reporting Period Start Date of actual Data", reportingTime)
 
-	AppendObservation(f, "ACTIVE_WEAR_TIME_CGM", formatFloat(unitIntervalToPercent(cgmUsePercent)), "Numeric", &unitsPercentage, "Percentage of time CGM worn during reporting period", reportingTime)
-	AppendObservation(f, "AVERAGE_CGM", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, "CGM Average Glucose during reporting period", reportingTime)
-	AppendObservation(f, "STANDARD_DEVIATION_CGM", formatFloat(cgmStdDev), "Numeric", cgmStdDevUnits, "The standard deviation of CGM measurements during the reporting period", reportingTime)
-
-	if settings.CoefficientOfVariationPercentage {
-		AppendObservation(f, "COEFFICIENT_OF_VARIATION_CGM", formatFloatWithPrecision(unitIntervalToPercent(cgmCoeffVar), 1), "Numeric", &unitsPercentage, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period", reportingTime)
-	} else {
-		AppendObservation(f, "COEFFICIENT_OF_VARIATION_CGM", formatFloat(cgmCoeffVar), "Numeric", nil, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period", reportingTime)
-	}
-
 	AppendObservation(f, "DAYS_WITH_DATA_CGM", formatInt(cgmDaysWithData), "Numeric", &unitsDay, "Number of days with at least one CGM datum during the reporting period", reportingTime)
 	AppendObservation(f, "HOURS_WITH_DATA_CGM", formatInt(cgmHoursWithData), "Numeric", &unitsHour, "Number of hours with at least one CGM datum during the reporting period", reportingTime)
-	AppendObservation(f, "GLUCOSE_MANAGEMENT_INDICATOR", formatFloat(gmi), "Numeric", nil, "CGM Glucose Management Indicator during reporting period", reportingTime)
 
-	AppendObservation(f, "TIME_BELOW_RANGE_VERY_LOW_CGM", formatFloat(unitIntervalToPercent(timeInVeryLow)), "Numeric", &unitsPercentage, "CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)", reportingTime)
-	AppendObservation(f, "TIME_BELOW_RANGE_LOW_CGM", formatFloat(unitIntervalToPercent(timeInLow)), "Numeric", &unitsPercentage, "CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time 54–69 mg/dL (3.0–3.8 mmol/L)", reportingTime)
-	AppendObservation(f, "TIME_IN_RANGE_CGM", formatFloat(unitIntervalToPercent(timeInTarget)), "Numeric", &unitsPercentage, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)", reportingTime)
-	AppendObservation(f, "TIME_ABOVE_RANGE_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInHigh)), "Numeric", &unitsPercentage, "CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)", reportingTime)
-	AppendObservation(f, "TIME_ABOVE_RANGE_VERY_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInVeryHigh)), "Numeric", &unitsPercentage, "CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)", reportingTime)
+	if settings.ICode {
+		AppendObservation(f, "COEFFICIENT_OF_VARIATION_CGM", formatFloatWithPrecision(unitIntervalToPercent(cgmCoeffVar), 1), "Numeric", &unitsPercentage, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period", reportingTime)
+	} else {
+		AppendObservation(f, "AVERAGE_CGM", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, "CGM Average Glucose during reporting period", reportingTime)
+		AppendObservation(f, "STANDARD_DEVIATION_CGM", formatFloat(cgmStdDev), "Numeric", cgmStdDevUnits, "The standard deviation of CGM measurements during the reporting period", reportingTime)
+		AppendObservation(f, "COEFFICIENT_OF_VARIATION_CGM", formatFloat(cgmCoeffVar), "Numeric", nil, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period", reportingTime)
+		AppendObservation(f, "ACTIVE_WEAR_TIME_CGM", formatFloat(unitIntervalToPercent(cgmUsePercent)), "Numeric", &unitsPercentage, "Percentage of time CGM worn during reporting period", reportingTime)
+		AppendObservation(f, "GLUCOSE_MANAGEMENT_INDICATOR", formatFloat(gmi), "Numeric", nil, "CGM Glucose Management Indicator during reporting period", reportingTime)
+		AppendObservation(f, "TIME_BELOW_RANGE_VERY_LOW_CGM", formatFloat(unitIntervalToPercent(timeInVeryLow)), "Numeric", &unitsPercentage, "CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)", reportingTime)
+		AppendObservation(f, "TIME_BELOW_RANGE_LOW_CGM", formatFloat(unitIntervalToPercent(timeInLow)), "Numeric", &unitsPercentage, "CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time 54–69 mg/dL (3.0–3.8 mmol/L)", reportingTime)
+		AppendObservation(f, "TIME_IN_RANGE_CGM", formatFloat(unitIntervalToPercent(timeInTarget)), "Numeric", &unitsPercentage, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)", reportingTime)
+		AppendObservation(f, "TIME_ABOVE_RANGE_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInHigh)), "Numeric", &unitsPercentage, "CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)", reportingTime)
+		AppendObservation(f, "TIME_ABOVE_RANGE_VERY_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInVeryHigh)), "Numeric", &unitsPercentage, "CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)", reportingTime)
+	}
 }
 
 func PopulateBGMObservations(stats *clinics.PatientBGMStats, settings FlowsheetSettings, f *models.NewFlowsheet) {
