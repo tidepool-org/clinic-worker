@@ -139,7 +139,7 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, preferredBgUnits cl
 			averageGlucoseUnits = &units
 		}
 
-		{
+		{ // scope to contain val / units to Ptr
 			// Convert standard deviation to preferred units
 			val, units := bgInUnits(period.StandardDeviation, string(clinics.MmolL), string(preferredBgUnits))
 			cgmStdDev = &val

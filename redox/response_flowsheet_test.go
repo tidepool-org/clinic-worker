@@ -174,6 +174,7 @@ var _ = Describe("Flowsheet", func() {
 				observations := Observations(flowsheet)
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_CGM", "142.7052", "Numeric", &expectedBgUnits, "CGM Average Glucose during reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_SMBG", "172.2908", "Numeric", &expectedBgUnits, "SMBG Average Glucose during reporting period"}))
+				Expect(observations).To(ContainObservation(Observation{"STANDARD_DEVIATION_CGM", "26.4774", "Numeric", &expectedBgUnits, "The standard deviation of CGM measurements during the reporting period"}))
 			})
 		})
 
