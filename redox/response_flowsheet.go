@@ -101,7 +101,8 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetS
 	reportingTime := formatTime(&now)
 	var firstData, periodEnd, periodStart *time.Time
 
-	if stats != nil {
+	// Only consider stats if they are not a placeholder or pending first calculation
+	if stats != nil && stats.Dates.LastUpdatedDate != nil && !stats.Dates.LastUpdatedDate.IsZero() {
 		reportingTime = formatTime(stats.Dates.LastUpdatedDate)
 		if stats.Periods != nil {
 			if v, ok := stats.Periods["14d"]; ok {
@@ -216,7 +217,8 @@ func PopulateBGMObservations(stats *clinics.PatientBGMStats, settings FlowsheetS
 	reportingTime := formatTime(&now)
 
 	var firstData, periodEnd, periodStart *time.Time
-	if stats != nil {
+	// Only consider stats if they are not a placeholder or pending first calculation
+	if stats != nil && stats.Dates.LastUpdatedDate != nil && !stats.Dates.LastUpdatedDate.IsZero() {
 		reportingTime = formatTime(stats.Dates.LastUpdatedDate)
 		if stats.Periods != nil {
 			if v, ok := stats.Periods["14d"]; ok {
@@ -268,6 +270,7 @@ func PopulateBGMObservations(stats *clinics.PatientBGMStats, settings FlowsheetS
 		"READINGS_ABOVE_RANGE_VERY_HIGH_SMBG": {formatInt(timeInVeryHighRecords), "Numeric", nil, "SMBG Level 2 Hyperglycemia: Number of readings above range (TAR-VH) time >250 mg/dL (>13.9 mmol/L) during reporting period"},
 	}
 
+	// For clinics flagged as icode, replace certain values with alternative formatting, as defined in BACK-3476
 	if settings.ICode {
 		observations["AVERAGE_SMBG"].Value = formatFloatConditionalPrecision(averageGlucose)
 	}

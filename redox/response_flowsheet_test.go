@@ -99,8 +99,8 @@ var _ = Describe("Flowsheet", func() {
 
 				flowsheet := redox.NewFlowsheet()
 				settings := redox.FlowsheetSettings{
-					PreferredBGUnits:                 string(response.Clinic.PreferredBgUnits),
-					CoefficientOfVariationPercentage: true,
+					PreferredBGUnits: string(response.Clinic.PreferredBgUnits),
+					ICode:            true,
 				}
 				redox.PopulateSummaryStatistics((*response.Patients)[0], settings, &flowsheet)
 
@@ -140,8 +140,8 @@ var _ = Describe("Flowsheet", func() {
 				patient.Summary.CgmStats = nil
 
 				settings := redox.FlowsheetSettings{
-					PreferredBGUnits:                 string(response.Clinic.PreferredBgUnits),
-					CoefficientOfVariationPercentage: true,
+					PreferredBGUnits: string(response.Clinic.PreferredBgUnits),
+					ICode:            true,
 				}
 				redox.PopulateSummaryStatistics(patient, settings, &flowsheet)
 
