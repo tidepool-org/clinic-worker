@@ -1,6 +1,6 @@
 module github.com/tidepool-org/clinic-worker
 
-go 1.22
+go 1.24.0
 
 require (
 	github.com/IBM/sarama v1.43.2
@@ -14,12 +14,13 @@ require (
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
-	github.com/tidepool-org/clinic/client v0.0.0-20241126104542-715a2a8b0a0f
+	github.com/tidepool-org/clinic/client v0.0.0-20250327222244-6e07f16e6e7a
 	github.com/tidepool-org/clinic/redox_models v0.0.0-20250110131311-70b99601f0b3
 	github.com/tidepool-org/go-common v0.12.2-0.20250129210214-bd36b59b9733
 	github.com/tidepool-org/hydrophone/client v0.0.0-20240613035211-756659d74c0d
 	go.mongodb.org/mongo-driver v1.16.0
 	go.uber.org/fx v1.22.1
+	go.uber.org/mock v0.5.0
 	go.uber.org/ratelimit v0.3.1
 	go.uber.org/zap v1.27.0
 	golang.org/x/sync v0.10.0
