@@ -152,7 +152,7 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetS
 			averageGlucoseUnits = &units
 		}
 
-		{
+		{ // scope to contain val / units to Ptr
 			// Convert standard deviation to preferred units
 			val, units := bgInUnits(period.StandardDeviation, string(clinics.MmolL), string(settings.PreferredBGUnits))
 			cgmStdDev = &val
@@ -178,7 +178,7 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetS
 		"DAYS_WITH_DATA_CGM":              {formatInt(cgmDaysWithData), "Numeric", &unitsDay, "Number of days with at least one CGM datum during the reporting period"},
 		"HOURS_WITH_DATA_CGM":             {formatInt(cgmHoursWithData), "Numeric", &unitsHour, "Number of hours with at least one CGM datum during the reporting period"},
 		"AVERAGE_CGM":                     {formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, "CGM Average Glucose during reporting period"},
-		"COEFFICIENT_OF_VARIATION_CGM":    {formatFloat(cgmCoeffVar), "Numeric", &unitsPercentage, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period"},
+		"COEFFICIENT_OF_VARIATION_CGM":    {formatFloat(cgmCoeffVar), "Numeric", nil, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period"},
 		"STANDARD_DEVIATION_CGM":          {formatFloat(cgmStdDev), "Numeric", cgmStdDevUnits, "The standard deviation of CGM measurements during the reporting period"},
 		"ACTIVE_WEAR_TIME_CGM":            {formatFloat(unitIntervalToPercent(cgmUsePercent)), "Numeric", &unitsPercentage, "Percentage of time CGM worn during reporting period"},
 		"GLUCOSE_MANAGEMENT_INDICATOR":    {formatFloat(gmi), "Numeric", nil, "CGM Glucose Management Indicator during reporting period"},
@@ -192,7 +192,15 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetS
 	// For clinics flagged as icode, replace certain values with alternative formatting, as defined in BACK-3476
 	if settings.ICode {
 		observations["COEFFICIENT_OF_VARIATION_CGM"].Value = formatFloatWithPrecision(unitIntervalToPercent(cgmCoeffVar), 1)
-		observations["AVERAGE_CGM"].Value = formatFloatConditionalPrecision(averageGlucose)
+		observations["COEFFICIENT_OF_VARIATION_CGM"].Units = &unitsPercentage
+
+		// ICode2 defines whole-number precision for average glucose, this is only accurate enough for mg/dl
+		if strings.ToLower(settings.PreferredBGUnits) == "mg/dl" {
+			observations["AVERAGE_CGM"].Value = formatFloatConditionalPrecision(averageGlucose)
+		} else {
+			observations["AVERAGE_CGM"].Value = formatFloatWithPrecision(averageGlucose, 1)
+		}
+
 		observations["GLUCOSE_MANAGEMENT_INDICATOR"].Value = formatFloatWithPrecision(gmi, 1)
 		observations["ACTIVE_WEAR_TIME_CGM"].Value = formatFloatWithPrecision(unitIntervalToPercent(cgmUsePercent), 2)
 		observations["STANDARD_DEVIATION_CGM"].Value = formatFloatWithPrecision(cgmStdDev, 1)
@@ -272,7 +280,12 @@ func PopulateBGMObservations(stats *clinics.PatientBGMStats, settings FlowsheetS
 
 	// For clinics flagged as icode, replace certain values with alternative formatting, as defined in BACK-3476
 	if settings.ICode {
-		observations["AVERAGE_SMBG"].Value = formatFloatConditionalPrecision(averageGlucose)
+		// ICode2 defines whole-number precision for average glucose, this is only accurate enough for mg/dl
+		if strings.ToLower(settings.PreferredBGUnits) == "mg/dl" {
+			observations["AVERAGE_SMBG"].Value = formatFloatConditionalPrecision(averageGlucose)
+		} else {
+			observations["AVERAGE_SMBG"].Value = formatFloatWithPrecision(averageGlucose, 1)
+		}
 	}
 
 	for k := range observations {
