@@ -80,15 +80,22 @@ type Observation struct {
 }
 
 // PopulateSummaryStatistics populates a flowsheet with patient summary statistics. If summary statistics are not available,
-// the flowsheet items will be populated with 'NOT AVAILABLE'.
+// the flowsheet for that type will be skipped.
 func PopulateSummaryStatistics(patient clinics.Patient, settings FlowsheetSettings, flowsheet *models.NewFlowsheet) {
 	if patient.Summary != nil {
-		if patient.Summary.CgmStats != nil && !patient.Summary.CgmStats.Dates.LastUpdatedDate.IsZero() {
-			PopulateCGMObservations(patient.Summary.CgmStats, settings, flowsheet)
+
+		if patient.Summary.CgmStats != nil && patient.Summary.CgmStats.Dates.LastUpdatedDate != nil && patient.Summary.CgmStats.Dates.LastData != nil {
+			if !patient.Summary.CgmStats.Dates.LastUpdatedDate.IsZero() && !patient.Summary.CgmStats.Dates.LastData.IsZero() {
+				PopulateCGMObservations(patient.Summary.CgmStats, settings, flowsheet)
+			}
 		}
-		if patient.Summary.BgmStats != nil && !patient.Summary.BgmStats.Dates.LastUpdatedDate.IsZero() {
-			PopulateBGMObservations(patient.Summary.BgmStats, settings, flowsheet)
+
+		if patient.Summary.BgmStats != nil && patient.Summary.BgmStats.Dates.LastUpdatedDate != nil && patient.Summary.BgmStats.Dates.LastData != nil {
+			if !patient.Summary.BgmStats.Dates.LastUpdatedDate.IsZero() && !patient.Summary.BgmStats.Dates.LastData.IsZero() {
+				PopulateBGMObservations(patient.Summary.BgmStats, settings, flowsheet)
+			}
 		}
+
 	}
 }
 
@@ -213,7 +220,9 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetS
 	}
 
 	for k := range observations {
-		AppendObservation(f, k, observations[k], reportingTime)
+		if observations[k].Value != missingValue {
+			AppendObservation(f, k, observations[k], reportingTime)
+		}
 	}
 }
 
@@ -289,7 +298,9 @@ func PopulateBGMObservations(stats *clinics.PatientBGMStats, settings FlowsheetS
 	}
 
 	for k := range observations {
-		AppendObservation(f, k, observations[k], reportingTime)
+		if observations[k].Value != missingValue {
+			AppendObservation(f, k, observations[k], reportingTime)
+		}
 	}
 }
 

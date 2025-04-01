@@ -124,7 +124,7 @@ func GetPeriodBounds(dates *clinics.PatientSummaryDates, duration time.Duration)
 	if dates == nil {
 		return nil
 	}
-	if dates.LastData == nil || dates.LastUpdatedDate == nil || dates.LastData.IsZero() || dates.LastUpdatedDate.IsZero() {
+	if dates.LastData == nil {
 		return nil
 	}
 	return &PeriodBounds{

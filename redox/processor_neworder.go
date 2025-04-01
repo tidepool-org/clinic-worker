@@ -479,6 +479,12 @@ func (o *newOrderProcessor) SendSummaryAndReport(ctx context.Context, params Sum
 	if err != nil {
 		return err
 	}
+
+	if len(flowsheet.Observations) == 0 {
+		o.logger.Infow("the patient has no observations", "order", params.Order.Meta, "clinicId", params.Match.Clinic.Id, "patientId", patient.Id)
+		return nil
+	}
+
 	notes, err := o.createReportNote(ctx, params)
 	if err != nil {
 		// return the error so we can retry the request
