@@ -154,6 +154,7 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetS
 		{ // scope to contain val / units to Ptr
 			// Convert standard deviation to preferred units
 			val, units := bgInUnits(period.StandardDeviation, string(clinics.MmolL), string(settings.PreferredBGUnits))
+      
 			cgmStdDev = &val
 			cgmStdDevUnits = &units
 		}
@@ -192,7 +193,7 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetS
 	if settings.ICode {
 		observations["COEFFICIENT_OF_VARIATION_CGM"].Value = formatFloatWithPrecision(unitIntervalToPercent(cgmCoeffVar), 1)
 		observations["COEFFICIENT_OF_VARIATION_CGM"].Units = &unitsPercentage
-
+    
 		// ICode2 defines whole-number precision for average glucose, this is only accurate enough for mg/dl
 		if strings.ToLower(settings.PreferredBGUnits) == "mg/dl" {
 			observations["AVERAGE_CGM"].Value = formatFloatConditionalPrecision(averageGlucose)
