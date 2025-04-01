@@ -2,6 +2,7 @@ package redox_test
 
 import (
 	"encoding/json"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -11,8 +12,9 @@ import (
 	models "github.com/tidepool-org/clinic/redox_models"
 
 	//. "github.com/onsi/gomega/gstruct"
-	"github.com/tidepool-org/clinic-worker/redox"
 	"time"
+
+	"github.com/tidepool-org/clinic-worker/redox"
 )
 
 var _ = Describe("Flowsheet", func() {
@@ -59,11 +61,11 @@ var _ = Describe("Flowsheet", func() {
 				expectedProviderExtension := Fields{
 					"URL": Equal("https://api.redoxengine.com/extensions/additional-provider-info"),
 					"Participants": ContainElements(MatchFields(IgnoreExtras, Fields{
-						"Id": Equal("4356789876"),
+						"Id":     Equal("4356789876"),
 						"IdType": Equal("NPI"),
 						"Person": MatchFields(IgnoreExtras, Fields{
 							"Name": MatchFields(IgnoreExtras, Fields{
-								"Given": ConsistOf(Equal("Pat")),
+								"Given":  ConsistOf(Equal("Pat")),
 								"Family": Equal("Granite"),
 							}),
 						}),
@@ -104,7 +106,7 @@ var _ = Describe("Flowsheet", func() {
 				Expect(observations).To(ContainObservation(Observation{"REPORTING_PERIOD_START_CGM_DATA", "2023-04-14T00:00:00Z", "DateTime", nil, "CGM Reporting Period Start Date of actual Data"}))
 				Expect(observations).To(ContainObservation(Observation{"ACTIVE_WEAR_TIME_CGM", "50.1262", "Numeric", &expectedPercentageUnits, "Percentage of time CGM worn during reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_CGM", "7.9212", "Numeric", &expectedBgUnits, "CGM Average Glucose during reporting period"}))
-				Expect(observations).To(ContainObservation(Observation{"STANDARD_DEVIATION_CGM", "1.4697", "Numeric", nil, "The standard deviation of CGM measurements during the reporting period"}))
+				Expect(observations).To(ContainObservation(Observation{"STANDARD_DEVIATION_CGM", "1.4697", "Numeric", &expectedBgUnits, "The standard deviation of CGM measurements during the reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"COEFFICIENT_OF_VARIATION_CGM", "0.2004", "Numeric", nil, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"DAYS_WITH_DATA_CGM", "2", "Numeric", &expectedDayUnits, "Number of days with at least one CGM datum during the reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"HOURS_WITH_DATA_CGM", "28", "Numeric", &expetedHourUnits, "Number of hours with at least one CGM datum during the reporting period"}))
@@ -172,6 +174,7 @@ var _ = Describe("Flowsheet", func() {
 				observations := Observations(flowsheet)
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_CGM", "142.7052", "Numeric", &expectedBgUnits, "CGM Average Glucose during reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_SMBG", "172.2908", "Numeric", &expectedBgUnits, "SMBG Average Glucose during reporting period"}))
+				Expect(observations).To(ContainObservation(Observation{"STANDARD_DEVIATION_CGM", "26.4774", "Numeric", &expectedBgUnits, "The standard deviation of CGM measurements during the reporting period"}))
 			})
 		})
 
