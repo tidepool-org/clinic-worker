@@ -5,13 +5,14 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"io"
+	"time"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/kelseyhightower/envconfig"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"go.uber.org/zap"
-	"io"
-	"time"
 )
 
 //go:embed test/sample-report.pdf
