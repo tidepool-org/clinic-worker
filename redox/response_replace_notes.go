@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"github.com/tidepool-org/clinic-worker/types"
-	models "github.com/tidepool-org/clinic/redox_models"
 	"io"
 	"time"
+
+	"github.com/tidepool-org/clinic-worker/types"
+	models "github.com/tidepool-org/clinic/redox_models"
 )
 
 type ReplaceNotes models.ReplaceNotes

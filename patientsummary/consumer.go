@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/IBM/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 const (
@@ -80,6 +81,8 @@ func (p *CDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) error {
 }
 
 func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
 	p.logger.Debugw("handling kafka message", "offset", cm.Offset)
 	// we have to unmarshal twice, once to get the type out
 	event := CDCEvent{
@@ -97,8 +100,14 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 		return nil
 	}
 
+	// handle document delete events, as they have no FullDocument/userId
+	if event.OperationType == cdc.OperationTypeDelete {
+		p.logger.Debugw("deleting patient summary", "summaryId", event.DocumentKey.Value)
+		p.clinics.DeletePatientSummaryWithResponse(ctx, event.DocumentKey.Value)
+	}
+
 	if event.FullDocument.Type == "cgm" || event.FullDocument.Type == "bgm" {
-		if err := applyPatientSummaryUpdate(p, event); err != nil {
+		if err := applyPatientSummaryUpdate(ctx, p, event); err != nil {
 			p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
 			return err
 		}
@@ -121,15 +130,13 @@ func (p *CDCConsumer) unmarshalEvent(value []byte, event interface{}) error {
 	return json.Unmarshal([]byte(message), event)
 }
 
-func applyPatientSummaryUpdate(p *CDCConsumer, event CDCEvent) error {
+func applyPatientSummaryUpdate(ctx context.Context, p *CDCConsumer, event CDCEvent) error {
 	p.logger.Debugw("applying patient summary update", "offset", event.Offset)
 	if event.FullDocument.UserID == "" {
 		return errors.New("expected user id to be defined")
 	}
 
 	userId := event.FullDocument.UserID
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-	defer cancel()
 
 	updateBody, err := event.CreateUpdateBody()
 	if err != nil {

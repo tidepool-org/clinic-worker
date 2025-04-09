@@ -5,13 +5,14 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"io"
+	"time"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/kelseyhightower/envconfig"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"go.uber.org/zap"
-	"io"
-	"time"
 )
 
 //go:embed test/sample-report.pdf
@@ -119,7 +120,7 @@ type PeriodBounds struct {
 	End   time.Time
 }
 
-func GetPeriodBounds(dates *clinics.PatientSummaryDates, duration time.Duration) *PeriodBounds {
+func GetPeriodBounds(dates *clinics.SummaryDatesV1, duration time.Duration) *PeriodBounds {
 	if dates == nil {
 		return nil
 	}
@@ -137,7 +138,7 @@ func GetPeriodBounds(dates *clinics.PatientSummaryDates, duration time.Duration)
 // If the patient has only CGM data, the reporting period will be based on the CGM data.
 // Otherwise, if the patient has only BGM data, the reporting period will be based on
 // the BGM data. If the patient has neither CGM nor BGM data, nil will be returned.
-func GetReportingPeriodBounds(patient clinics.Patient, duration time.Duration) *PeriodBounds {
+func GetReportingPeriodBounds(patient clinics.PatientV1, duration time.Duration) *PeriodBounds {
 	cgmDates := GetCGMStatsDates(patient)
 	bgmDates := GetBGMStatsDates(patient)
 	bounds := GetPeriodBounds(cgmDates, duration)
@@ -148,14 +149,14 @@ func GetReportingPeriodBounds(patient clinics.Patient, duration time.Duration) *
 	return bounds
 }
 
-func GetCGMStatsDates(patient clinics.Patient) *clinics.PatientSummaryDates {
+func GetCGMStatsDates(patient clinics.PatientV1) *clinics.SummaryDatesV1 {
 	if patient.Summary == nil || patient.Summary.CgmStats == nil {
 		return nil
 	}
 	return &patient.Summary.CgmStats.Dates
 }
 
-func GetBGMStatsDates(patient clinics.Patient) *clinics.PatientSummaryDates {
+func GetBGMStatsDates(patient clinics.PatientV1) *clinics.SummaryDatesV1 {
 	if patient.Summary == nil || patient.Summary.BgmStats == nil {
 		return nil
 	}
