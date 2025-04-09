@@ -1,8 +1,9 @@
 package patients
 
 import (
-	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"time"
+
+	summaries "github.com/tidepool-org/go-common/clients/summary"
 
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/patientsummary"
@@ -58,7 +59,7 @@ func (p PatientCDCEvent) IsPatientCreateFromExistingUserEvent() bool {
 func (p PatientCDCEvent) PatientHasPendingDexcomConnection() bool {
 	if p.FullDocument.DataSources != nil {
 		for _, dataSource := range *p.FullDocument.DataSources {
-			if *dataSource.ProviderName == DexcomDataSourceProviderName && *dataSource.State == string(clinics.DataSourceStatePending) {
+			if *dataSource.ProviderName == DexcomDataSourceProviderName && *dataSource.State == string(clinics.Pending) {
 				return true
 			}
 		}
@@ -125,14 +126,14 @@ type Patient struct {
 	Summary                        *CDCSummary          `json:"summary" bson:"summary"`
 }
 
-func (p PatientCDCEvent) CreateDataSourceBody(source clients.DataSource) clinics.DataSource {
-	dataSource := clinics.DataSource{
+func (p PatientCDCEvent) CreateDataSourceBody(source clients.DataSource) clinics.DataSourceV1 {
+	dataSource := clinics.DataSourceV1{
 		ProviderName: *source.ProviderName,
-		State:        api.DataSourceState(*source.State),
+		State:        api.DataSourceV1State(*source.State),
 	}
 
 	if source.ModifiedTime != nil {
-		modifiedTimeVal := clinics.DateTime(source.ModifiedTime.Format(time.RFC3339))
+		modifiedTimeVal := clinics.DatetimeV1(source.ModifiedTime.Format(time.RFC3339))
 		dataSource.ModifiedTime = &modifiedTimeVal
 	}
 

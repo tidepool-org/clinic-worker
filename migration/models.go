@@ -18,7 +18,7 @@ type MigrationDocument struct {
 }
 
 type Migration struct {
-	clinic                 *clinics.Clinic
+	clinic                 *clinics.ClinicV1
 	legacyClinicianUserId  string
 	legacyClinicianProfile *LegacyClinicianProfile
 	legacyPatients         clients.UsersPermissions

@@ -1,13 +1,14 @@
 package patients
 
 import (
+	"regexp"
+	"strconv"
+	"time"
+
 	"github.com/tidepool-org/clinic-worker/patientsummary"
 	clinics "github.com/tidepool-org/clinic/client"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"github.com/tidepool-org/go-common/errors"
-	"regexp"
-	"strconv"
-	"time"
 )
 
 func ApplyPatientChangesToProfile(patient Patient, profile map[string]interface{}) {
@@ -98,8 +99,8 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 			cgmSummary.Dates.LastUpdatedReason = []string{}
 		}
 
-		patientUpdate.CgmStats = &clinics.PatientCGMStats{
-			Dates: clinics.PatientSummaryDates{
+		patientUpdate.CgmStats = &clinics.CgmStatsV1{
+			Dates: clinics.SummaryDatesV1{
 				LastUpdatedDate:   lastUpdatedDate,
 				LastUpdatedReason: &cgmSummary.Dates.LastUpdatedReason,
 				OutdatedReason:    &cgmSummary.Dates.OutdatedReason,
@@ -112,7 +113,7 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 				HasOutdatedSince:  cgmSummary.Dates.OutdatedSince != nil,
 				OutdatedSince:     cgmSummary.Dates.OutdatedSince,
 			},
-			Config: clinics.PatientSummaryConfig(cgmSummary.Config),
+			Config: clinics.SummaryConfigV1(cgmSummary.Config),
 		}
 
 		if cgmSummary.Periods != nil {
@@ -122,7 +123,7 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 			}
 
 			daysRe := regexp.MustCompile("(\\d+)d")
-			patientUpdate.CgmStats.Periods = clinics.PatientCGMPeriods{}
+			patientUpdate.CgmStats.Periods = clinics.CgmPeriodsV1{}
 			for k := range cgmPeriods {
 				// get integer portion of 1d/7d/14d/30d map string
 				m := daysRe.FindStringSubmatch(k)
@@ -163,8 +164,8 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 			bgmSummary.Dates.LastUpdatedReason = []string{}
 		}
 
-		patientUpdate.BgmStats = &clinics.PatientBGMStats{
-			Dates: clinics.PatientSummaryDates{
+		patientUpdate.BgmStats = &clinics.BgmStatsV1{
+			Dates: clinics.SummaryDatesV1{
 				LastUpdatedDate:   lastUpdatedDate,
 				LastUpdatedReason: &bgmSummary.Dates.LastUpdatedReason,
 				OutdatedReason:    &bgmSummary.Dates.OutdatedReason,
@@ -177,7 +178,7 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 				HasOutdatedSince:  bgmSummary.Dates.OutdatedSince != nil,
 				OutdatedSince:     bgmSummary.Dates.OutdatedSince,
 			},
-			Config: clinics.PatientSummaryConfig(bgmSummary.Config),
+			Config: clinics.SummaryConfigV1(bgmSummary.Config),
 		}
 
 		if bgmSummary.Periods != nil {
@@ -187,7 +188,7 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 			}
 
 			daysRe := regexp.MustCompile("(\\d+)d")
-			patientUpdate.BgmStats.Periods = clinics.PatientBGMPeriods{}
+			patientUpdate.BgmStats.Periods = clinics.BgmPeriodsV1{}
 			for k := range bgmPeriods {
 				m := daysRe.FindStringSubmatch(k)
 				if len(m) >= 2 {
