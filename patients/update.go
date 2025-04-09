@@ -100,6 +100,7 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 		}
 
 		patientUpdate.CgmStats = &clinics.CgmStatsV1{
+			Id: cgmSummary.Id,
 			Dates: clinics.SummaryDatesV1{
 				LastUpdatedDate:   lastUpdatedDate,
 				LastUpdatedReason: &cgmSummary.Dates.LastUpdatedReason,
@@ -117,7 +118,7 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 		}
 
 		if cgmSummary.Periods != nil {
-			cgmPeriods, err := cgmSummary.Periods.AsCgmperiodsV5()
+			cgmPeriods, err := cgmSummary.Periods.AsCgmPeriodsV5()
 			if err != nil {
 				return clinics.UpdatePatientSummaryJSONRequestBody{}, errors.Wrapf(err, "unable to unserialize CGM summary stats for userId %s", *cgmSummary.UserId)
 			}
@@ -165,6 +166,7 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 		}
 
 		patientUpdate.BgmStats = &clinics.BgmStatsV1{
+			Id: bgmSummary.Id,
 			Dates: clinics.SummaryDatesV1{
 				LastUpdatedDate:   lastUpdatedDate,
 				LastUpdatedReason: &bgmSummary.Dates.LastUpdatedReason,
@@ -182,7 +184,7 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 		}
 
 		if bgmSummary.Periods != nil {
-			bgmPeriods, err := bgmSummary.Periods.AsBgmperiodsV5()
+			bgmPeriods, err := bgmSummary.Periods.AsBgmPeriodsV5()
 			if err != nil {
 				return clinics.UpdatePatientSummaryJSONRequestBody{}, errors.Wrapf(err, "unable to unserialize BGM summary stats for userId %s", *bgmSummary.UserId)
 			}
