@@ -1,9 +1,13 @@
 package patients
 
 import (
+	"github.com/tidepool-org/clinic-worker/patientsummary"
 	clinics "github.com/tidepool-org/clinic/client"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"github.com/tidepool-org/go-common/errors"
+	"regexp"
+	"strconv"
+	"time"
 )
 
 func ApplyPatientChangesToProfile(patient Patient, profile map[string]interface{}) {
@@ -62,64 +66,135 @@ func EnsurePatientProfileExists(profile map[string]interface{}) map[string]inter
 	}
 }
 
-func CreateSummaryUpdateBody(cgmSummary *summaries.Summary, bgmSummary *summaries.Summary) (clinics.UpdatePatientSummaryJSONRequestBody, error) {
+func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summaries.SummaryV5) (clinics.UpdatePatientSummaryJSONRequestBody, error) {
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{}
 
 	if cgmSummary != nil {
+		var firstData *time.Time
+		if !cgmSummary.Dates.FirstData.IsZero() {
+			firstData = &cgmSummary.Dates.FirstData
+		}
+
+		var lastData *time.Time
+		if !cgmSummary.Dates.LastData.IsZero() {
+			lastData = &cgmSummary.Dates.LastData
+		}
+
+		var lastUpdatedDate *time.Time
+		if !cgmSummary.Dates.LastUpdatedDate.IsZero() {
+			lastUpdatedDate = &cgmSummary.Dates.LastUpdatedDate
+		}
+
+		var lastUploadDate *time.Time
+		if !cgmSummary.Dates.LastUpdatedDate.IsZero() {
+			lastUploadDate = &cgmSummary.Dates.LastUpdatedDate
+		}
+
+		if cgmSummary.Dates.OutdatedReason == nil {
+			cgmSummary.Dates.OutdatedReason = []string{}
+		}
+
+		if cgmSummary.Dates.LastUpdatedReason == nil {
+			cgmSummary.Dates.LastUpdatedReason = []string{}
+		}
+
 		patientUpdate.CgmStats = &clinics.PatientCGMStats{
-			Dates:  clinics.PatientSummaryDates(cgmSummary.Dates),
+			Dates: clinics.PatientSummaryDates{
+				LastUpdatedDate:   lastUpdatedDate,
+				LastUpdatedReason: &cgmSummary.Dates.LastUpdatedReason,
+				OutdatedReason:    &cgmSummary.Dates.OutdatedReason,
+				HasLastUploadDate: lastUploadDate != nil,
+				LastUploadDate:    lastUploadDate,
+				HasFirstData:      firstData != nil,
+				FirstData:         firstData,
+				HasLastData:       lastData != nil,
+				LastData:          lastData,
+				HasOutdatedSince:  cgmSummary.Dates.OutdatedSince != nil,
+				OutdatedSince:     cgmSummary.Dates.OutdatedSince,
+			},
 			Config: clinics.PatientSummaryConfig(cgmSummary.Config),
 		}
 
-		if cgmSummary.Stats != nil {
-			cgmStats, err := cgmSummary.Stats.AsCGMStats()
+		if cgmSummary.Periods != nil {
+			cgmPeriods, err := cgmSummary.Periods.AsCgmperiodsV5()
 			if err != nil {
 				return clinics.UpdatePatientSummaryJSONRequestBody{}, errors.Wrapf(err, "unable to unserialize CGM summary stats for userId %s", *cgmSummary.UserId)
 			}
-			patientUpdate.CgmStats.TotalHours = cgmStats.TotalHours
 
-			if cgmStats.Periods != nil {
-				patientUpdate.CgmStats.Periods = clinics.PatientCGMPeriods{}
-				for k, source := range cgmStats.Periods {
-					patientUpdate.CgmStats.Periods[k] = clinics.PatientCGMPeriod(source)
-				}
-			}
-
-			if cgmStats.OffsetPeriods != nil {
-				patientUpdate.CgmStats.OffsetPeriods = clinics.PatientCGMPeriods{}
-				for k, source := range cgmStats.OffsetPeriods {
-					patientUpdate.CgmStats.OffsetPeriods[k] = clinics.PatientCGMPeriod(source)
+			daysRe := regexp.MustCompile("(\\d+)d")
+			patientUpdate.CgmStats.Periods = clinics.PatientCGMPeriods{}
+			for k := range cgmPeriods {
+				// get integer portion of 1d/7d/14d/30d map string
+				m := daysRe.FindStringSubmatch(k)
+				if len(m) >= 2 {
+					i, _ := strconv.Atoi(m[1])
+					patientUpdate.CgmStats.Periods[k] = patientsummary.ExportCGMPeriod(cgmPeriods[k], i)
 				}
 			}
 		}
 	}
 
 	if bgmSummary != nil {
+		var firstData *time.Time
+		if !bgmSummary.Dates.FirstData.IsZero() {
+			firstData = &bgmSummary.Dates.FirstData
+		}
+
+		var lastData *time.Time
+		if !bgmSummary.Dates.LastData.IsZero() {
+			lastData = &bgmSummary.Dates.LastData
+		}
+
+		var lastUpdatedDate *time.Time
+		if !bgmSummary.Dates.LastUpdatedDate.IsZero() {
+			lastUpdatedDate = &bgmSummary.Dates.LastUpdatedDate
+		}
+
+		var lastUploadDate *time.Time
+		if !bgmSummary.Dates.LastUpdatedDate.IsZero() {
+			lastUploadDate = &bgmSummary.Dates.LastUpdatedDate
+		}
+
+		if bgmSummary.Dates.OutdatedReason == nil {
+			bgmSummary.Dates.OutdatedReason = []string{}
+		}
+
+		if bgmSummary.Dates.LastUpdatedReason == nil {
+			bgmSummary.Dates.LastUpdatedReason = []string{}
+		}
+
 		patientUpdate.BgmStats = &clinics.PatientBGMStats{
-			Dates:  clinics.PatientSummaryDates(bgmSummary.Dates),
+			Dates: clinics.PatientSummaryDates{
+				LastUpdatedDate:   lastUpdatedDate,
+				LastUpdatedReason: &bgmSummary.Dates.LastUpdatedReason,
+				OutdatedReason:    &bgmSummary.Dates.OutdatedReason,
+				HasLastUploadDate: lastUploadDate != nil,
+				LastUploadDate:    lastUploadDate,
+				HasFirstData:      firstData != nil,
+				FirstData:         firstData,
+				HasLastData:       lastData != nil,
+				LastData:          lastData,
+				HasOutdatedSince:  bgmSummary.Dates.OutdatedSince != nil,
+				OutdatedSince:     bgmSummary.Dates.OutdatedSince,
+			},
 			Config: clinics.PatientSummaryConfig(bgmSummary.Config),
 		}
 
-		if bgmSummary.Stats != nil {
-			bgmStats, err := bgmSummary.Stats.AsBGMStats()
+		if bgmSummary.Periods != nil {
+			bgmPeriods, err := bgmSummary.Periods.AsBgmperiodsV5()
 			if err != nil {
 				return clinics.UpdatePatientSummaryJSONRequestBody{}, errors.Wrapf(err, "unable to unserialize BGM summary stats for userId %s", *bgmSummary.UserId)
 			}
-			patientUpdate.BgmStats.TotalHours = bgmStats.TotalHours
 
-			if bgmStats.Periods != nil {
-				patientUpdate.BgmStats.Periods = clinics.PatientBGMPeriods{}
-				for k, source := range bgmStats.Periods {
-					patientUpdate.BgmStats.Periods[k] = clinics.PatientBGMPeriod(source)
+			daysRe := regexp.MustCompile("(\\d+)d")
+			patientUpdate.BgmStats.Periods = clinics.PatientBGMPeriods{}
+			for k := range bgmPeriods {
+				m := daysRe.FindStringSubmatch(k)
+				if len(m) >= 2 {
+					patientUpdate.BgmStats.Periods[k] = patientsummary.ExportBGMPeriod(bgmPeriods[k])
 				}
 			}
 
-			if bgmStats.OffsetPeriods != nil {
-				patientUpdate.BgmStats.OffsetPeriods = clinics.PatientBGMPeriods{}
-				for k, source := range bgmStats.OffsetPeriods {
-					patientUpdate.BgmStats.OffsetPeriods[k] = clinics.PatientBGMPeriod(source)
-				}
-			}
 		}
 	}
 
