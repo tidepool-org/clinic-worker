@@ -1,13 +1,14 @@
 package patients
 
 import (
+	"regexp"
+	"strconv"
+	"time"
+
 	"github.com/tidepool-org/clinic-worker/patientsummary"
 	clinics "github.com/tidepool-org/clinic/client"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"github.com/tidepool-org/go-common/errors"
-	"regexp"
-	"strconv"
-	"time"
 )
 
 func ApplyPatientChangesToProfile(patient Patient, profile map[string]interface{}) {
@@ -69,24 +70,28 @@ func EnsurePatientProfileExists(profile map[string]interface{}) map[string]inter
 func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summaries.SummaryV5) (clinics.UpdatePatientSummaryJSONRequestBody, error) {
 	patientUpdate := clinics.UpdatePatientSummaryJSONRequestBody{}
 
+	// we need a "zero" date as at some points, a golang 0000 date becomes unix 0 (1970)
+	// 2000 is sufficiently zero
+	zeroDate := time.Date(2000, 1, 1, 1, 0, 0, 0, time.UTC)
+
 	if cgmSummary != nil {
 		var firstData *time.Time
-		if !cgmSummary.Dates.FirstData.IsZero() {
+		if cgmSummary.Dates.FirstData.After(zeroDate) {
 			firstData = &cgmSummary.Dates.FirstData
 		}
 
 		var lastData *time.Time
-		if !cgmSummary.Dates.LastData.IsZero() {
+		if cgmSummary.Dates.LastData.After(zeroDate) {
 			lastData = &cgmSummary.Dates.LastData
 		}
 
 		var lastUpdatedDate *time.Time
-		if !cgmSummary.Dates.LastUpdatedDate.IsZero() {
+		if cgmSummary.Dates.LastUpdatedDate.After(zeroDate) {
 			lastUpdatedDate = &cgmSummary.Dates.LastUpdatedDate
 		}
 
 		var lastUploadDate *time.Time
-		if !cgmSummary.Dates.LastUpdatedDate.IsZero() {
+		if cgmSummary.Dates.LastUpdatedDate.After(zeroDate) {
 			lastUploadDate = &cgmSummary.Dates.LastUpdatedDate
 		}
 
@@ -136,22 +141,22 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 
 	if bgmSummary != nil {
 		var firstData *time.Time
-		if !bgmSummary.Dates.FirstData.IsZero() {
+		if bgmSummary.Dates.FirstData.After(zeroDate) {
 			firstData = &bgmSummary.Dates.FirstData
 		}
 
 		var lastData *time.Time
-		if !bgmSummary.Dates.LastData.IsZero() {
+		if bgmSummary.Dates.LastData.After(zeroDate) {
 			lastData = &bgmSummary.Dates.LastData
 		}
 
 		var lastUpdatedDate *time.Time
-		if !bgmSummary.Dates.LastUpdatedDate.IsZero() {
+		if bgmSummary.Dates.LastUpdatedDate.After(zeroDate) {
 			lastUpdatedDate = &bgmSummary.Dates.LastUpdatedDate
 		}
 
 		var lastUploadDate *time.Time
-		if !bgmSummary.Dates.LastUpdatedDate.IsZero() {
+		if bgmSummary.Dates.LastUpdatedDate.After(zeroDate) {
 			lastUploadDate = &bgmSummary.Dates.LastUpdatedDate
 		}
 

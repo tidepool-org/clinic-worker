@@ -1,12 +1,13 @@
 package patientsummary
 
 import (
-	"github.com/tidepool-org/clinic-worker/cdc"
-	clinics "github.com/tidepool-org/clinic/client"
-	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/tidepool-org/clinic-worker/cdc"
+	clinics "github.com/tidepool-org/clinic/client"
+	summaries "github.com/tidepool-org/go-common/clients/summary"
 )
 
 type CDCEvent struct {
@@ -58,27 +59,31 @@ type Summary struct {
 }
 
 func (p CDCEvent) CreateUpdateBody() (*clinics.UpdatePatientSummaryJSONRequestBody, error) {
+	// we need a "zero" date as at some points, a golang 0000 date becomes unix 0 (1970)
+	// 2000 is sufficiently zero
+	zeroDate := time.Date(2000, 1, 1, 1, 0, 0, 0, time.UTC)
+
 	var firstData *time.Time
 	firstDataVal := time.UnixMilli(p.FullDocument.Dates.FirstData.Value)
-	if !firstDataVal.IsZero() {
+	if firstDataVal.After(zeroDate) {
 		firstData = &firstDataVal
 	}
 
 	var lastData *time.Time
 	lastDataVal := time.UnixMilli(p.FullDocument.Dates.LastData.Value)
-	if !lastDataVal.IsZero() {
+	if lastDataVal.After(zeroDate) {
 		lastData = &lastDataVal
 	}
 
 	var lastUpdatedDate *time.Time
 	lastUpdatedDateVal := time.UnixMilli(p.FullDocument.Dates.LastUpdatedDate.Value)
-	if !lastUpdatedDateVal.IsZero() {
+	if lastUpdatedDateVal.After(zeroDate) {
 		lastUpdatedDate = &lastUpdatedDateVal
 	}
 
 	var lastUploadDate *time.Time
 	lastUploadDateVal := time.UnixMilli(p.FullDocument.Dates.LastUploadDate.Value)
-	if !lastUpdatedDateVal.IsZero() {
+	if lastUpdatedDateVal.After(zeroDate) {
 		lastUploadDate = &lastUploadDateVal
 	}
 
