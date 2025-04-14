@@ -3,7 +3,7 @@ package client
 //go:generate mockgen -source=./client.go -destination=./mock.go -package client ClientInterface
 //go:generate mockgen -source=./client.go -destination=./mock.go -package client ClientWithResponsesInterface
 
-import "go.uber.org/mock/gomock"
+import "github.com/golang/mock/gomock"
 
 func (m *MockClientInterface) Reset(ctrl *gomock.Controller) {
 	m.ctrl = ctrl

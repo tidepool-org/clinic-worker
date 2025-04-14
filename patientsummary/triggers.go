@@ -12,25 +12,25 @@ var (
 	}
 )
 
-func ShouldTriggerEHRSync[T Stats](s Summary[T]) bool {
-	if s.Type == nil {
+func ShouldTriggerEHRSync(s Summary) bool {
+	if s.Type == "" {
 		return false
 	}
-	if _, ok := types[*s.Type]; !ok {
+	if _, ok := types[s.Type]; !ok {
 		return false
 	}
 
 	// After a summary recalculation last updated reason is not empty, but outdated reason is.
 	// This is the only time we should consider triggering an EHR sync
-	if s.Dates.LastUpdatedReason == nil || len(*s.Dates.LastUpdatedReason) == 0 {
+	if s.Dates.LastUpdatedReason == nil || len(s.Dates.LastUpdatedReason) == 0 {
 		return false
 	}
-	if s.Dates.OutdatedReason != nil && len(*s.Dates.OutdatedReason) != 0 {
+	if s.Dates.OutdatedReason != nil && len(s.Dates.OutdatedReason) != 0 {
 		return false
 	}
 
 	// Trigger sync only if upload is completed or if summary was recalculated during jellyfish upload session
-	for _, typ := range *s.Dates.LastUpdatedReason {
+	for _, typ := range s.Dates.LastUpdatedReason {
 		if _, ok := triggers[typ]; ok {
 			return true
 		}

@@ -142,6 +142,7 @@ func (o *newOrderProcessor) matchOrder(ctx context.Context, matchRequest clinics
 	return response.JSON200, nil
 }
 
+
 func (o *newOrderProcessor) handleEnableSummaryReports(ctx context.Context, enableReports EnableReports) error {
 	order := enableReports.Order
 	match, err := o.matchOrder(ctx, enableReports.GetMatchRequest(), order)
@@ -206,6 +207,8 @@ func (o *newOrderProcessor) handleDisableSummaryReports(ctx context.Context, dis
 	o.logger.Infow("successfully matched clinic and patient", "order", params.Order.Meta, "clinicId", params.Match.Clinic.Id, "patientId", patient.Id)
 	return o.handleSuccessfulPatientMatch(ctx, params)
 }
+
+
 
 func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, create CreateAccount) (bool, error) {
 	order := create.Order
@@ -290,7 +293,7 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, create Crea
 	return true, o.handleAccountCreationSuccess(ctx, order, *match)
 }
 
-func (o *newOrderProcessor) handleCreateAccountAndEnableSummaryReports(ctx context.Context, createAndEnable CreateAccountEnableReports) error {
+func (o *newOrderProcessor) handleCreateAccountAndEnableSummaryReports(ctx context.Context, createAndEnable 	CreateAccountEnableReports) error {
 	// Checks if a matching account already exists without enabling reports
 	match, err := o.matchOrder(ctx, createAndEnable.GetMatchRequest(), createAndEnable.Order)
 	if err != nil {
@@ -479,12 +482,6 @@ func (o *newOrderProcessor) SendSummaryAndReport(ctx context.Context, params Sum
 	if err != nil {
 		return err
 	}
-
-	if len(flowsheet.Observations) == 0 {
-		o.logger.Infow("the patient has no observations", "order", params.Order.Meta, "clinicId", params.Match.Clinic.Id, "patientId", patient.Id)
-		return nil
-	}
-
 	notes, err := o.createReportNote(ctx, params)
 	if err != nil {
 		// return the error so we can retry the request
@@ -525,11 +522,6 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 		ID: &destinationId,
 	}}
 
-	settings := FlowsheetSettings{
-		PreferredBGUnits: string(params.Match.Clinic.PreferredBgUnits),
-		ICode:            params.Match.Settings.Flowsheets.Icode,
-	}
-
 	flowsheet := NewFlowsheet()
 	flowsheet.Meta.Source = &source
 	flowsheet.Meta.Destinations = &destinations
@@ -540,8 +532,7 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 	SetVisitLocationInFlowsheet(params.Order, &flowsheet)
 	SetAccountNumberInFlowsheet(params.Order, &flowsheet)
 	SetOrderIdInFlowsheet(params.Order, &flowsheet)
-	SetProviderInFlowsheet(params.Order, &flowsheet)
-	PopulateSummaryStatistics(patient, settings, &flowsheet)
+	PopulateSummaryStatistics(patient, params.Match.Clinic, &flowsheet)
 
 	return flowsheet, nil
 }
@@ -926,6 +917,7 @@ func (c CreateAccountEnableReports) GetMatchRequest() clinics.EHRMatchRequest {
 	}
 	return request
 }
+
 
 func GetProcedureCode(order models.NewOrder) string {
 	var procedureCode string
