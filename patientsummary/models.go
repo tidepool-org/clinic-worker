@@ -36,11 +36,11 @@ type Glucose struct {
 }
 
 type Dates struct {
-	FirstData         cdc.Date  `json:"firstData,omitempty"`
-	LastData          cdc.Date  `json:"lastData,omitempty"`
-	LastUpdatedDate   cdc.Date  `json:"lastUpdatedDate,omitempty"`
+	FirstData         *cdc.Date `json:"firstData"`
+	LastData          *cdc.Date `json:"lastData"`
+	LastUpdatedDate   *cdc.Date `json:"lastUpdatedDate"`
 	LastUpdatedReason []string  `json:"lastUpdatedReason,omitempty"`
-	LastUploadDate    cdc.Date  `json:"lastUploadDate,omitempty"`
+	LastUploadDate    *cdc.Date `json:"lastUploadDate"`
 	OutdatedReason    []string  `json:"outdatedReason,omitempty"`
 	OutdatedSince     *cdc.Date `json:"outdatedSince,omitempty"`
 }
@@ -59,31 +59,27 @@ type Summary struct {
 }
 
 func (p CDCEvent) CreateUpdateBody() (*clinics.UpdatePatientSummaryJSONRequestBody, error) {
-	// we need a "zero" date as at some points, a golang 0000 date becomes unix 0 (1970)
-	// 2000 is sufficiently zero
-	zeroDate := time.Date(2000, 1, 1, 1, 0, 0, 0, time.UTC)
-
 	var firstData *time.Time
-	firstDataVal := time.UnixMilli(p.FullDocument.Dates.FirstData.Value)
-	if firstDataVal.After(zeroDate) {
+	if p.FullDocument.Dates.FirstData != nil {
+		firstDataVal := time.UnixMilli(p.FullDocument.Dates.FirstData.Value)
 		firstData = &firstDataVal
 	}
 
 	var lastData *time.Time
-	lastDataVal := time.UnixMilli(p.FullDocument.Dates.LastData.Value)
-	if lastDataVal.After(zeroDate) {
+	if p.FullDocument.Dates.LastData != nil {
+		lastDataVal := time.UnixMilli(p.FullDocument.Dates.LastData.Value)
 		lastData = &lastDataVal
 	}
 
 	var lastUpdatedDate *time.Time
-	lastUpdatedDateVal := time.UnixMilli(p.FullDocument.Dates.LastUpdatedDate.Value)
-	if lastUpdatedDateVal.After(zeroDate) {
+	if p.FullDocument.Dates.LastUpdatedDate != nil {
+		lastUpdatedDateVal := time.UnixMilli(p.FullDocument.Dates.LastUpdatedDate.Value)
 		lastUpdatedDate = &lastUpdatedDateVal
 	}
 
 	var lastUploadDate *time.Time
-	lastUploadDateVal := time.UnixMilli(p.FullDocument.Dates.LastUploadDate.Value)
-	if lastUpdatedDateVal.After(zeroDate) {
+	if p.FullDocument.Dates.LastUploadDate != nil {
+		lastUploadDateVal := time.UnixMilli(p.FullDocument.Dates.LastUploadDate.Value)
 		lastUploadDate = &lastUploadDateVal
 	}
 
