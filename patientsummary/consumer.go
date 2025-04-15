@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/IBM/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 const (
@@ -80,6 +81,8 @@ func (p *CDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) error {
 }
 
 func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
 	p.logger.Debugw("handling kafka message", "offset", cm.Offset)
 	// we have to unmarshal twice, once to get the type out
 	event := CDCEvent{
@@ -95,6 +98,12 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 	if !event.ShouldApplyUpdates() {
 		p.logger.Debugw("skipping handling of event", "offset", event.Offset)
 		return nil
+	}
+
+	// handle document delete events, as they have no FullDocument/userId
+	if event.OperationType == cdc.OperationTypeDelete {
+		p.logger.Debugw("deleting patient summary", "summaryId", event.DocumentKey.Value)
+		p.clinics.DeletePatientSummaryWithResponse(ctx, event.DocumentKey.Value)
 	}
 
 	if event.FullDocument.Type == "cgm" || event.FullDocument.Type == "bgm" {
