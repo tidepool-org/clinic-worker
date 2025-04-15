@@ -2,6 +2,7 @@ package redox_test
 
 import (
 	"encoding/json"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -11,8 +12,9 @@ import (
 	models "github.com/tidepool-org/clinic/redox_models"
 
 	//. "github.com/onsi/gomega/gstruct"
-	"github.com/tidepool-org/clinic-worker/redox"
 	"time"
+
+	"github.com/tidepool-org/clinic-worker/redox"
 )
 
 var _ = Describe("Flowsheet", func() {
@@ -56,10 +58,10 @@ var _ = Describe("Flowsheet", func() {
 	})
 
 	Context("With EHR Match Response", func() {
-		var response api.EHRMatchResponse
+		var response api.EhrMatchResponseV1
 
 		BeforeEach(func() {
-			response = api.EHRMatchResponse{}
+			response = api.EhrMatchResponseV1{}
 			fixture, err := test.LoadFixture("test/fixtures/subscriptionmatchresponse.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(fixture, &response)).To(Succeed())
