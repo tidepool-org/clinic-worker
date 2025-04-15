@@ -2,7 +2,6 @@ package patientsummary
 
 import (
 	"regexp"
-	"slices"
 	"strconv"
 	"time"
 
@@ -22,15 +21,16 @@ type CDCEvent struct {
 	DocumentKey   DocumentKey `json:"documentKey"`
 }
 
-var supportedOps = []string{
-	cdc.OperationTypeInsert,
-	cdc.OperationTypeUpdate,
-	cdc.OperationTypeReplace,
-	cdc.OperationTypeDelete,
+var empty any
+var supportedOps = map[string]any{
+	cdc.OperationTypeInsert:  empty,
+	cdc.OperationTypeUpdate:  empty,
+	cdc.OperationTypeReplace: empty,
+	cdc.OperationTypeDelete:  empty,
 }
 
 func (p CDCEvent) ShouldApplyUpdates() bool {
-	if !slices.Contains(supportedOps, p.OperationType) {
+	if _, ok := supportedOps[p.OperationType]; !ok {
 		return false
 	}
 
