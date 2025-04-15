@@ -107,7 +107,7 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 	}
 
 	if event.FullDocument.Type == "cgm" || event.FullDocument.Type == "bgm" {
-		if err := applyPatientSummaryUpdate(p, event); err != nil {
+		if err := applyPatientSummaryUpdate(ctx, p, event); err != nil {
 			p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
 			return err
 		}
@@ -130,15 +130,13 @@ func (p *CDCConsumer) unmarshalEvent(value []byte, event interface{}) error {
 	return json.Unmarshal([]byte(message), event)
 }
 
-func applyPatientSummaryUpdate(p *CDCConsumer, event CDCEvent) error {
+func applyPatientSummaryUpdate(ctx context.Context, p *CDCConsumer, event CDCEvent) error {
 	p.logger.Debugw("applying patient summary update", "offset", event.Offset)
 	if event.FullDocument.UserID == "" {
 		return errors.New("expected user id to be defined")
 	}
 
 	userId := event.FullDocument.UserID
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-	defer cancel()
 
 	updateBody, err := event.CreateUpdateBody()
 	if err != nil {
