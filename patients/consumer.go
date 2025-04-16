@@ -147,9 +147,9 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			return err
 		}
 
-		// Only send invite email if patient does not have a pending dexcom connect request, which also
+		// Only send invite email if patient does not have a pending connection request, which also
 		// sends an email that provides a pathway towards claiming the account
-		if !event.PatientHasPendingDexcomConnection() {
+		if !event.PatientHasPendingConnection() {
 			if err := p.applyInviteUpdate(event); err != nil {
 				return err
 			}
@@ -177,16 +177,17 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		return p.sendUploadReminder(*event.FullDocument.UserId)
 	}
 
-	if event.IsRequestDexcomConnectEvent() {
-		p.logger.Infow("processing dexcom connect email", "event", event)
+	connectionRequests := event.UpdateDescription.UpdatedFields.GetUpdatedConnectionRequests()
+	if len(connectionRequests) > 0 {
+		p.logger.Infow("processing connection requests", "event", event)
 
 		if event.FullDocument.IsCustodial() {
 			invite := confirmations.UpsertAccountSignupConfirmationJSONRequestBody{
-				ClinicId:  (*confirmations.ClinicId)(&event.FullDocument.ClinicId.Value),
-				InvitedBy: (*confirmations.TidepoolUserId)(event.FullDocument.InvitedBy),
+				ClinicId:  &event.FullDocument.ClinicId.Value,
+				InvitedBy: event.FullDocument.InvitedBy,
 			}
 
-			response, err := p.confirmations.UpsertAccountSignupConfirmationWithResponse(ctx, confirmations.UserId(*event.FullDocument.UserId), invite)
+			response, err := p.confirmations.UpsertAccountSignupConfirmationWithResponse(ctx, *event.FullDocument.UserId, invite)
 			if err != nil {
 				return fmt.Errorf("unable to upsert confirmation: %v", err)
 			}
@@ -198,26 +199,38 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			}
 		}
 
-		templateName := "request_dexcom_connect"
-
-		if event.FullDocument.IsCustodial() {
-			templateName = "request_dexcom_connect_custodial"
+		providers := map[string]struct{}{}
+		for _, r := range connectionRequests {
+			providers[r.ProviderName] = struct{}{}
 		}
 
-		if event.FullDocument.DataSources != nil {
-			for _, source := range *event.FullDocument.DataSources {
-				if *source.ProviderName == DexcomDataSourceProviderName && *source.State == string(clinics.DataSourceStatePendingReconnect) {
-					templateName = "request_dexcom_reconnect"
+		errs := make([]error, 0, len(providers))
+		for providerName := range providers {
+			templatePrefix := fmt.Sprintf("request_%s_", providerName)
+			action := "connect"
+			if event.FullDocument.IsCustodial() {
+				action = "connect_custodial"
+			}
+			if event.FullDocument.DataSources != nil {
+				for _, source := range *event.FullDocument.DataSources {
+					if *source.ProviderName == providerName && *source.State == string(clinics.DataSourceStatePendingReconnect) {
+						action = "reconnect"
+					}
 				}
 			}
-		}
 
-		return p.sendDexcomConnectEmail(
-			*event.FullDocument.UserId,
-			event.FullDocument.ClinicId.Value,
-			*event.FullDocument.FullName,
-			templateName,
-		)
+			templateName := templatePrefix + action
+			errs = append(errs, p.sendProviderConnectEmail(
+				providerName,
+				*event.FullDocument.UserId,
+				event.FullDocument.ClinicId.Value,
+				*event.FullDocument.FullName,
+				templateName,
+			))
+		}
+		if err := errors.Join(errs...); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -292,7 +305,7 @@ func (p *PatientCDCConsumer) sendUploadReminder(userId string) error {
 	return p.mailer.SendEmailTemplate(ctx, template)
 }
 
-func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, patientName, templateName string) error {
+func (p *PatientCDCConsumer) sendProviderConnectEmail(providerName, userId, clinicId, patientName, templateName string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
@@ -314,7 +327,7 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, patientNam
 		return err
 	}
 
-	restrictedTokenPaths := []string{"/v1/oauth/dexcom"}
+	restrictedTokenPaths := []string{"/v1/oauth/" + providerName}
 	restrictedTokenExpirationTime := time.Now().Add(restrictedTokenExpirationDuration)
 
 	// Create new or update existing restricted token for this path and user
@@ -360,6 +373,7 @@ func (p *PatientCDCConsumer) sendDexcomConnectEmail(userId, clinicId, patientNam
 			"ClinicName":        clinicName,
 			"RestrictedTokenId": restrictedToken.ID,
 			"PatientName":       patientName,
+			"ProviderName":      providerName,
 		},
 	}
 
