@@ -211,10 +211,49 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 
 		})
 
-		It("doesn't send any documents if last upload date is more than 14 days ago", func() {
-			beforeCutoff := time.Now().Add(-15 * 24 * time.Hour)
-			patient.Summary.CgmStats.Dates.LastUploadDate = &beforeCutoff
-			patient.Summary.BgmStats.Dates.LastUploadDate = &beforeCutoff
+		It("sends documents if the original order doesn't have event date time", func() {
+			scheduled.DecodedOrder.Meta.EventDateTime = nil
+
+			afterOrderTime := time.Now().Add(-10 * 24 * time.Hour)
+			patient.Summary.CgmStats.Dates.LastUploadDate = &afterOrderTime
+			patient.Summary.BgmStats.Dates.LastUploadDate = &afterOrderTime
+
+			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+			Expect(redoxClient.Sent).To(HaveLen(2))
+		})
+
+		It("sends documents if the original order's event date time can't be parsed", func() {
+			orderTime := "2099-AA"
+			scheduled.DecodedOrder.Meta.EventDateTime = &orderTime
+
+			afterOrderTime := time.Now().Add(-10 * 24 * time.Hour)
+			patient.Summary.CgmStats.Dates.LastUploadDate = &afterOrderTime
+			patient.Summary.BgmStats.Dates.LastUploadDate = &afterOrderTime
+
+			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+			Expect(redoxClient.Sent).To(HaveLen(2))
+		})
+
+		It("sends documents if last upload date is after the original order time", func() {
+			orderTime := time.Now().Add(-15 * 24 * time.Hour).UTC().Format(time.RFC3339)
+			scheduled.DecodedOrder.Meta.EventDateTime = &orderTime
+
+			afterOrderTime := time.Now().Add(-10 * 24 * time.Hour)
+			patient.Summary.CgmStats.Dates.LastUploadDate = &afterOrderTime
+			patient.Summary.BgmStats.Dates.LastUploadDate = &afterOrderTime
+
+			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+			Expect(redoxClient.Sent).To(HaveLen(2))
+		})
+
+		It("doesn't send documents if last upload date is before last scheduled document", func() {
+			scheduled.PrecedingDocument = &redox.PrecedingDocument{
+				Id: primitive.NewObjectID(),
+				CreatedTime: time.Now().Add(-10 * 24 * time.Hour),
+			}
+			beforeLastScheduledDocument := scheduled.PrecedingDocument.CreatedTime.Add(-1 * time.Hour)
+			patient.Summary.CgmStats.Dates.LastUploadDate = &beforeLastScheduledDocument
+			patient.Summary.BgmStats.Dates.LastUploadDate = &beforeLastScheduledDocument
 
 			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
 			Expect(redoxClient.Sent).To(HaveLen(0))
@@ -222,7 +261,11 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 
 		It("sends documents if bgm upload date is before the cutoff but cgm after", func() {
 			now := time.Now()
-			beforeCutoff := time.Now().Add(-15 * 24 * time.Hour)
+			scheduled.PrecedingDocument = &redox.PrecedingDocument{
+				Id: primitive.NewObjectID(),
+				CreatedTime: time.Now().Add(-10 * 24 * time.Hour),
+			}
+			beforeCutoff := scheduled.PrecedingDocument.CreatedTime.Add(-1 * time.Hour)
 			patient.Summary.CgmStats.Dates.LastUploadDate = &now
 			patient.Summary.BgmStats.Dates.LastUploadDate = &beforeCutoff
 
@@ -232,7 +275,11 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 
 		It("sends documents if cgm upload date is before the cutoff but bgm after", func() {
 			now := time.Now()
-			beforeCutoff := time.Now().Add(-15 * 24 * time.Hour)
+			scheduled.PrecedingDocument = &redox.PrecedingDocument{
+				Id: primitive.NewObjectID(),
+				CreatedTime: time.Now().Add(-10 * 24 * time.Hour),
+			}
+			beforeCutoff := scheduled.PrecedingDocument.CreatedTime.Add(-1 * time.Hour)
 			patient.Summary.CgmStats.Dates.LastUploadDate = &beforeCutoff
 			patient.Summary.BgmStats.Dates.LastUploadDate = &now
 
