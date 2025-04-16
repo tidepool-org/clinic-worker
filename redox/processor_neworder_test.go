@@ -3,7 +3,6 @@ package redox_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -16,6 +15,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
@@ -175,6 +175,58 @@ var _ = Describe("NewOrderProcessor", func() {
 						gomock.Eq(*((*matchResponse.JSON200.Patients)[0]).Id),
 						testRedox.MatchArg(func(body clinics.UpdatePatientJSONRequestBody) bool {
 							return testRedox.PatientHasTags(body.Tags, []string{"1", "3"})
+						}),
+					).Return(&clinics.UpdatePatientResponse{
+						Body: nil,
+						HTTPResponse: &http.Response{
+							StatusCode: http.StatusOK,
+						},
+						JSON200: &(*matchResponse.JSON200.Patients)[0],
+					}, nil)
+
+					Expect(processor.ProcessOrder(context.Background(), envelope, order)).To(Succeed())
+				})
+
+				It("ignores tags if creation fails with bad request", func() {
+					t1dId := "1"
+					t1dName := "T1D"
+					adultName := "ADULT"
+
+					matchResponse.JSON200.Clinic.PatientTags = &[]clinics.PatientTag{
+						{&t1dId, t1dName},
+					}
+
+					clinicClient.EXPECT().
+						CreatePatientTagWithResponse(gomock.Any(), *matchResponse.JSON200.Clinic.Id, testRedox.MatchArg(func(body clinics.CreatePatientTagJSONRequestBody) bool {
+							return body.Name == adultName
+						})).
+						Return(&clinics.CreatePatientTagResponse{
+							Body: nil,
+							HTTPResponse: &http.Response{
+								StatusCode: http.StatusBadRequest,
+							},
+						}, nil)
+
+					updatedClinic := matchResponse.JSON200.Clinic
+					updatedClinic.PatientTags = &[]clinics.PatientTag{
+						{&t1dId, t1dName},
+					}
+
+					clinicClient.EXPECT().
+						GetClinicWithResponse(gomock.Any(), *matchResponse.JSON200.Clinic.Id).
+						Return(&clinics.GetClinicResponse{
+							Body: nil,
+							HTTPResponse: &http.Response{
+								StatusCode: http.StatusOK,
+							},
+							JSON200: &updatedClinic,
+						}, nil)
+
+					clinicClient.EXPECT().UpdatePatientWithResponse(gomock.Any(),
+						gomock.Eq(*matchResponse.JSON200.Clinic.Id),
+						gomock.Eq(*((*matchResponse.JSON200.Patients)[0]).Id),
+						testRedox.MatchArg(func(body clinics.UpdatePatientJSONRequestBody) bool {
+							return testRedox.PatientHasTags(body.Tags, []string{"1"})
 						}),
 					).Return(&clinics.UpdatePatientResponse{
 						Body: nil,

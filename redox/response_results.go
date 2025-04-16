@@ -124,6 +124,17 @@ func SetVisitNumberInResult(order models.NewOrder, result *models.NewResults) {
 	}
 }
 
+func SetVisitLocationInResult(order models.NewOrder, result *models.NewResults) {
+	if order.Visit == nil {
+		return
+	}
+	
+	if result.Visit == nil {
+		result.Visit = types.NewStructPtr(result.Visit)
+	}
+	result.Visit.Location = order.Visit.Location
+}
+
 func SetAccountNumberInResult(order models.NewOrder, result *models.NewResults) {
 	if order.Visit != nil && order.Visit.AccountNumber != nil {
 		if result.Visit == nil {

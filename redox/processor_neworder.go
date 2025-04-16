@@ -142,7 +142,6 @@ func (o *newOrderProcessor) matchOrder(ctx context.Context, matchRequest clinics
 	return response.JSON200, nil
 }
 
-
 func (o *newOrderProcessor) handleEnableSummaryReports(ctx context.Context, enableReports EnableReports) error {
 	order := enableReports.Order
 	match, err := o.matchOrder(ctx, enableReports.GetMatchRequest(), order)
@@ -207,8 +206,6 @@ func (o *newOrderProcessor) handleDisableSummaryReports(ctx context.Context, dis
 	o.logger.Infow("successfully matched clinic and patient", "order", params.Order.Meta, "clinicId", params.Match.Clinic.Id, "patientId", patient.Id)
 	return o.handleSuccessfulPatientMatch(ctx, params)
 }
-
-
 
 func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, create CreateAccount) (bool, error) {
 	order := create.Order
@@ -293,7 +290,7 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, create Crea
 	return true, o.handleAccountCreationSuccess(ctx, order, *match)
 }
 
-func (o *newOrderProcessor) handleCreateAccountAndEnableSummaryReports(ctx context.Context, createAndEnable 	CreateAccountEnableReports) error {
+func (o *newOrderProcessor) handleCreateAccountAndEnableSummaryReports(ctx context.Context, createAndEnable CreateAccountEnableReports) error {
 	// Checks if a matching account already exists without enabling reports
 	match, err := o.matchOrder(ctx, createAndEnable.GetMatchRequest(), createAndEnable.Order)
 	if err != nil {
@@ -340,8 +337,18 @@ func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order mode
 			if err != nil {
 				return nil, err
 			}
+			if resp.StatusCode() == http.StatusBadRequest {
+				o.logger.Warnw(
+					"ignoring tag because it doesn't conform to tag schema",
+					"tag", tagName,
+					"order", order.Meta,
+					"clinicId", match.Clinic.Id,
+				)
+				continue
+			}
+
 			if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
-				return nil, fmt.Errorf("unexpected status code %v when creating tagName %s", resp.StatusCode(), tagName)
+				return nil, fmt.Errorf("unexpected status code %v when creating tag %s", resp.StatusCode(), tagName)
 			}
 		}
 	}
@@ -359,8 +366,8 @@ func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order mode
 	for _, tagName := range tagNames {
 		patientTag, ok := existingTags[tagName]
 		if !ok {
-			// The tag should have been created. If it was deleted in the meantime returning an error will result in a retry
-			return nil, fmt.Errorf("patient tag doesn't exist")
+			// Ignore the tag if the creation wasn't successful
+			continue
 		}
 		patientTagIds = append(patientTagIds, *patientTag.Id)
 	}
@@ -472,6 +479,12 @@ func (o *newOrderProcessor) SendSummaryAndReport(ctx context.Context, params Sum
 	if err != nil {
 		return err
 	}
+
+	if len(flowsheet.Observations) == 0 {
+		o.logger.Infow("the patient has no observations", "order", params.Order.Meta, "clinicId", params.Match.Clinic.Id, "patientId", patient.Id)
+		return nil
+	}
+
 	notes, err := o.createReportNote(ctx, params)
 	if err != nil {
 		// return the error so we can retry the request
@@ -512,6 +525,11 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 		ID: &destinationId,
 	}}
 
+	settings := FlowsheetSettings{
+		PreferredBGUnits: string(params.Match.Clinic.PreferredBgUnits),
+		ICode:            params.Match.Settings.Flowsheets.Icode,
+	}
+
 	flowsheet := NewFlowsheet()
 	flowsheet.Meta.Source = &source
 	flowsheet.Meta.Destinations = &destinations
@@ -519,8 +537,11 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 	flowsheet.Patient.Demographics = params.Order.Patient.Demographics
 
 	SetVisitNumberInFlowsheet(params.Order, &flowsheet)
+	SetVisitLocationInFlowsheet(params.Order, &flowsheet)
 	SetAccountNumberInFlowsheet(params.Order, &flowsheet)
-	PopulateSummaryStatistics(patient, params.Match.Clinic, &flowsheet)
+	SetOrderIdInFlowsheet(params.Order, &flowsheet)
+	SetProviderInFlowsheet(params.Order, &flowsheet)
+	PopulateSummaryStatistics(patient, settings, &flowsheet)
 
 	return flowsheet, nil
 }
@@ -561,6 +582,7 @@ func (o *newOrderProcessor) createReportNote(ctx context.Context, params Summary
 	notes.SetDestination(params.Match.Settings.DestinationIds.Notes)
 
 	notes.SetOrderId(params.Order)
+	notes.SetVisitLocationFromOrder(params.Order)
 	notes.SetVisitNumberFromOrder(params.Order)
 	notes.SetAccountNumberFromOrder(params.Order)
 
@@ -691,6 +713,7 @@ func (o *newOrderProcessor) sendMatchingResultsNotification(ctx context.Context,
 	SetMatchingResult(notification, params.Order, &results)
 	SetAccountNumberInResult(params.Order, &results)
 	SetVisitNumberInResult(params.Order, &results)
+	SetVisitLocationInResult(params.Order, &results)
 
 	if err := o.client.Send(ctx, results); err != nil {
 		// Return an error so we can retry the request
@@ -718,6 +741,7 @@ func (o *newOrderProcessor) sendAccountCreationResultsNotification(ctx context.C
 	SetAccountCreationResults(notification, order, &results)
 	SetAccountNumberInResult(order, &results)
 	SetVisitNumberInResult(order, &results)
+	SetVisitLocationInResult(order, &results)
 
 	if err := o.client.Send(ctx, results); err != nil {
 		// Return an error so we can retry the request
@@ -902,7 +926,6 @@ func (c CreateAccountEnableReports) GetMatchRequest() clinics.EHRMatchRequest {
 	}
 	return request
 }
-
 
 func GetProcedureCode(order models.NewOrder) string {
 	var procedureCode string

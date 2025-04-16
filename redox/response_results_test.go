@@ -52,6 +52,14 @@ var _ = Describe("Results", func() {
 			})
 		})
 
+		Describe("SetVisitLocationFromOrder", func() {
+			It("sets the visit location from the order", func() {
+				redox.SetVisitLocationInResult(order, &results)
+				Expect(results.Visit).ToNot(BeNil())
+				Expect(results.Visit.Location).To(PointTo(Equal(*order.Visit.Location)))
+			})
+		})
+
 		Describe("SetResultsPatientFromOrder", func() {
 			It("sets the patient identifier and demographics from the order", func() {
 				redox.SetResultsPatientFromOrder(order, &results)
