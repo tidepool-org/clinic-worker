@@ -91,12 +91,10 @@ func (r *scheduledSummaryAndReportProcessor) ProcessOrder(ctx context.Context, s
 	}
 
 	params := SummaryAndReportParameters{
-		Match:      match,
-		Order:      scheduled.DecodedOrder,
-		DocumentId: scheduled.Id.Hex(),
-	}
-	if scheduled.PrecedingDocument != nil {
-		params.PrecedingDocumentId = scheduled.PrecedingDocument.Id.Hex()
+		Match:             match,
+		Order:             scheduled.DecodedOrder,
+		DocumentId:        scheduled.Id.Hex(),
+		PrecedingDocument: scheduled.PrecedingDocument,
 	}
 
 	return r.orderProcessor.SendSummaryAndReport(ctx, params)
