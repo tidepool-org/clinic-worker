@@ -17,6 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
+	"math/rand/v2"
 	"net/http"
 	"time"
 )
@@ -143,7 +144,7 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 			scheduled.Id = primitive.NewObjectID()
 			scheduled.PrecedingDocument = &redox.PrecedingDocument{
 				Id:          primitive.NewObjectID(),
-				CreatedTime: time.Now().Add(-5 * time.Minute),
+				CreatedTime: time.Now().Add(-4 * time.Minute),
 			}
 
 			Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
@@ -273,10 +274,9 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 
 		It("Should be false when there's no preceding document and clinic is not configured for replacement", func() {
 			params := redox.SummaryAndReportParameters{
-				Match:               *response,
-				Order:               *order,
-				DocumentId:          "1234567",
-				PrecedingDocumentId: "",
+				Match:      *response,
+				Order:      *order,
+				DocumentId: "1234567",
 			}
 			Expect(params.ShouldReplacePrecedingReport()).To(BeFalse())
 		})
@@ -288,12 +288,15 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 				Match:               *response,
 				Order:               *order,
 				DocumentId:          "1234567",
-				PrecedingDocumentId: "0001111",
+				PrecedingDocument: &redox.PrecedingDocument{
+					Id:          primitive.NewObjectID(),
+					CreatedTime: time.Now().Add(-time.Minute),
+				},
 			}
 			Expect(params.ShouldReplacePrecedingReport()).To(BeFalse())
 		})
 
-		It("Should be false true there's is preceding document and clinic is configured for replacement", func() {
+		It("Should be false if there's is preceding document created more than 5 minutes ago and the clinic is configured for replacement", func() {
 			eventType := clinics.ScheduledReportsOnUploadNoteEventTypeReplace
 			response.Settings.ScheduledReports.OnUploadNoteEventType = &eventType
 
@@ -301,7 +304,27 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 				Match:               *response,
 				Order:               *order,
 				DocumentId:          "1234567",
-				PrecedingDocumentId: "0001111",
+				PrecedingDocument: &redox.PrecedingDocument{
+					Id:          primitive.NewObjectID(),
+					CreatedTime: time.Now().Add(-time.Minute * 5 - time.Second),
+				},
+			}
+			Expect(params.ShouldReplacePrecedingReport()).To(BeFalse())
+		})
+
+		It("Should be true if there's is preceding document created within the last 5 minutes and the clinic is configured for replacement", func() {
+			eventType := clinics.ScheduledReportsOnUploadNoteEventTypeReplace
+			response.Settings.ScheduledReports.OnUploadNoteEventType = &eventType
+
+			offset := rand.IntN(int((time.Minute * 5 - time.Second * 10).Seconds())) + 1
+			params := redox.SummaryAndReportParameters{
+				Match:               *response,
+				Order:               *order,
+				DocumentId:          "1234567",
+				PrecedingDocument: &redox.PrecedingDocument{
+					Id:          primitive.NewObjectID(),
+					CreatedTime: time.Now().Add(-time.Second * time.Duration(offset)),
+				},
 			}
 			Expect(params.ShouldReplacePrecedingReport()).To(BeTrue())
 		})
