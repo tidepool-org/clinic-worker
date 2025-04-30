@@ -1,6 +1,7 @@
 package patientsummary
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -142,7 +143,9 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 }
 
 func (p *CDCConsumer) unmarshalEvent(value []byte, event interface{}) error {
+	value = bytes.Replace(value, []byte(": NaN"), []byte(": null"), -1)
 	message, err := strconv.Unquote(string(value))
+
 	if err != nil {
 		return err
 	}
