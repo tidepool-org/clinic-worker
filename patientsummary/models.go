@@ -243,9 +243,9 @@ func ExportCGMPeriod(period summaries.GlucoseperiodV5, i int) clinics.PatientCGM
 	}
 
 	// reconstruct some previous period values for comparison later
-	deltaPeriodTotalRecords := period.Total.Records + period.Delta.Total.Records
-	deltaPeriodTimeCGMUsePercent := period.Total.Percent + period.Delta.Total.Percent
-	deltaPeriodTimeCGMUseMinutes := period.Total.Minutes + period.Delta.Total.Minutes
+	deltaPeriodTotalRecords := period.Total.Records - period.Delta.Total.Records
+	deltaPeriodTimeCGMUsePercent := period.Total.Percent - period.Delta.Total.Percent
+	deltaPeriodTimeCGMUseMinutes := period.Total.Minutes - period.Delta.Total.Minutes
 
 	// The following provides concessions to allow patient list sorting and filtering according to
 	// certain eligibility requirements, notably:
@@ -374,7 +374,7 @@ func ExportBGMPeriod(period summaries.GlucoseperiodV5) clinics.PatientBGMPeriod 
 	}
 
 	// reconstruct previous period total records for comparison later
-	deltaPeriodTotalRecords := period.Total.Records + period.Delta.Total.Records
+	deltaPeriodTotalRecords := period.Total.Records - period.Delta.Total.Records
 
 	// percentages should stay nil unless there is records, but schema >5 removed all optional pointers
 	if *destPeriod.TotalRecords != 0 {
