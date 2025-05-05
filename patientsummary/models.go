@@ -242,67 +242,83 @@ func ExportCGMPeriod(period summaries.GlucoseperiodV5, i int) clinics.PatientCGM
 		TotalRecordsDelta:             &period.Delta.Total.Records,
 	}
 
+	// reconstruct some previous period values for comparison later
+	deltaPeriodTotalRecords := period.Total.Records + period.Delta.Total.Records
+	deltaPeriodTimeCGMUsePercent := period.Total.Percent + period.Delta.Total.Percent
+	deltaPeriodTimeCGMUseMinutes := period.Total.Minutes + period.Delta.Total.Minutes
+
 	// The following provides concessions to allow patient list sorting and filtering according to
 	// certain eligibility requirements, notably:
 	// - TIR percent only is visible in the frontend if >1d of data, or 70% cgm use on single day metrics
 	// - GMI requires >70% cgm use
 	// - All percentages should be nil if 0 TotalRecords, as they would have been before schema v5
+	// - All delta percentages should be nil if both periods do not fulfill their respective requirements above
 	if *destPeriod.TotalRecords != 0 {
 		destPeriod.HasTimeCGMUsePercent = true
+		destPeriod.HasAverageGlucoseMmol = true
 		destPeriod.TimeCGMUsePercent = &period.Total.Percent
+		destPeriod.AverageGlucoseMmol = &period.AverageGlucoseMmol
+		destPeriod.StandardDeviation = period.StandardDeviation
+		destPeriod.CoefficientOfVariation = period.CoefficientOfVariation
+
+		if deltaPeriodTotalRecords != 0 {
+			destPeriod.TimeCGMUsePercentDelta = &period.Delta.Total.Percent
+			destPeriod.AverageGlucoseMmolDelta = &period.Delta.AverageGlucoseMmol
+			destPeriod.StandardDeviationDelta = period.Delta.StandardDeviation
+			destPeriod.CoefficientOfVariationDelta = period.Delta.CoefficientOfVariation
+		}
 
 		// if we are storing under 1d, apply 70% rule to TimeIn*
 		// if we are storing over 1d, check for 24h cgm use
 		if (i <= 1 && *destPeriod.TimeCGMUsePercent > 0.7) || (i > 1 && *destPeriod.TimeCGMUseMinutes > 1440) {
 			destPeriod.HasTimeInTargetPercent = true
 			destPeriod.TimeInTargetPercent = &period.InTarget.Percent
-			destPeriod.TimeInTargetPercentDelta = &period.Delta.InTarget.Percent
 
 			destPeriod.HasTimeInLowPercent = true
 			destPeriod.TimeInLowPercent = &period.InLow.Percent
-			destPeriod.TimeInLowPercentDelta = &period.Delta.InLow.Percent
 
 			destPeriod.HasTimeInVeryLowPercent = true
 			destPeriod.TimeInVeryLowPercent = &period.InVeryLow.Percent
-			destPeriod.TimeInVeryLowPercentDelta = &period.Delta.InVeryLow.Percent
 
 			destPeriod.HasTimeInAnyLowPercent = true
 			destPeriod.TimeInAnyLowPercent = &period.InAnyLow.Percent
-			destPeriod.TimeInAnyLowPercentDelta = &period.Delta.InAnyLow.Percent
 
 			destPeriod.HasTimeInHighPercent = true
 			destPeriod.TimeInHighPercent = &period.InHigh.Percent
-			destPeriod.TimeInHighPercentDelta = &period.Delta.InHigh.Percent
 
 			destPeriod.HasTimeInVeryHighPercent = true
 			destPeriod.TimeInVeryHighPercent = &period.InVeryHigh.Percent
-			destPeriod.TimeInVeryHighPercentDelta = &period.Delta.InVeryHigh.Percent
 
 			destPeriod.HasTimeInExtremeHighPercent = true
 			destPeriod.TimeInExtremeHighPercent = &period.InExtremeHigh.Percent
-			destPeriod.TimeInExtremeHighPercentDelta = &period.Delta.InExtremeHigh.Percent
 
 			destPeriod.HasTimeInAnyHighPercent = true
 			destPeriod.TimeInAnyHighPercent = &period.InAnyHigh.Percent
-			destPeriod.TimeInAnyHighPercentDelta = &period.Delta.InAnyHigh.Percent
-		}
 
-		destPeriod.HasAverageGlucoseMmol = true
-		destPeriod.AverageGlucoseMmol = &period.AverageGlucoseMmol
-		destPeriod.AverageGlucoseMmolDelta = &period.Delta.AverageGlucoseMmol
+			// add deltas if delta period fulfills requirements as well
+			if (i <= 1 && deltaPeriodTimeCGMUsePercent > 0.7) || (i > 1 && deltaPeriodTimeCGMUseMinutes > 1440) {
+				destPeriod.TimeInTargetPercentDelta = &period.Delta.InTarget.Percent
+				destPeriod.TimeInLowPercentDelta = &period.Delta.InLow.Percent
+				destPeriod.TimeInVeryLowPercentDelta = &period.Delta.InVeryLow.Percent
+				destPeriod.TimeInAnyLowPercentDelta = &period.Delta.InAnyLow.Percent
+				destPeriod.TimeInHighPercentDelta = &period.Delta.InHigh.Percent
+				destPeriod.TimeInVeryHighPercentDelta = &period.Delta.InVeryHigh.Percent
+				destPeriod.TimeInExtremeHighPercentDelta = &period.Delta.InExtremeHigh.Percent
+				destPeriod.TimeInAnyHighPercentDelta = &period.Delta.InAnyHigh.Percent
+			}
+		}
 
 		// GMI should only be present if CGM use % is >70% so that they are filtered to the bottom on GMI queries.
 		if *destPeriod.TimeCGMUsePercent > 0.7 {
 			destPeriod.HasGlucoseManagementIndicator = true
 			destPeriod.GlucoseManagementIndicator = &period.GlucoseManagementIndicator
-			destPeriod.GlucoseManagementIndicatorDelta = &period.Delta.GlucoseManagementIndicator
+
+			// add deltas if delta period fulfills requirements as well
+			if deltaPeriodTimeCGMUsePercent > 0.7 {
+				destPeriod.GlucoseManagementIndicatorDelta = &period.Delta.GlucoseManagementIndicator
+			}
 		}
 
-		destPeriod.StandardDeviation = period.StandardDeviation
-		destPeriod.StandardDeviationDelta = period.Delta.StandardDeviation
-
-		destPeriod.CoefficientOfVariation = period.CoefficientOfVariation
-		destPeriod.CoefficientOfVariationDelta = period.Delta.CoefficientOfVariation
 	}
 
 	return destPeriod
@@ -357,43 +373,49 @@ func ExportBGMPeriod(period summaries.GlucoseperiodV5) clinics.PatientBGMPeriod 
 		TotalRecordsDelta:             &period.Delta.Total.Records,
 	}
 
+	// reconstruct previous period total records for comparison later
+	deltaPeriodTotalRecords := period.Total.Records + period.Delta.Total.Records
+
 	// percentages should stay nil unless there is records, but schema >5 removed all optional pointers
 	if *destPeriod.TotalRecords != 0 {
 		destPeriod.HasTimeInTargetPercent = true
 		destPeriod.TimeInTargetPercent = &period.InTarget.Percent
-		destPeriod.TimeInTargetPercentDelta = &period.Delta.InTarget.Percent
 
 		destPeriod.HasTimeInLowPercent = true
 		destPeriod.TimeInLowPercent = &period.InLow.Percent
-		destPeriod.TimeInLowPercentDelta = &period.Delta.InLow.Percent
 
 		destPeriod.HasTimeInVeryLowPercent = true
 		destPeriod.TimeInVeryLowPercent = &period.InVeryLow.Percent
-		destPeriod.TimeInVeryLowPercentDelta = &period.Delta.InVeryLow.Percent
 
 		destPeriod.HasTimeInAnyLowPercent = true
 		destPeriod.TimeInAnyLowPercent = &period.InAnyLow.Percent
-		destPeriod.TimeInAnyLowPercentDelta = &period.Delta.InAnyLow.Percent
 
 		destPeriod.HasTimeInHighPercent = true
 		destPeriod.TimeInHighPercent = &period.InHigh.Percent
-		destPeriod.TimeInHighPercentDelta = &period.Delta.InHigh.Percent
 
 		destPeriod.HasTimeInVeryHighPercent = true
 		destPeriod.TimeInVeryHighPercent = &period.InVeryHigh.Percent
-		destPeriod.TimeInVeryHighPercentDelta = &period.Delta.InVeryHigh.Percent
 
 		destPeriod.HasTimeInExtremeHighPercent = true
 		destPeriod.TimeInExtremeHighPercent = &period.InExtremeHigh.Percent
-		destPeriod.TimeInExtremeHighPercentDelta = &period.Delta.InExtremeHigh.Percent
 
 		destPeriod.HasTimeInAnyHighPercent = true
 		destPeriod.TimeInAnyHighPercent = &period.InAnyHigh.Percent
-		destPeriod.TimeInAnyHighPercentDelta = &period.Delta.InAnyHigh.Percent
 
 		destPeriod.HasAverageGlucoseMmol = true
 		destPeriod.AverageGlucoseMmol = &period.AverageGlucoseMmol
-		destPeriod.AverageGlucoseMmolDelta = &period.Delta.AverageGlucoseMmol
+
+		if deltaPeriodTotalRecords != 0 {
+			destPeriod.TimeInTargetPercentDelta = &period.Delta.InTarget.Percent
+			destPeriod.TimeInLowPercentDelta = &period.Delta.InLow.Percent
+			destPeriod.TimeInVeryLowPercentDelta = &period.Delta.InVeryLow.Percent
+			destPeriod.TimeInAnyLowPercentDelta = &period.Delta.InAnyLow.Percent
+			destPeriod.TimeInHighPercentDelta = &period.Delta.InHigh.Percent
+			destPeriod.TimeInVeryHighPercentDelta = &period.Delta.InVeryHigh.Percent
+			destPeriod.TimeInExtremeHighPercentDelta = &period.Delta.InExtremeHigh.Percent
+			destPeriod.TimeInAnyHighPercentDelta = &period.Delta.InAnyHigh.Percent
+			destPeriod.AverageGlucoseMmolDelta = &period.Delta.AverageGlucoseMmol
+		}
 
 	}
 
