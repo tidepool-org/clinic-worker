@@ -2,16 +2,17 @@ package users_test
 
 import (
 	"errors"
+	"net/http"
+
 	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic-worker/users"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/events"
+	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 var _ = Describe("UserDataDeletionHandler", func() {
