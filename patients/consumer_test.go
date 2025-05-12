@@ -26,4 +26,22 @@ var _ = Describe("PatientCDCConsumer", func() {
 			Expect(event.FullDocument.LastRequestedDexcomConnectTime.Value).To(Equal(int64(1725664480753)))
 		})
 	})
+
+	Describe("", func() {
+		It("returns only the added provider connection request", func() {
+			fixture, err := test.LoadFixture("test/fixtures/provider_connection_request.txt")
+			Expect(err).ToNot(HaveOccurred())
+
+			// Some editors add a new line at the end of the file by default, remove it
+			fixture = []byte(strings.TrimSuffix(string(fixture), "\n"))
+
+			event := patients.PatientCDCEvent{}
+			err = patients.UnmarshalEvent(fixture, &event)
+			Expect(err).ToNot(HaveOccurred())
+
+			requests := event.UpdateDescription.UpdatedFields.GetUpdatedConnectionRequests()
+			Expect(requests).To(HaveLen(1))
+			Expect(requests[0].ProviderName).To(Equal("dexcom"))
+		})
+	})
 })
