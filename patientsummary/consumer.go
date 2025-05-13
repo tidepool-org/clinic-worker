@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/IBM/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 const (
@@ -102,7 +103,7 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 			p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
 			return err
 		}
-	} else if event.FullDocument.Type == "con" {
+	} else if event.FullDocument.Type == "con" || event.FullDocument.Type == "continuous" {
 		p.logger.Debugw("skipping over continuous type cdc event", "offset", cm.Offset, "userId", event.FullDocument.UserID)
 		return nil
 	} else {
