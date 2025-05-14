@@ -1,8 +1,8 @@
 package test
 
 import (
-	"github.com/golang/mock/gomock"
 	"github.com/tidepool-org/clinic/client"
+	"go.uber.org/mock/gomock"
 )
 
 type ArgMatcher[T any] struct {

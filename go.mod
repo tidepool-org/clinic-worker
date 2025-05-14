@@ -8,18 +8,18 @@ require (
 	github.com/cloudevents/sdk-go/v2 v2.15.2
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/golang-jwt/jwt/v5 v5.2.1
-	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/onsi/ginkgo/v2 v2.23.0
 	github.com/onsi/gomega v1.36.2
-	github.com/tidepool-org/clinic/client v0.0.0-20250122123230-f89e2b1540dc
+	github.com/tidepool-org/clinic/client v0.0.0-20250501201547-4ecce72193de
 	github.com/tidepool-org/clinic/redox_models v0.0.0-20250122123230-f89e2b1540dc
 	github.com/tidepool-org/go-common v0.12.3-0.20250408231331-54a9af052965
 	github.com/tidepool-org/hydrophone/client v0.0.0-20250317164837-a8cd51fd6677
 	go.mongodb.org/mongo-driver v1.17.3
 	go.uber.org/fx v1.23.0
+	go.uber.org/mock v0.5.2
 	go.uber.org/ratelimit v0.3.1
 	go.uber.org/zap v1.27.0
 	golang.org/x/sync v0.12.0
