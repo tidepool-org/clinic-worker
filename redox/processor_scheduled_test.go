@@ -3,7 +3,9 @@ package redox_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/golang/mock/gomock"
+	"net/http"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -16,9 +18,8 @@ import (
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
