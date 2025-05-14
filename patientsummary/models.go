@@ -10,16 +10,27 @@ import (
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 )
 
+type DocumentKey struct {
+	cdc.ObjectId `json:"_id"`
+}
+
 type CDCEvent struct {
-	Offset        int64   `json:"-"`
-	FullDocument  Summary `json:"fullDocument"`
-	OperationType string  `json:"operationType"`
+	Offset        int64       `json:"-"`
+	FullDocument  Summary     `json:"fullDocument"`
+	OperationType string      `json:"operationType"`
+	DocumentKey   DocumentKey `json:"documentKey"`
+}
+
+var empty any
+var supportedOps = map[string]any{
+	cdc.OperationTypeInsert:  empty,
+	cdc.OperationTypeUpdate:  empty,
+	cdc.OperationTypeReplace: empty,
+	cdc.OperationTypeDelete:  empty,
 }
 
 func (p CDCEvent) ShouldApplyUpdates() bool {
-	if p.OperationType != cdc.OperationTypeInsert &&
-		p.OperationType != cdc.OperationTypeUpdate &&
-		p.OperationType != cdc.OperationTypeReplace {
+	if _, ok := supportedOps[p.OperationType]; !ok {
 		return false
 	}
 
@@ -97,26 +108,29 @@ func (p CDCEvent) CreateUpdateBody() (*clinics.UpdatePatientSummaryJSONRequestBo
 		p.FullDocument.Dates.LastUpdatedReason = []string{}
 	}
 
+	dates := clinics.PatientSummaryDates{
+		LastUpdatedDate:   lastUpdatedDate,
+		LastUpdatedReason: &p.FullDocument.Dates.LastUpdatedReason,
+		OutdatedReason:    &p.FullDocument.Dates.OutdatedReason,
+		HasLastUploadDate: lastUploadDate != nil,
+		LastUploadDate:    lastUploadDate,
+		HasFirstData:      firstData != nil,
+		FirstData:         firstData,
+		HasLastData:       lastData != nil,
+		LastData:          lastData,
+		HasOutdatedSince:  outdatedSince != nil,
+		OutdatedSince:     outdatedSince,
+	}
+
+	config := clinics.PatientSummaryConfig(p.FullDocument.Config)
+
 	patientUpdate := &clinics.UpdatePatientSummaryJSONRequestBody{}
 	if p.FullDocument.Type == "cgm" {
-		patientUpdate.CgmStats = &clinics.PatientCGMStats{}
-
-		patientUpdate.CgmStats.Dates = clinics.PatientSummaryDates{
-			LastUpdatedDate:   lastUpdatedDate,
-			LastUpdatedReason: &p.FullDocument.Dates.LastUpdatedReason,
-			OutdatedReason:    &p.FullDocument.Dates.OutdatedReason,
-			HasLastUploadDate: lastUploadDate != nil,
-			LastUploadDate:    lastUploadDate,
-			HasFirstData:      firstData != nil,
-			FirstData:         firstData,
-			HasLastData:       lastData != nil,
-			LastData:          lastData,
-			HasOutdatedSince:  outdatedSince != nil,
-			OutdatedSince:     outdatedSince,
+		patientUpdate.CgmStats = &clinics.PatientCGMStats{
+			Id:     &p.FullDocument.ID.Value,
+			Dates:  dates,
+			Config: config,
 		}
-
-		config := clinics.PatientSummaryConfig(p.FullDocument.Config)
-		patientUpdate.CgmStats.Config = config
 
 		if p.FullDocument.Periods != nil {
 			sourceCGMPeriod, err := p.FullDocument.Periods.AsCgmperiodsV5()
@@ -127,24 +141,11 @@ func (p CDCEvent) CreateUpdateBody() (*clinics.UpdatePatientSummaryJSONRequestBo
 		}
 
 	} else if p.FullDocument.Type == "bgm" {
-		patientUpdate.BgmStats = &clinics.PatientBGMStats{}
-
-		patientUpdate.BgmStats.Dates = clinics.PatientSummaryDates{
-			LastUpdatedDate:   lastUpdatedDate,
-			LastUpdatedReason: &p.FullDocument.Dates.LastUpdatedReason,
-			OutdatedReason:    &p.FullDocument.Dates.OutdatedReason,
-			HasLastUploadDate: lastUploadDate != nil,
-			LastUploadDate:    lastUploadDate,
-			HasFirstData:      firstData != nil,
-			FirstData:         firstData,
-			HasLastData:       lastData != nil,
-			LastData:          lastData,
-			HasOutdatedSince:  outdatedSince != nil,
-			OutdatedSince:     outdatedSince,
+		patientUpdate.BgmStats = &clinics.PatientBGMStats{
+			Id:     &p.FullDocument.ID.Value,
+			Dates:  dates,
+			Config: config,
 		}
-
-		config := clinics.PatientSummaryConfig(p.FullDocument.Config)
-		patientUpdate.BgmStats.Config = config
 
 		if p.FullDocument.Periods != nil {
 			sourceBGMPeriod, err := p.FullDocument.Periods.AsBgmperiodsV5()

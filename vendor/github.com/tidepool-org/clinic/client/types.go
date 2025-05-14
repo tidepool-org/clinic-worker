@@ -684,6 +684,7 @@ const (
 const (
 	DISABLED ScheduledReportsCadence = "DISABLED"
 	N14d     ScheduledReportsCadence = "14d"
+	N1d      ScheduledReportsCadence = "1d"
 	N30d     ScheduledReportsCadence = "30d"
 	N7d      ScheduledReportsCadence = "7d"
 )
@@ -872,6 +873,12 @@ type EHRFacility struct {
 	Name string `json:"name"`
 }
 
+// EHRFlowsheetSettings defines model for EHRFlowsheetSettings.
+type EHRFlowsheetSettings struct {
+	// Icode Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.
+	Icode bool `json:"icode"`
+}
+
 // EHRMatchMessageRef defines model for EHRMatchMessageRef.
 type EHRMatchMessageRef struct {
 	DataModel  EHRMatchMessageRefDataModel `json:"dataModel"`
@@ -929,11 +936,12 @@ type EHRSettings struct {
 	DestinationIds *EHRDestinationIds `json:"destinationIds,omitempty"`
 
 	// Enabled Enable or disable the EHR integration
-	Enabled        bool                `json:"enabled"`
-	Facility       *EHRFacility        `json:"facility,omitempty"`
-	MrnIdType      string              `json:"mrnIdType"`
-	ProcedureCodes EHRProcedureCodes   `json:"procedureCodes"`
-	Provider       EHRSettingsProvider `json:"provider"`
+	Enabled        bool                 `json:"enabled"`
+	Facility       *EHRFacility         `json:"facility,omitempty"`
+	Flowsheets     EHRFlowsheetSettings `json:"flowsheets"`
+	MrnIdType      string               `json:"mrnIdType"`
+	ProcedureCodes EHRProcedureCodes    `json:"procedureCodes"`
+	Provider       EHRSettingsProvider  `json:"provider"`
 
 	// ScheduledReports Scheduled Report Settings
 	ScheduledReports ScheduledReports `json:"scheduledReports"`
@@ -1210,6 +1218,9 @@ type PatientBGMStats struct {
 	// Dates dates tracked for summary calculation
 	Dates PatientSummaryDates `json:"dates,omitempty"`
 
+	// Id Summary Unique Identifier
+	Id *SummaryIdV1 `json:"id,omitempty"`
+
 	// OffsetPeriods A map to each supported BGM summary period
 	OffsetPeriods PatientBGMPeriods `json:"offsetPeriods,omitempty"`
 
@@ -1458,6 +1469,9 @@ type PatientCGMStats struct {
 
 	// Dates dates tracked for summary calculation
 	Dates PatientSummaryDates `json:"dates,omitempty"`
+
+	// Id Summary Unique Identifier
+	Id *SummaryIdV1 `json:"id,omitempty"`
 
 	// OffsetPeriods A map to each supported CGM summary period
 	OffsetPeriods PatientCGMPeriods `json:"offsetPeriods,omitempty"`
@@ -1753,6 +1767,9 @@ type UpdateUserDetails struct {
 	Email *openapi_types.Email `json:"email,omitempty"`
 }
 
+// SummaryIdV1 Summary Unique Identifier
+type SummaryIdV1 = string
+
 // ClinicId defines model for clinicId.
 type ClinicId = string
 
@@ -1797,6 +1814,9 @@ type ShareCode = string
 
 // Sort defines model for sort.
 type Sort = string
+
+// SummaryId Summary Unique Identifier
+type SummaryId = SummaryIdV1
 
 // UserId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 type UserId = TidepoolUserId
