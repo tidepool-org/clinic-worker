@@ -100,6 +100,7 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 		}
 
 		patientUpdate.CgmStats = &clinics.PatientCGMStats{
+			Id: cgmSummary.Id,
 			Dates: clinics.PatientSummaryDates{
 				LastUpdatedDate:   lastUpdatedDate,
 				LastUpdatedReason: &cgmSummary.Dates.LastUpdatedReason,
@@ -165,6 +166,7 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 		}
 
 		patientUpdate.BgmStats = &clinics.PatientBGMStats{
+			Id: bgmSummary.Id,
 			Dates: clinics.PatientSummaryDates{
 				LastUpdatedDate:   lastUpdatedDate,
 				LastUpdatedReason: &bgmSummary.Dates.LastUpdatedReason,
