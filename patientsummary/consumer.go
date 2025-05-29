@@ -101,8 +101,13 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 	// handle delete events
 	if event.OperationType == cdc.OperationTypeDelete {
 		p.logger.Debugw("deleting patient summary", "summaryId", event.DocumentKey.Value)
-		_, err := p.clinics.DeletePatientSummaryWithResponse(ctx, event.DocumentKey.Value)
-		return err
+		response, err := p.clinics.DeletePatientSummaryWithResponse(ctx, event.DocumentKey.Value)
+		if err != nil {
+			return err
+		} else if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNoContent) {
+			return fmt.Errorf("unexpected status code when updating patient summary %v", response.StatusCode())
+		}
+		return nil
 	}
 
 	// handle update events
