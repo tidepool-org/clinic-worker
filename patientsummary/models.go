@@ -8,6 +8,7 @@ import (
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
+	"go.uber.org/zap"
 )
 
 type DocumentKey struct {
@@ -26,15 +27,35 @@ var supportedOps = map[string]any{
 	cdc.OperationTypeInsert:  empty,
 	cdc.OperationTypeUpdate:  empty,
 	cdc.OperationTypeReplace: empty,
-	cdc.OperationTypeDelete:  empty,
+	//cdc.OperationTypeDelete:  empty,
 }
 
-func (p CDCEvent) ShouldApplyUpdates() bool {
+var supportedSummaryTypes = map[string]any{
+	"cgm": empty,
+	"bgm": empty,
+}
+
+func (p CDCEvent) ShouldApplyUpdates(logger *zap.SugaredLogger) bool {
+	// specically catch deletes first, as it lacks summary type or userid
+	if p.OperationType == cdc.OperationTypeDelete {
+		return true
+	}
+
+	// catch unsupported ops
 	if _, ok := supportedOps[p.OperationType]; !ok {
+		logger.Debugw("skipping over unsupported cdc operation type", "offset", p.Offset, "operationType", p.OperationType)
 		return false
 	}
 
+	// catch unsupported summary types
+	if _, ok := supportedSummaryTypes[p.FullDocument.Type]; !ok {
+		logger.Debugw("skipping over unsupported summary type", "offset", p.Offset, "summaryType", p.FullDocument.Type)
+		return false
+	}
+
+	// catch empty userid
 	if p.FullDocument.UserID == "" {
+		logger.Debugw("skipping over summary with empty userId", "offset", p.Offset, "summaryType", p.FullDocument.Type, "userId", p.FullDocument.UserID)
 		return false
 	}
 

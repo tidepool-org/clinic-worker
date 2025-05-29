@@ -89,34 +89,27 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 		Offset: cm.Offset,
 	}
 	if err := p.unmarshalEvent(cm.Value, &event); err != nil {
-		p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
+		p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, "error", zap.Error(err))
 		return err
 	}
 
 	p.logger.Debugw("event being processed", "event", event.FullDocument.BaseSummary)
 
-	if !event.ShouldApplyUpdates() {
+	if !event.ShouldApplyUpdates(p.logger) {
 		p.logger.Debugw("skipping handling of event", "offset", event.Offset)
 		return nil
 	}
 
-	// handle document delete events, as they have no FullDocument/userId
+	// handle delete events
 	if event.OperationType == cdc.OperationTypeDelete {
 		p.logger.Debugw("deleting patient summary", "summaryId", event.DocumentKey.Value)
 		p.clinics.DeletePatientSummaryWithResponse(ctx, event.DocumentKey.Value)
 	}
 
-	if event.FullDocument.Type == "cgm" || event.FullDocument.Type == "bgm" {
-		if err := applyPatientSummaryUpdate(p, event); err != nil {
-			p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
-			return err
-		}
-	} else if event.FullDocument.Type == "con" || event.FullDocument.Type == "continuous" {
-		p.logger.Debugw("skipping over continuous type cdc event", "offset", cm.Offset, "userId", event.FullDocument.UserID)
-		return nil
-	} else {
-		p.logger.Warnw("unsupported type of unmarshalled message", "offset", cm.Offset, "type", event.FullDocument.Type)
-		return fmt.Errorf("unsupported type of unmarshalled message, type: %s", event.FullDocument.Type)
+	// handle update events
+	if err := applyPatientSummaryUpdate(p, event); err != nil {
+		p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
+		return err
 	}
 
 	return nil
