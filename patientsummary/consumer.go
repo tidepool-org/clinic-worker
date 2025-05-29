@@ -137,7 +137,7 @@ func applyPatientSummaryUpdate(p *CDCConsumer, event CDCEvent) error {
 		return err
 	}
 
-	if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNotFound) {
+	if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNoContent) {
 		return fmt.Errorf("unexpected status code when updating patient summary %v", response.StatusCode())
 	}
 
