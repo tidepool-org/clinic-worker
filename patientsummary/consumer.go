@@ -3,7 +3,6 @@ package patientsummary
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -96,14 +95,14 @@ func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 	p.logger.Debugw("event being processed", "event", event.FullDocument.BaseSummary)
 
 	if !event.ShouldApplyUpdates(p.logger) {
-		p.logger.Debugw("skipping handling of event", "offset", event.Offset)
 		return nil
 	}
 
 	// handle delete events
 	if event.OperationType == cdc.OperationTypeDelete {
 		p.logger.Debugw("deleting patient summary", "summaryId", event.DocumentKey.Value)
-		p.clinics.DeletePatientSummaryWithResponse(ctx, event.DocumentKey.Value)
+		_, err := p.clinics.DeletePatientSummaryWithResponse(ctx, event.DocumentKey.Value)
+		return err
 	}
 
 	// handle update events
@@ -125,11 +124,6 @@ func (p *CDCConsumer) unmarshalEvent(value []byte, event interface{}) error {
 
 func applyPatientSummaryUpdate(p *CDCConsumer, event CDCEvent) error {
 	p.logger.Debugw("applying patient summary update", "offset", event.Offset)
-	if event.FullDocument.UserID == "" {
-		return errors.New("expected user id to be defined")
-	}
-
-	userId := event.FullDocument.UserID
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
@@ -138,7 +132,7 @@ func applyPatientSummaryUpdate(p *CDCConsumer, event CDCEvent) error {
 		return err
 	}
 
-	response, err := p.clinics.UpdatePatientSummaryWithResponse(ctx, userId, *updateBody)
+	response, err := p.clinics.UpdatePatientSummaryWithResponse(ctx, event.FullDocument.UserID, *updateBody)
 	if err != nil {
 		return err
 	}
@@ -148,7 +142,7 @@ func applyPatientSummaryUpdate(p *CDCConsumer, event CDCEvent) error {
 	}
 
 	if ShouldTriggerEHRSync(event.FullDocument) {
-		syncResponse, err := p.clinics.SyncEHRDataForPatientWithResponse(ctx, userId)
+		syncResponse, err := p.clinics.SyncEHRDataForPatientWithResponse(ctx, event.FullDocument.UserID)
 		if err != nil {
 			return err
 		}
