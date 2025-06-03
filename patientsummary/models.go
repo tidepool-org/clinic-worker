@@ -27,7 +27,6 @@ var supportedOps = map[string]any{
 	cdc.OperationTypeInsert:  empty,
 	cdc.OperationTypeUpdate:  empty,
 	cdc.OperationTypeReplace: empty,
-	//cdc.OperationTypeDelete:  empty,
 }
 
 var supportedSummaryTypes = map[string]any{
