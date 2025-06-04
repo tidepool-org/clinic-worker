@@ -3,8 +3,9 @@ package redox
 import (
 	_ "embed"
 	"fmt"
-	models "github.com/tidepool-org/clinic/redox_models"
 	"io"
+
+	models "github.com/tidepool-org/clinic/redox_models"
 )
 
 const (
