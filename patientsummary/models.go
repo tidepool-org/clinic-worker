@@ -8,22 +8,53 @@ import (
 	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
+	"go.uber.org/zap"
 )
 
-type CDCEvent struct {
-	Offset        int64   `json:"-"`
-	FullDocument  Summary `json:"fullDocument"`
-	OperationType string  `json:"operationType"`
+type DocumentKey struct {
+	cdc.ObjectId `json:"_id"`
 }
 
-func (p CDCEvent) ShouldApplyUpdates() bool {
-	if p.OperationType != cdc.OperationTypeInsert &&
-		p.OperationType != cdc.OperationTypeUpdate &&
-		p.OperationType != cdc.OperationTypeReplace {
+type CDCEvent struct {
+	Offset        int64       `json:"-"`
+	FullDocument  Summary     `json:"fullDocument"`
+	OperationType string      `json:"operationType"`
+	DocumentKey   DocumentKey `json:"documentKey"`
+}
+
+var empty any
+var supportedOps = map[string]any{
+	cdc.OperationTypeInsert:  empty,
+	cdc.OperationTypeUpdate:  empty,
+	cdc.OperationTypeReplace: empty,
+}
+
+var supportedSummaryTypes = map[string]any{
+	"cgm": empty,
+	"bgm": empty,
+}
+
+func (p CDCEvent) ShouldApplyUpdates(logger *zap.SugaredLogger) bool {
+	// specically catch deletes first, as it lacks summary type or userid
+	if p.OperationType == cdc.OperationTypeDelete {
+		return true
+	}
+
+	// catch unsupported ops
+	if _, ok := supportedOps[p.OperationType]; !ok {
+		logger.Debugw("skipping over unsupported cdc operation type", "offset", p.Offset, "operationType", p.OperationType)
 		return false
 	}
 
+	// catch unsupported summary types
+	if _, ok := supportedSummaryTypes[p.FullDocument.Type]; !ok {
+		logger.Debugw("skipping over unsupported summary type", "offset", p.Offset, "summaryType", p.FullDocument.Type)
+		return false
+	}
+
+	// catch empty userid
 	if p.FullDocument.UserID == "" {
+		logger.Debugw("skipping over summary with empty userId", "offset", p.Offset, "summaryType", p.FullDocument.Type, "userId", p.FullDocument.UserID)
 		return false
 	}
 
@@ -97,26 +128,29 @@ func (p CDCEvent) CreateUpdateBody() (*clinics.UpdatePatientSummaryJSONRequestBo
 		p.FullDocument.Dates.LastUpdatedReason = []string{}
 	}
 
+	dates := clinics.PatientSummaryDates{
+		LastUpdatedDate:   lastUpdatedDate,
+		LastUpdatedReason: &p.FullDocument.Dates.LastUpdatedReason,
+		OutdatedReason:    &p.FullDocument.Dates.OutdatedReason,
+		HasLastUploadDate: lastUploadDate != nil,
+		LastUploadDate:    lastUploadDate,
+		HasFirstData:      firstData != nil,
+		FirstData:         firstData,
+		HasLastData:       lastData != nil,
+		LastData:          lastData,
+		HasOutdatedSince:  outdatedSince != nil,
+		OutdatedSince:     outdatedSince,
+	}
+
+	config := clinics.PatientSummaryConfig(p.FullDocument.Config)
+
 	patientUpdate := &clinics.UpdatePatientSummaryJSONRequestBody{}
 	if p.FullDocument.Type == "cgm" {
-		patientUpdate.CgmStats = &clinics.PatientCGMStats{}
-
-		patientUpdate.CgmStats.Dates = clinics.PatientSummaryDates{
-			LastUpdatedDate:   lastUpdatedDate,
-			LastUpdatedReason: &p.FullDocument.Dates.LastUpdatedReason,
-			OutdatedReason:    &p.FullDocument.Dates.OutdatedReason,
-			HasLastUploadDate: lastUploadDate != nil,
-			LastUploadDate:    lastUploadDate,
-			HasFirstData:      firstData != nil,
-			FirstData:         firstData,
-			HasLastData:       lastData != nil,
-			LastData:          lastData,
-			HasOutdatedSince:  outdatedSince != nil,
-			OutdatedSince:     outdatedSince,
+		patientUpdate.CgmStats = &clinics.PatientCGMStats{
+			Id:     &p.FullDocument.ID.Value,
+			Dates:  dates,
+			Config: config,
 		}
-
-		config := clinics.PatientSummaryConfig(p.FullDocument.Config)
-		patientUpdate.CgmStats.Config = config
 
 		if p.FullDocument.Periods != nil {
 			sourceCGMPeriod, err := p.FullDocument.Periods.AsCgmperiodsV5()
@@ -127,24 +161,11 @@ func (p CDCEvent) CreateUpdateBody() (*clinics.UpdatePatientSummaryJSONRequestBo
 		}
 
 	} else if p.FullDocument.Type == "bgm" {
-		patientUpdate.BgmStats = &clinics.PatientBGMStats{}
-
-		patientUpdate.BgmStats.Dates = clinics.PatientSummaryDates{
-			LastUpdatedDate:   lastUpdatedDate,
-			LastUpdatedReason: &p.FullDocument.Dates.LastUpdatedReason,
-			OutdatedReason:    &p.FullDocument.Dates.OutdatedReason,
-			HasLastUploadDate: lastUploadDate != nil,
-			LastUploadDate:    lastUploadDate,
-			HasFirstData:      firstData != nil,
-			FirstData:         firstData,
-			HasLastData:       lastData != nil,
-			LastData:          lastData,
-			HasOutdatedSince:  outdatedSince != nil,
-			OutdatedSince:     outdatedSince,
+		patientUpdate.BgmStats = &clinics.PatientBGMStats{
+			Id:     &p.FullDocument.ID.Value,
+			Dates:  dates,
+			Config: config,
 		}
-
-		config := clinics.PatientSummaryConfig(p.FullDocument.Config)
-		patientUpdate.BgmStats.Config = config
 
 		if p.FullDocument.Periods != nil {
 			sourceBGMPeriod, err := p.FullDocument.Periods.AsBgmperiodsV5()

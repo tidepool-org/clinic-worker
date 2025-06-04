@@ -277,7 +277,7 @@ func (p *PatientCDCConsumer) populateSummary(userId string) error {
 		return err
 	}
 
-	if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNotFound) {
+	if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNoContent) {
 		return fmt.Errorf("unexpected status code when updating patient summary %v", response.StatusCode())
 	}
 

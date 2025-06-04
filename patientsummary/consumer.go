@@ -3,7 +3,6 @@ package patientsummary
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -81,34 +80,40 @@ func (p *CDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) error {
 }
 
 func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
 	p.logger.Debugw("handling kafka message", "offset", cm.Offset)
 	// we have to unmarshal twice, once to get the type out
 	event := CDCEvent{
 		Offset: cm.Offset,
 	}
 	if err := p.unmarshalEvent(cm.Value, &event); err != nil {
-		p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
+		p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, "error", zap.Error(err))
 		return err
 	}
 
 	p.logger.Debugw("event being processed", "event", event.FullDocument.BaseSummary)
 
-	if !event.ShouldApplyUpdates() {
-		p.logger.Debugw("skipping handling of event", "offset", event.Offset)
+	if !event.ShouldApplyUpdates(p.logger) {
 		return nil
 	}
 
-	if event.FullDocument.Type == "cgm" || event.FullDocument.Type == "bgm" {
-		if err := applyPatientSummaryUpdate(p, event); err != nil {
-			p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
+	// handle delete events
+	if event.OperationType == cdc.OperationTypeDelete {
+		p.logger.Debugw("deleting patient summary", "summaryId", event.DocumentKey.Value)
+		response, err := p.clinics.DeletePatientSummaryWithResponse(ctx, event.DocumentKey.Value)
+		if err != nil {
 			return err
+		} else if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNoContent) {
+			return fmt.Errorf("unexpected status code when updating patient summary %v", response.StatusCode())
 		}
-	} else if event.FullDocument.Type == "con" || event.FullDocument.Type == "continuous" {
-		p.logger.Debugw("skipping over continuous type cdc event", "offset", cm.Offset, "userId", event.FullDocument.UserID)
 		return nil
-	} else {
-		p.logger.Warnw("unsupported type of unmarshalled message", "offset", cm.Offset, "type", event.FullDocument.Type)
-		return fmt.Errorf("unsupported type of unmarshalled message, type: %s", event.FullDocument.Type)
+	}
+
+	// handle update events
+	if err := applyPatientSummaryUpdate(p, event); err != nil {
+		p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
+		return err
 	}
 
 	return nil
@@ -124,11 +129,6 @@ func (p *CDCConsumer) unmarshalEvent(value []byte, event interface{}) error {
 
 func applyPatientSummaryUpdate(p *CDCConsumer, event CDCEvent) error {
 	p.logger.Debugw("applying patient summary update", "offset", event.Offset)
-	if event.FullDocument.UserID == "" {
-		return errors.New("expected user id to be defined")
-	}
-
-	userId := event.FullDocument.UserID
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
@@ -137,17 +137,17 @@ func applyPatientSummaryUpdate(p *CDCConsumer, event CDCEvent) error {
 		return err
 	}
 
-	response, err := p.clinics.UpdatePatientSummaryWithResponse(ctx, userId, *updateBody)
+	response, err := p.clinics.UpdatePatientSummaryWithResponse(ctx, event.FullDocument.UserID, *updateBody)
 	if err != nil {
 		return err
 	}
 
-	if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNotFound) {
+	if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNoContent) {
 		return fmt.Errorf("unexpected status code when updating patient summary %v", response.StatusCode())
 	}
 
 	if ShouldTriggerEHRSync(event.FullDocument) {
-		syncResponse, err := p.clinics.SyncEHRDataForPatientWithResponse(ctx, userId)
+		syncResponse, err := p.clinics.SyncEHRDataForPatientWithResponse(ctx, event.FullDocument.UserID)
 		if err != nil {
 			return err
 		}
