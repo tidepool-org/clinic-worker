@@ -213,7 +213,7 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			}
 			if event.FullDocument.DataSources != nil {
 				for _, source := range *event.FullDocument.DataSources {
-					if *source.ProviderName == providerName && *source.State == string(clinics.DataSourceStatePendingReconnect) {
+					if *source.ProviderName == providerName && *source.State == string(clinics.PendingReconnect) {
 						action = "reconnect"
 					}
 				}

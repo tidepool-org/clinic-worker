@@ -79,10 +79,10 @@ var _ = Describe("Flowsheet", func() {
 	})
 
 	Context("With EHR Match Response", func() {
-		var response api.EHRMatchResponse
+		var response api.EhrMatchResponseV1
 
 		BeforeEach(func() {
-			response = api.EHRMatchResponse{}
+			response = api.EhrMatchResponseV1{}
 			fixture, err := test.LoadFixture("test/fixtures/subscriptionmatchresponse.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(fixture, &response)).To(Succeed())
@@ -188,8 +188,8 @@ var _ = Describe("Flowsheet", func() {
 			It("does not populate cgm and bgm observations when summaries placeholders", func() {
 				flowsheet := redox.NewFlowsheet()
 				patient := (*response.Patients)[0]
-				patient.Summary.BgmStats = &api.PatientBGMStats{Dates: api.PatientSummaryDates{LastUpdatedDate: &time.Time{}}}
-				patient.Summary.CgmStats = &api.PatientCGMStats{Dates: api.PatientSummaryDates{LastUpdatedDate: &time.Time{}}}
+				patient.Summary.BgmStats = &api.BgmStatsV1{Dates: api.SummaryDatesV1{LastUpdatedDate: &time.Time{}}}
+				patient.Summary.CgmStats = &api.CgmStatsV1{Dates: api.SummaryDatesV1{LastUpdatedDate: &time.Time{}}}
 
 				settings := redox.FlowsheetSettings{
 					PreferredBGUnits: string(response.Clinic.PreferredBgUnits),

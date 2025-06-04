@@ -30,7 +30,7 @@ type NewOrderProcessor interface {
 }
 
 type SummaryAndReportParameters struct {
-	Match               clinics.EHRMatchResponse
+	Match               clinics.EhrMatchResponseV1
 	Order               models.NewOrder
 	DocumentId          string
 	PrecedingDocumentId string
@@ -38,7 +38,7 @@ type SummaryAndReportParameters struct {
 
 func (s SummaryAndReportParameters) ShouldReplacePrecedingReport() bool {
 	if s.Match.Settings.ScheduledReports.OnUploadNoteEventType != nil &&
-		*s.Match.Settings.ScheduledReports.OnUploadNoteEventType == clinics.ScheduledReportsOnUploadNoteEventTypeReplace &&
+		*s.Match.Settings.ScheduledReports.OnUploadNoteEventType == clinics.ScheduledReportsV1OnUploadNoteEventTypeReplace &&
 		s.PrecedingDocumentId != "" {
 		return true
 	}
@@ -50,7 +50,7 @@ var (
 	ErrMultipleMatchingPatients = fmt.Errorf("multiple matching patients")
 )
 
-func (s SummaryAndReportParameters) GetMatchingPatient() (p clinics.Patient, err error) {
+func (s SummaryAndReportParameters) GetMatchingPatient() (p clinics.PatientV1, err error) {
 	if s.Match.Patients == nil || len(*s.Match.Patients) == 0 {
 		err = ErrNoMatchingPatients
 	} else if len(*s.Match.Patients) > 1 {
@@ -120,7 +120,7 @@ func (o *newOrderProcessor) ProcessOrder(ctx context.Context, envelope models.Me
 	return o.handleUnknownProcedure(ctx, order, *match)
 }
 
-func (o *newOrderProcessor) matchOrder(ctx context.Context, matchRequest clinics.EHRMatchRequest, order models.NewOrder) (*clinics.EHRMatchResponse, error) {
+func (o *newOrderProcessor) matchOrder(ctx context.Context, matchRequest clinics.EhrMatchRequestV1, order models.NewOrder) (*clinics.EhrMatchResponseV1, error) {
 	response, err := o.clinics.MatchClinicAndPatientWithResponse(ctx, matchRequest)
 	if err != nil {
 		o.logger.Warnw("unable to match", "order", order.Meta, zap.Error(err))
@@ -233,7 +233,7 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, create Crea
 
 	permission := make(map[string]interface{})
 	createPatient := clinics.CreatePatientAccountJSONRequestBody{
-		Permissions: &clinics.PatientPermissions{
+		Permissions: &clinics.PatientPermissionsV1{
 			Custodian: &permission,
 			Note:      &permission,
 			Upload:    &permission,
@@ -320,7 +320,7 @@ func (o *newOrderProcessor) handleCreateAccountAndEnableSummaryReports(ctx conte
 	return o.handleEnableSummaryReports(ctx, enable)
 }
 
-func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) (*clinics.PatientTagIds, error) {
+func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order models.NewOrder, match clinics.EhrMatchResponseV1) (*clinics.PatientTagIdsV1, error) {
 	tagNames := o.getTagNamesFromOrder(order, match)
 	if tagNames == nil {
 		return nil, nil
@@ -362,7 +362,7 @@ func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order mode
 	}
 
 	existingTags = o.getExistingTags(*resp.JSON200)
-	patientTagIds := clinics.PatientTagIds{}
+	patientTagIds := clinics.PatientTagIdsV1{}
 	for _, tagName := range tagNames {
 		patientTag, ok := existingTags[tagName]
 		if !ok {
@@ -375,7 +375,7 @@ func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order mode
 	return &patientTagIds, nil
 }
 
-func (o *newOrderProcessor) replacePatientTags(ctx context.Context, match clinics.EHRMatchResponse, tagIds *clinics.PatientTagIds) error {
+func (o *newOrderProcessor) replacePatientTags(ctx context.Context, match clinics.EhrMatchResponseV1, tagIds *clinics.PatientTagIdsV1) error {
 	if tagIds == nil {
 		return nil
 	}
@@ -399,7 +399,7 @@ func (o *newOrderProcessor) replacePatientTags(ctx context.Context, match clinic
 	return nil
 }
 
-func (o *newOrderProcessor) getPatientTagCodes(match clinics.EHRMatchResponse) map[string]struct{} {
+func (o *newOrderProcessor) getPatientTagCodes(match clinics.EhrMatchResponseV1) map[string]struct{} {
 	result := make(map[string]struct{})
 	if match.Settings.Tags.Codes != nil {
 		for _, code := range *match.Settings.Tags.Codes {
@@ -409,11 +409,11 @@ func (o *newOrderProcessor) getPatientTagCodes(match clinics.EHRMatchResponse) m
 	return result
 }
 
-func (o *newOrderProcessor) getPatientTagsSeparator(match clinics.EHRMatchResponse) *string {
+func (o *newOrderProcessor) getPatientTagsSeparator(match clinics.EhrMatchResponseV1) *string {
 	return match.Settings.Tags.Separator
 }
 
-func (o *newOrderProcessor) getTagNamesFromOrder(order models.NewOrder, match clinics.EHRMatchResponse) []string {
+func (o *newOrderProcessor) getTagNamesFromOrder(order models.NewOrder, match clinics.EhrMatchResponseV1) []string {
 	separator := o.getPatientTagsSeparator(match)
 	codes := o.getPatientTagCodes(match)
 	if len(codes) == 0 {
@@ -444,8 +444,8 @@ func (o *newOrderProcessor) getTagNamesFromOrder(order models.NewOrder, match cl
 	return tagNames
 }
 
-func (o *newOrderProcessor) getExistingTags(clinic clinics.Clinic) map[string]clinics.PatientTag {
-	tags := make(map[string]clinics.PatientTag)
+func (o *newOrderProcessor) getExistingTags(clinic clinics.ClinicV1) map[string]clinics.PatientTagV1 {
+	tags := make(map[string]clinics.PatientTagV1)
 	if clinic.PatientTags != nil {
 		for _, tag := range *clinic.PatientTags {
 			tags[tag.Name] = tag
@@ -650,7 +650,7 @@ func (o *newOrderProcessor) createReportNote(ctx context.Context, params Summary
 	return notes, nil
 }
 
-func (o *newOrderProcessor) handleUnknownProcedure(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
+func (o *newOrderProcessor) handleUnknownProcedure(ctx context.Context, order models.NewOrder, match clinics.EhrMatchResponseV1) error {
 	o.logger.Infow("Unknown procedure code. Ignoring order.", "order", order.Meta, "settings", match.Settings)
 	return nil
 }
@@ -679,7 +679,7 @@ func (o *newOrderProcessor) handleSuccessfulPatientMatch(ctx context.Context, pa
 	}, params)
 }
 
-func (o *newOrderProcessor) handleAccountCreationSuccess(ctx context.Context, order models.NewOrder, match clinics.EHRMatchResponse) error {
+func (o *newOrderProcessor) handleAccountCreationSuccess(ctx context.Context, order models.NewOrder, match clinics.EhrMatchResponseV1) error {
 	o.logger.Infow("account was successfully created", "order", order.Meta)
 	return o.sendAccountCreationResultsNotification(ctx, ResultsNotification{
 		IsSuccess: true,
@@ -687,7 +687,7 @@ func (o *newOrderProcessor) handleAccountCreationSuccess(ctx context.Context, or
 	}, order, match)
 }
 
-func (o *newOrderProcessor) handleAccountCreationError(ctx context.Context, err error, order models.NewOrder, match clinics.EHRMatchResponse) error {
+func (o *newOrderProcessor) handleAccountCreationError(ctx context.Context, err error, order models.NewOrder, match clinics.EhrMatchResponseV1) error {
 	o.logger.Warnw("unable to create account", "order", order.Meta, "error", err)
 	return o.sendAccountCreationResultsNotification(ctx, ResultsNotification{
 		IsSuccess: false,
@@ -723,7 +723,7 @@ func (o *newOrderProcessor) sendMatchingResultsNotification(ctx context.Context,
 	return nil
 }
 
-func (o *newOrderProcessor) sendAccountCreationResultsNotification(ctx context.Context, notification ResultsNotification, order models.NewOrder, match clinics.EHRMatchResponse) error {
+func (o *newOrderProcessor) sendAccountCreationResultsNotification(ctx context.Context, notification ResultsNotification, order models.NewOrder, match clinics.EhrMatchResponseV1) error {
 	o.logger.Infow("Sending account creation results notification", "order", order.Meta)
 	source := o.client.GetSource()
 	destinationId := match.Settings.DestinationIds.Results
@@ -860,12 +860,12 @@ func GetMrnFromOrder(order models.NewOrder) (*string, error) {
 	return mrn, nil
 }
 
-func NewMatchRequest(documentId string, order models.NewOrder) clinics.EHRMatchRequest {
-	return clinics.EHRMatchRequest{
-		MessageRef: &clinics.EHRMatchMessageRef{
+func NewMatchRequest(documentId string, order models.NewOrder) clinics.EhrMatchRequestV1 {
+	return clinics.EhrMatchRequestV1{
+		MessageRef: &clinics.EhrMatchMessageRefV1{
 			DocumentId: documentId,
-			DataModel:  clinics.EHRMatchMessageRefDataModel(order.Meta.DataModel),
-			EventType:  clinics.EHRMatchMessageRefEventType(order.Meta.EventType),
+			DataModel:  clinics.EhrMatchMessageRefV1DataModel(order.Meta.DataModel),
+			EventType:  clinics.EhrMatchMessageRefV1EventType(order.Meta.EventType),
 		},
 	}
 }
@@ -876,11 +876,11 @@ type EnableReports struct {
 	OnSuccess  func(context.Context, SummaryAndReportParameters) error
 }
 
-func (e EnableReports) GetMatchRequest() clinics.EHRMatchRequest {
+func (e EnableReports) GetMatchRequest() clinics.EhrMatchRequestV1 {
 	action := clinics.ENABLEREPORTS
 	request := NewMatchRequest(e.DocumentId, e.Order)
-	request.Patients = &clinics.EHRMatchRequestPatientsOptions{
-		Criteria: []clinics.EHRMatchRequestPatientsOptionsCriteria{clinics.MRNDOB},
+	request.Patients = &clinics.EhrMatchRequestPatientsOptionsV1{
+		Criteria: []clinics.EhrMatchRequestPatientsOptionsV1Criteria{clinics.MRNDOB},
 	}
 	request.Patients.OnUniqueMatch = &action
 	return request
@@ -891,11 +891,11 @@ type DisableReports struct {
 	Order      models.NewOrder
 }
 
-func (d DisableReports) GetMatchRequest() clinics.EHRMatchRequest {
+func (d DisableReports) GetMatchRequest() clinics.EhrMatchRequestV1 {
 	action := clinics.DISABLEREPORTS
 	request := NewMatchRequest(d.DocumentId, d.Order)
-	request.Patients = &clinics.EHRMatchRequestPatientsOptions{
-		Criteria: []clinics.EHRMatchRequestPatientsOptionsCriteria{clinics.MRNDOB},
+	request.Patients = &clinics.EhrMatchRequestPatientsOptionsV1{
+		Criteria: []clinics.EhrMatchRequestPatientsOptionsV1Criteria{clinics.MRNDOB},
 	}
 	request.Patients.OnUniqueMatch = &action
 	return request
@@ -906,10 +906,10 @@ type CreateAccount struct {
 	Order      models.NewOrder
 }
 
-func (c CreateAccount) GetMatchRequest() clinics.EHRMatchRequest {
+func (c CreateAccount) GetMatchRequest() clinics.EhrMatchRequestV1 {
 	request := NewMatchRequest(c.DocumentId, c.Order)
-	request.Patients = &clinics.EHRMatchRequestPatientsOptions{
-		Criteria: []clinics.EHRMatchRequestPatientsOptionsCriteria{clinics.MRN, clinics.DOBFULLNAME},
+	request.Patients = &clinics.EhrMatchRequestPatientsOptionsV1{
+		Criteria: []clinics.EhrMatchRequestPatientsOptionsV1Criteria{clinics.MRN, clinics.DOBFULLNAME},
 	}
 	return request
 }
@@ -919,10 +919,10 @@ type CreateAccountEnableReports struct {
 	Order      models.NewOrder
 }
 
-func (c CreateAccountEnableReports) GetMatchRequest() clinics.EHRMatchRequest {
+func (c CreateAccountEnableReports) GetMatchRequest() clinics.EhrMatchRequestV1 {
 	request := NewMatchRequest(c.DocumentId, c.Order)
-	request.Patients = &clinics.EHRMatchRequestPatientsOptions{
-		Criteria: []clinics.EHRMatchRequestPatientsOptionsCriteria{clinics.MRNDOB},
+	request.Patients = &clinics.EhrMatchRequestPatientsOptionsV1{
+		Criteria: []clinics.EhrMatchRequestPatientsOptionsV1Criteria{clinics.MRNDOB},
 	}
 	return request
 }
