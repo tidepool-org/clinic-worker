@@ -25,7 +25,7 @@ func MatchArg[T any](fn func(T) bool) gomock.Matcher {
 	return ArgMatcher[T]{MatchFn: fn}
 }
 
-func PatientHasTags(actual *client.PatientTagIds, expected []string) bool {
+func PatientHasTags(actual *client.PatientTagIdsV1, expected []string) bool {
 	if actual == nil {
 		return false
 	}

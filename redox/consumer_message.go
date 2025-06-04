@@ -2,6 +2,7 @@ package redox
 
 import (
 	"context"
+
 	"github.com/IBM/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	models "github.com/tidepool-org/clinic/redox_models"

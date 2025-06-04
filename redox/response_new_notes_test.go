@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/tidepool-org/clinic-worker/redox"
 	"github.com/tidepool-org/clinic-worker/test"
 	models "github.com/tidepool-org/clinic/redox_models"
-	"time"
 )
 
 var _ = Describe("Notes", func() {
@@ -114,7 +115,7 @@ var _ = Describe("Notes", func() {
 
 		Describe("SetProcedureFromOrder", func() {
 			Context("with an existing visit", func() {
-				BeforeEach(func(){
+				BeforeEach(func() {
 					notes.SetVisitNumberFromOrder(order)
 					Expect(notes.Visit).ToNot(BeNil())
 					Expect(notes.Visit.VisitNumber).To(PointTo(Equal(*order.Visit.VisitNumber)))

@@ -179,7 +179,7 @@ func (m *migrator) createMigration(ctx context.Context, userId, clinicId string)
 
 func (m *migrator) updateMigrationsStatus(ctx context.Context, migration *Migration, status string) error {
 	body := clinics.UpdateMigrationJSONRequestBody{
-		Status: clinics.MigrationStatus(status),
+		Status: clinics.MigrationStatusV1(status),
 	}
 	resp, err := m.clinics.UpdateMigrationWithResponse(ctx, *migration.clinic.Id, clinics.UserId(migration.legacyClinicianUserId), body)
 	if err != nil {
@@ -220,14 +220,14 @@ func (m *migrator) migratePatient(ctx context.Context, migration *Migration, pat
 	return nil
 }
 
-func (m *migrator) createPatient(ctx context.Context, migration *Migration, patientId string, permissions clients.Permissions) (*clinics.Patient, error) {
+func (m *migrator) createPatient(ctx context.Context, migration *Migration, patientId string, permissions clients.Permissions) (*clinics.PatientV1, error) {
 	clinicId := string(*migration.clinic.Id)
 	m.logger.Infof("Migrating patient %v to clinic %v", patientId, clinicId)
-	var patient *clinics.Patient
+	var patient *clinics.PatientV1
 	var err error
 
 	isMigrated := true
-	legacyClinicianId := clinics.TidepoolUserId(migration.legacyClinicianUserId)
+	legacyClinicianId := clinics.Tidepooluserid(migration.legacyClinicianUserId)
 	body := clinics.CreatePatientFromUserJSONRequestBody{
 		IsMigrated:        &isMigrated,
 		LegacyClinicianId: &legacyClinicianId,
@@ -274,7 +274,7 @@ func (m *migrator) removeSharingConnection(userId, patientId string) error {
 	return err
 }
 
-func (m *migrator) sendMigrationEmail(ctx context.Context, migrationContext *Migration, patient *clinics.Patient) error {
+func (m *migrator) sendMigrationEmail(ctx context.Context, migrationContext *Migration, patient *clinics.PatientV1) error {
 	if patient.Email == nil || *patient.Email == "" {
 		m.logger.Infof("Skipping sending of migration email to user %s because email address is empty", string(*patient.Id))
 		return nil
@@ -312,8 +312,8 @@ func (m *migrator) sendMigrationCompletedEmail(ctx context.Context, migrationCon
 	return m.mailer.SendEmailTemplate(ctx, email)
 }
 
-func mapPermissions(permissions clients.Permissions) *clinics.PatientPermissions {
-	mapped := clinics.PatientPermissions{}
+func mapPermissions(permissions clients.Permissions) *clinics.PatientPermissionsV1 {
+	mapped := clinics.PatientPermissionsV1{}
 	permission := make(map[string]interface{})
 	if _, ok := permissions["custodian"]; ok {
 		mapped.Custodian = &permission

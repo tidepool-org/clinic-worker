@@ -38,7 +38,7 @@ var _ = Describe("NewOrderProcessor", func() {
 
 	Describe("ProcessOrder", func() {
 		BeforeEach(func() {
-			response := &clinics.EHRMatchResponse{}
+			response := &clinics.EhrMatchResponseV1{}
 			matchFixture, err := test.LoadFixture("test/fixtures/clinic_match_response.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(matchFixture, response)).To(Succeed())
@@ -73,7 +73,7 @@ var _ = Describe("NewOrderProcessor", func() {
 					Meta:    order.Meta,
 					Message: message,
 				}
-				response := &clinics.EHRMatchResponse{}
+				response := &clinics.EhrMatchResponseV1{}
 				matchFixture, err := test.LoadFixture("test/fixtures/subscriptionmatchresponse.json")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(json.Unmarshal(matchFixture, response)).To(Succeed())
@@ -91,7 +91,7 @@ var _ = Describe("NewOrderProcessor", func() {
 				BeforeEach(func() {
 					codes := []string{"TIDEPOOL_TAGS"}
 					separator := ","
-					matchResponse.JSON200.Settings.Tags = clinics.EHRTagsSettings{
+					matchResponse.JSON200.Settings.Tags = clinics.EhrTagsSettingsV1{
 						Codes:     &codes,
 						Separator: &separator,
 					}
@@ -140,7 +140,7 @@ var _ = Describe("NewOrderProcessor", func() {
 					adultId := "3"
 					adultName := "ADULT"
 
-					matchResponse.JSON200.Clinic.PatientTags = &[]clinics.PatientTag{
+					matchResponse.JSON200.Clinic.PatientTags = &[]clinics.PatientTagV1{
 						{&t1dId, t1dName},
 					}
 
@@ -156,7 +156,7 @@ var _ = Describe("NewOrderProcessor", func() {
 						}, nil)
 
 					updatedClinic := matchResponse.JSON200.Clinic
-					updatedClinic.PatientTags = &[]clinics.PatientTag{
+					updatedClinic.PatientTags = &[]clinics.PatientTagV1{
 						{&t1dId, t1dName},
 						{&adultId, adultName},
 					}
@@ -193,7 +193,7 @@ var _ = Describe("NewOrderProcessor", func() {
 					t1dName := "T1D"
 					adultName := "ADULT"
 
-					matchResponse.JSON200.Clinic.PatientTags = &[]clinics.PatientTag{
+					matchResponse.JSON200.Clinic.PatientTags = &[]clinics.PatientTagV1{
 						{&t1dId, t1dName},
 					}
 
@@ -209,7 +209,7 @@ var _ = Describe("NewOrderProcessor", func() {
 						}, nil)
 
 					updatedClinic := matchResponse.JSON200.Clinic
-					updatedClinic.PatientTags = &[]clinics.PatientTag{
+					updatedClinic.PatientTags = &[]clinics.PatientTagV1{
 						{&t1dId, t1dName},
 					}
 
@@ -341,7 +341,7 @@ var _ = Describe("NewOrderProcessor", func() {
 					Meta:    order.Meta,
 					Message: message,
 				}
-				response := &clinics.EHRMatchResponse{}
+				response := &clinics.EhrMatchResponseV1{}
 				matchFixture, err := test.LoadFixture("test/fixtures/createansubscribematchresponse.json")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(json.Unmarshal(matchFixture, response)).To(Succeed())
@@ -414,7 +414,7 @@ var _ = Describe("NewOrderProcessor", func() {
 				var noMatchResponse *clinics.MatchClinicAndPatientResponse
 
 				BeforeEach(func() {
-					response := &clinics.EHRMatchResponse{}
+					response := &clinics.EhrMatchResponseV1{}
 					matchFixture, err := test.LoadFixture("test/fixtures/createansubscribenomatchresponse.json")
 					Expect(err).ToNot(HaveOccurred())
 					Expect(json.Unmarshal(matchFixture, response)).To(Succeed())
@@ -530,7 +530,7 @@ var _ = Describe("NewOrderProcessor", func() {
 					Meta:    order.Meta,
 					Message: message,
 				}
-				response := &clinics.EHRMatchResponse{}
+				response := &clinics.EhrMatchResponseV1{}
 				matchFixture, err := test.LoadFixture("test/fixtures/accountcreationmatchresponse.json")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(json.Unmarshal(matchFixture, response)).To(Succeed())
@@ -570,7 +570,7 @@ var _ = Describe("NewOrderProcessor", func() {
 						HTTPResponse: &http.Response{
 							StatusCode: http.StatusOK,
 						},
-						JSON200: &clinics.Patient{},
+						JSON200: &clinics.PatientV1{},
 					}, nil)
 				Expect(processor.ProcessOrder(context.Background(), envelope, order)).To(Succeed())
 			})

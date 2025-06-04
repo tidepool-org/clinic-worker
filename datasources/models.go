@@ -37,15 +37,15 @@ type DataSource struct {
 	State        *string       `json:"state"`
 }
 
-func (p CDCEvent) CreateUpdateBody(source clients.DataSource) clinics.DataSource {
-	patientUpdate := clinics.DataSource{
+func (p CDCEvent) CreateUpdateBody(source clients.DataSource) clinics.DataSourceV1 {
+	patientUpdate := clinics.DataSourceV1{
 		DataSourceId: &p.FullDocument.ID.Value,
 		ProviderName: *source.ProviderName,
-		State:        api.DataSourceState(*source.State),
+		State:        api.DataSourceV1State(*source.State),
 	}
 
 	if source.ModifiedTime != nil {
-		modifiedTimeVal := clinics.DateTime(source.ModifiedTime.Format(time.RFC3339))
+		modifiedTimeVal := clinics.DatetimeV1(source.ModifiedTime.Format(time.RFC3339))
 		patientUpdate.ModifiedTime = &modifiedTimeVal
 	}
 
