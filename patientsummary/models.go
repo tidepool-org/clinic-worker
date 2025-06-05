@@ -261,6 +261,10 @@ func ExportCGMPeriod(period summaries.GlucosePeriodV5, i int) clinics.CgmPeriodV
 		TimeInVeryLowRecordsDelta:     &period.Delta.InVeryLow.Records,
 		TotalRecords:                  &period.Total.Records,
 		TotalRecordsDelta:             &period.Delta.Total.Records,
+		Min:                           period.Min,
+		MinDelta:                      period.Delta.Min,
+		Max:                           period.Max,
+		MaxDelta:                      period.Delta.Max,
 	}
 
 	// reconstruct some previous period values for comparison later
@@ -392,6 +396,14 @@ func ExportBGMPeriod(period summaries.GlucosePeriodV5) clinics.BgmPeriodV1 {
 		TimeInVeryLowRecordsDelta:     &period.Delta.InVeryLow.Records,
 		TotalRecords:                  &period.Total.Records,
 		TotalRecordsDelta:             &period.Delta.Total.Records,
+		StandardDeviation:             period.StandardDeviation,
+		StandardDeviationDelta:        period.Delta.StandardDeviation,
+		CoefficientOfVariation:        period.CoefficientOfVariation,
+		CoefficientOfVariationDelta:   period.Delta.CoefficientOfVariation,
+		Min:                           period.Min,
+		MinDelta:                      period.Delta.Min,
+		Max:                           period.Max,
+		MaxDelta:                      period.Delta.Max,
 	}
 
 	// reconstruct previous period total records for comparison later

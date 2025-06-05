@@ -276,6 +276,7 @@ func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettin
 		"AVERAGE_SMBG":                        {formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, "SMBG Average Glucose during reporting period"},
 		"READINGS_BELOW_RANGE_VERY_LOW_SMBG":  {formatInt(timeInVeryLowRecords), "Numeric", nil, "SMBG Level 2 Hypoglycemia Events: Number of readings <54 mg/dL (<3.0 mmol/L) during reporting period"},
 		"READINGS_ABOVE_RANGE_VERY_HIGH_SMBG": {formatInt(timeInVeryHighRecords), "Numeric", nil, "SMBG Level 2 Hyperglycemia: Number of readings above range (TAR-VH) time >250 mg/dL (>13.9 mmol/L) during reporting period"},
+		//"STANDARD_DEVIATION_SMBG":             {formatFloat(bgmStdDev), "Numeric", bgmStdDevUnits, "The standard deviation of SMBG measurements during the reporting period"},
 	}
 
 	// For clinics flagged as icode, replace certain values with alternative formatting, as defined in BACK-3476
