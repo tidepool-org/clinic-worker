@@ -201,13 +201,13 @@ github.com/pierrec/lz4/v4/internal/xxh32
 # github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 ## explicit
 github.com/rcrowley/go-metrics
-# github.com/tidepool-org/clinic/client v0.0.0-20250604035007-1aa5b79109b4
+# github.com/tidepool-org/clinic/client v0.0.0-20250605041638-874f1bb46f95
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/client
-# github.com/tidepool-org/clinic/redox_models v0.0.0-20250604035007-1aa5b79109b4
+# github.com/tidepool-org/clinic/redox_models v0.0.0-20250604225744-dd98de27af5d
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/redox_models
-# github.com/tidepool-org/go-common v0.12.3-0.20250604040229-ade89b59e5db
+# github.com/tidepool-org/go-common v0.12.3-0.20250605042015-03f64bdd8a80
 ## explicit; go 1.24.1
 github.com/tidepool-org/go-common/clients
 github.com/tidepool-org/go-common/clients/disc
