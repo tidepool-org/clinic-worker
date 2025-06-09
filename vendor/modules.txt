@@ -201,10 +201,10 @@ github.com/pierrec/lz4/v4/internal/xxh32
 # github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 ## explicit
 github.com/rcrowley/go-metrics
-# github.com/tidepool-org/clinic/client v0.0.0-20250605041638-874f1bb46f95
+# github.com/tidepool-org/clinic/client v0.0.0-20250609170750-6b55d8d08796
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/client
-# github.com/tidepool-org/clinic/redox_models v0.0.0-20250604225744-dd98de27af5d
+# github.com/tidepool-org/clinic/redox_models v0.0.0-20250609170750-6b55d8d08796
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/redox_models
 # github.com/tidepool-org/go-common v0.12.3-0.20250605042015-03f64bdd8a80
@@ -228,7 +228,7 @@ github.com/xdg/scram
 # github.com/xdg/stringprep v1.0.3
 ## explicit
 github.com/xdg/stringprep
-# go.mongodb.org/mongo-driver v1.17.3
+# go.mongodb.org/mongo-driver v1.17.4
 ## explicit; go 1.18
 go.mongodb.org/mongo-driver/bson
 go.mongodb.org/mongo-driver/bson/bsoncodec

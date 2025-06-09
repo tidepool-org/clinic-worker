@@ -395,11 +395,9 @@ func ExportBGMPeriod(period summaries.GlucosePeriodV5) clinics.BgmPeriodV1 {
 		TimeInVeryLowRecords:          &period.InVeryLow.Records,
 		TimeInVeryLowRecordsDelta:     &period.Delta.InVeryLow.Records,
 		TotalRecords:                  &period.Total.Records,
+		DaysWithData:                  period.DaysWithData,
+		DaysWithDataDelta:             period.Delta.DaysWithData,
 		TotalRecordsDelta:             &period.Delta.Total.Records,
-		StandardDeviation:             period.StandardDeviation,
-		StandardDeviationDelta:        period.Delta.StandardDeviation,
-		CoefficientOfVariation:        period.CoefficientOfVariation,
-		CoefficientOfVariationDelta:   period.Delta.CoefficientOfVariation,
 		Min:                           period.Min,
 		MinDelta:                      period.Delta.Min,
 		Max:                           period.Max,
@@ -449,7 +447,13 @@ func ExportBGMPeriod(period summaries.GlucosePeriodV5) clinics.BgmPeriodV1 {
 			destPeriod.TimeInAnyHighPercentDelta = &period.Delta.InAnyHigh.Percent
 			destPeriod.AverageGlucoseMmolDelta = &period.Delta.AverageGlucoseMmol
 		}
+	}
 
+	if period.Total.Records >= 30 && period.DaysWithData >= 7 {
+		destPeriod.StandardDeviation = period.StandardDeviation
+		destPeriod.StandardDeviationDelta = period.Delta.StandardDeviation
+		destPeriod.CoefficientOfVariation = period.CoefficientOfVariation
+		destPeriod.CoefficientOfVariationDelta = period.Delta.CoefficientOfVariation
 	}
 
 	return destPeriod
