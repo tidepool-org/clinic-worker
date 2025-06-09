@@ -120,6 +120,9 @@ var _ = Describe("Flowsheet", func() {
 				Expect(observations).To(ContainObservation(Observation{"TIME_IN_RANGE_CGM", "56.2871", "Numeric", &expectedPercentageUnits, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)"}))
 				Expect(observations).To(ContainObservation(Observation{"TIME_ABOVE_RANGE_HIGH_CGM", "25.6436", "Numeric", &expectedPercentageUnits, "CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)"}))
 				Expect(observations).To(ContainObservation(Observation{"TIME_ABOVE_RANGE_VERY_HIGH_CGM", "4.4059", "Numeric", &expectedPercentageUnits, "CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)"}))
+				Expect(observations).To(ContainObservation(Observation{"MIN_CGM", "2.8889", "Numeric", &expectedBgUnits, "Minimum blood glucose reading over the time period"}))
+				Expect(observations).To(ContainObservation(Observation{"MAX_CGM", "15.2556", "Numeric", &expectedBgUnits, "Maximum blood glucose reading over the time period"}))
+
 				Expect(observations).To(ContainObservation(Observation{"REPORTING_PERIOD_START_SMBG", "2023-04-11T00:57:11Z", "DateTime", nil, "SMBG Reporting Period Start"}))
 				Expect(observations).To(ContainObservation(Observation{"REPORTING_PERIOD_END_SMBG", "2023-04-25T00:57:11Z", "DateTime", nil, "SMBG Reporting Period End"}))
 				Expect(observations).To(ContainObservation(Observation{"REPORTING_PERIOD_START_SMBG_DATA", "2023-04-11T00:57:11Z", "DateTime", nil, "SMBG Reporting Period Start Date of actual Data"}))
@@ -127,6 +130,18 @@ var _ = Describe("Flowsheet", func() {
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_SMBG", "9.5634", "Numeric", &expectedBgUnits, "SMBG Average Glucose during reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"READINGS_BELOW_RANGE_VERY_LOW_SMBG", "4", "Numeric", nil, "SMBG Level 2 Hypoglycemia Events: Number of readings <54 mg/dL (<3.0 mmol/L) during reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"READINGS_ABOVE_RANGE_VERY_HIGH_SMBG", "13", "Numeric", nil, "SMBG Level 2 Hyperglycemia: Number of readings above range (TAR-VH) time >250 mg/dL (>13.9 mmol/L) during reporting period"}))
+				Expect(observations).To(ContainObservation(Observation{"STANDARD_DEVIATION_SMBG", "1.4698", "Numeric", &expectedBgUnits, "The standard deviation of SMBG measurements during the reporting period"}))
+				Expect(observations).To(ContainObservation(Observation{"COEFFICIENT_OF_VARIATION_SMBG", "0.2005", "Numeric", nil, "The coefficient of variation (standard deviation * 100 / mean) of SMBG measurements during the reporting period"}))
+				Expect(observations).To(ContainObservation(Observation{"TIME_BELOW_RANGE_VERY_LOW_SMBG", "5.7971", "Numeric", &expectedPercentageUnits, "% of readings < 54 mg/dL (<3.0 mmol/L)"}))
+				Expect(observations).To(ContainObservation(Observation{"TIME_BELOW_RANGE_LOW_SMBG", "7.2464", "Numeric", &expectedPercentageUnits, "% of readings between 54–69 mg/dL (3.0–3.8 mmol/L)"}))
+				Expect(observations).To(ContainObservation(Observation{"TIME_IN_RANGE_SMBG", "44.9275", "Numeric", &expectedPercentageUnits, "% of readings between 70–180 mg/dL (3.9–10.0 mmol/L)"}))
+				Expect(observations).To(ContainObservation(Observation{"TIME_ABOVE_RANGE_HIGH_SMBG", "23.1884", "Numeric", &expectedPercentageUnits, "% of readings between 181–250 mg/dL (10.1–13.9 mmol/L)"}))
+				Expect(observations).To(ContainObservation(Observation{"TIME_ABOVE_RANGE_VERY_HIGH_SMBG", "18.8406", "Numeric", &expectedPercentageUnits, "% of readings > 250 mg/dL (>13.9 mmol/L)"}))
+				Expect(observations).To(ContainObservation(Observation{"MIN_SMBG", "2.9889", "Numeric", &expectedBgUnits, "Minimum blood glucose reading over the time period"}))
+				Expect(observations).To(ContainObservation(Observation{"MAX_SMBG", "15.5556", "Numeric", &expectedBgUnits, "Maximum blood glucose reading over the time period"}))
+
+				// ensure no extra observations under different values
+				Expect(len(observations)).To(Equal(34))
 			})
 
 			It("populates cgm and bgm observations with icode set", func() {
@@ -158,6 +173,9 @@ var _ = Describe("Flowsheet", func() {
 				Expect(observations).To(ContainObservation(Observation{"TIME_IN_RANGE_CGM", "56", "Numeric", &expectedPercentageUnits, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)"}))
 				Expect(observations).To(ContainObservation(Observation{"TIME_ABOVE_RANGE_HIGH_CGM", "26", "Numeric", &expectedPercentageUnits, "CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)"}))
 				Expect(observations).To(ContainObservation(Observation{"TIME_ABOVE_RANGE_VERY_HIGH_CGM", "4", "Numeric", &expectedPercentageUnits, "CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)"}))
+				Expect(observations).To(ContainObservation(Observation{"MIN_CGM", "2.9", "Numeric", &expectedBgUnits, "Minimum blood glucose reading over the time period"}))
+				Expect(observations).To(ContainObservation(Observation{"MAX_CGM", "15.3", "Numeric", &expectedBgUnits, "Maximum blood glucose reading over the time period"}))
+
 				Expect(observations).To(ContainObservation(Observation{"REPORTING_PERIOD_START_SMBG", "2023-04-11T00:57:11Z", "DateTime", nil, "SMBG Reporting Period Start"}))
 				Expect(observations).To(ContainObservation(Observation{"REPORTING_PERIOD_END_SMBG", "2023-04-25T00:57:11Z", "DateTime", nil, "SMBG Reporting Period End"}))
 				Expect(observations).To(ContainObservation(Observation{"REPORTING_PERIOD_START_SMBG_DATA", "2023-04-11T00:57:11Z", "DateTime", nil, "SMBG Reporting Period Start Date of actual Data"}))
@@ -165,8 +183,18 @@ var _ = Describe("Flowsheet", func() {
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_SMBG", "9.6", "Numeric", &expectedBgUnits, "SMBG Average Glucose during reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"READINGS_BELOW_RANGE_VERY_LOW_SMBG", "4", "Numeric", nil, "SMBG Level 2 Hypoglycemia Events: Number of readings <54 mg/dL (<3.0 mmol/L) during reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"READINGS_ABOVE_RANGE_VERY_HIGH_SMBG", "13", "Numeric", nil, "SMBG Level 2 Hyperglycemia: Number of readings above range (TAR-VH) time >250 mg/dL (>13.9 mmol/L) during reporting period"}))
+				Expect(observations).To(ContainObservation(Observation{"STANDARD_DEVIATION_SMBG", "1.5", "Numeric", &expectedBgUnits, "The standard deviation of SMBG measurements during the reporting period"}))
+				Expect(observations).To(ContainObservation(Observation{"COEFFICIENT_OF_VARIATION_SMBG", "20.0", "Numeric", &expectedPercentageUnits, "The coefficient of variation (standard deviation * 100 / mean) of SMBG measurements during the reporting period"}))
+				Expect(observations).To(ContainObservation(Observation{"TIME_BELOW_RANGE_VERY_LOW_SMBG", "6", "Numeric", &expectedPercentageUnits, "% of readings < 54 mg/dL (<3.0 mmol/L)"}))
+				Expect(observations).To(ContainObservation(Observation{"TIME_BELOW_RANGE_LOW_SMBG", "7", "Numeric", &expectedPercentageUnits, "% of readings between 54–69 mg/dL (3.0–3.8 mmol/L)"}))
+				Expect(observations).To(ContainObservation(Observation{"TIME_IN_RANGE_SMBG", "45", "Numeric", &expectedPercentageUnits, "% of readings between 70–180 mg/dL (3.9–10.0 mmol/L)"}))
+				Expect(observations).To(ContainObservation(Observation{"TIME_ABOVE_RANGE_HIGH_SMBG", "23", "Numeric", &expectedPercentageUnits, "% of readings between 181–250 mg/dL (10.1–13.9 mmol/L)"}))
+				Expect(observations).To(ContainObservation(Observation{"TIME_ABOVE_RANGE_VERY_HIGH_SMBG", "19", "Numeric", &expectedPercentageUnits, "% of readings > 250 mg/dL (>13.9 mmol/L)"}))
+				Expect(observations).To(ContainObservation(Observation{"MIN_SMBG", "3.0", "Numeric", &expectedBgUnits, "Minimum blood glucose reading over the time period"}))
+				Expect(observations).To(ContainObservation(Observation{"MAX_SMBG", "15.6", "Numeric", &expectedBgUnits, "Maximum blood glucose reading over the time period"}))
+
 				// ensure no extra observations under different values
-				Expect(len(observations)).To(Equal(21))
+				Expect(len(observations)).To(Equal(34))
 			})
 
 			It("does not populate cgm and bgm observations when summaries are empty", func() {
@@ -217,7 +245,15 @@ var _ = Describe("Flowsheet", func() {
 				observations := Observations(flowsheet)
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_CGM", "143", "Numeric", &expectedBgUnits, "CGM Average Glucose during reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_SMBG", "172", "Numeric", &expectedBgUnits, "SMBG Average Glucose during reporting period"}))
+
 				Expect(observations).To(ContainObservation(Observation{"STANDARD_DEVIATION_CGM", "26.5", "Numeric", &expectedBgUnits, "The standard deviation of CGM measurements during the reporting period"}))
+				Expect(observations).To(ContainObservation(Observation{"STANDARD_DEVIATION_SMBG", "26.5", "Numeric", &expectedBgUnits, "The standard deviation of SMBG measurements during the reporting period"}))
+
+				Expect(observations).To(ContainObservation(Observation{"MIN_CGM", "52", "Numeric", &expectedBgUnits, "Minimum blood glucose reading over the time period"}))
+				Expect(observations).To(ContainObservation(Observation{"MAX_CGM", "275", "Numeric", &expectedBgUnits, "Maximum blood glucose reading over the time period"}))
+
+				Expect(observations).To(ContainObservation(Observation{"MIN_SMBG", "54", "Numeric", &expectedBgUnits, "Minimum blood glucose reading over the time period"}))
+				Expect(observations).To(ContainObservation(Observation{"MAX_SMBG", "280", "Numeric", &expectedBgUnits, "Maximum blood glucose reading over the time period"}))
 			})
 
 			It("converts blood glucose units to mg/dL when set as preferred bg units icode unset", func() {
@@ -236,7 +272,15 @@ var _ = Describe("Flowsheet", func() {
 				observations := Observations(flowsheet)
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_CGM", "142.7052", "Numeric", &expectedBgUnits, "CGM Average Glucose during reporting period"}))
 				Expect(observations).To(ContainObservation(Observation{"AVERAGE_SMBG", "172.2908", "Numeric", &expectedBgUnits, "SMBG Average Glucose during reporting period"}))
+
 				Expect(observations).To(ContainObservation(Observation{"STANDARD_DEVIATION_CGM", "26.4774", "Numeric", &expectedBgUnits, "The standard deviation of CGM measurements during the reporting period"}))
+				Expect(observations).To(ContainObservation(Observation{"STANDARD_DEVIATION_SMBG", "26.4792", "Numeric", &expectedBgUnits, "The standard deviation of SMBG measurements during the reporting period"}))
+
+				Expect(observations).To(ContainObservation(Observation{"MIN_CGM", "52.0449", "Numeric", &expectedBgUnits, "Minimum blood glucose reading over the time period"}))
+				Expect(observations).To(ContainObservation(Observation{"MAX_CGM", "274.8379", "Numeric", &expectedBgUnits, "Maximum blood glucose reading over the time period"}))
+
+				Expect(observations).To(ContainObservation(Observation{"MIN_SMBG", "53.8464", "Numeric", &expectedBgUnits, "Minimum blood glucose reading over the time period"}))
+				Expect(observations).To(ContainObservation(Observation{"MAX_SMBG", "280.2426", "Numeric", &expectedBgUnits, "Maximum blood glucose reading over the time period"}))
 			})
 		})
 
