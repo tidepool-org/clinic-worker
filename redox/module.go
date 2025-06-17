@@ -14,12 +14,12 @@ var Module = fx.Provide(
 	NewScheduledSummaryAndReportProcessor,
 	report.NewReportGenerator,
 	fx.Annotated{
-		Group:  "consumers",
-		Target: CreateRedoxMessageConsumerGroup,
+		Group:  "runners",
+		Target: NewMessageCDCConsumer,
 	},
 	fx.Annotated{
-		Group:  "consumers",
-		Target: CreateScheduledSummaryAndReportsConsumerGroup,
+		Group:  "runners",
+		Target: NewScheduledSummaryAndReportsRunner,
 	},
 )
 
