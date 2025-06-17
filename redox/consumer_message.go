@@ -2,26 +2,20 @@ package redox
 
 import (
 	"context"
+	"fmt"
 	"github.com/IBM/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	models "github.com/tidepool-org/clinic/redox_models"
-	"github.com/tidepool-org/go-common/events"
+	"github.com/tidepool-org/go-common/asyncevents"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"time"
 )
 
 const (
 	redoxMessageTopic = "clinic.redox"
 )
-
-// MessageCDCConsumer is kafka consumer for redox message CDC events
-type MessageCDCConsumer struct {
-	logger *zap.SugaredLogger
-
-	config         ModuleConfig
-	orderProcessor NewOrderProcessor
-}
 
 type MessageCDCConsumerParams struct {
 	fx.In
@@ -32,9 +26,16 @@ type MessageCDCConsumerParams struct {
 	OrderProcessor NewOrderProcessor
 }
 
-func CreateRedoxMessageConsumerGroup(p MessageCDCConsumerParams) (events.EventConsumer, error) {
+type MessageCDCConsumer struct {
+	logger *zap.SugaredLogger
+
+	config         ModuleConfig
+	orderProcessor NewOrderProcessor
+}
+
+func NewMessageCDCConsumer(p MessageCDCConsumerParams) (asyncevents.SaramaEventsRunner, error) {
 	if !p.Config.Enabled {
-		return &cdc.DisabledEventConsumer{}, nil
+		return &cdc.DisabledSaramaEventsRunner{}, nil
 	}
 
 	config, err := cdc.GetConfig()
@@ -43,77 +44,82 @@ func CreateRedoxMessageConsumerGroup(p MessageCDCConsumerParams) (events.EventCo
 	}
 
 	config.KafkaTopic = redoxMessageTopic
+	config.SaramaConfig.ClientID = config.KafkaTopicPrefix + "clinic-worker"
 
-	return events.NewFaultTolerantConsumerGroup(config, NewRedoxMessageConsumer(p))
-}
+	prefixedTopics := []string{config.GetPrefixedTopic()}
 
-func NewRedoxMessageConsumer(p MessageCDCConsumerParams) events.ConsumerFactory {
-	return func() (events.MessageConsumer, error) {
-		delegate, err := NewRedoxMessageCDCConsumer(p)
-		if err != nil {
-			return nil, err
-		}
-		return cdc.NewRetryingConsumer(delegate), nil
+	runnerCfg := asyncevents.SaramaRunnerConfig{
+		Brokers: config.KafkaBrokers,
+		GroupID: config.KafkaConsumerGroup,
+		Topics:  prefixedTopics,
+		Sarama:  config.SaramaConfig,
+		MessageConsumer: &MessageCDCConsumer{
+			config:         p.Config,
+			logger:         p.Logger,
+			orderProcessor: p.OrderProcessor,
+		},
 	}
+
+	delays := []time.Duration{0, time.Second * 60, time.Second * 300}
+	logger := &cdc.AsynceventsLoggerAdapter{
+		SugaredLogger: p.Logger,
+	}
+
+	eventsRunner := asyncevents.NewCascadingSaramaEventsRunner(runnerCfg, logger, delays, defaultTimeout)
+	return eventsRunner, nil
 }
 
-func NewRedoxMessageCDCConsumer(p MessageCDCConsumerParams) (events.MessageConsumer, error) {
-	return &MessageCDCConsumer{
-		logger:         p.Logger,
-		config:         p.Config,
-		orderProcessor: p.OrderProcessor,
-	}, nil
-}
-
-func (m *MessageCDCConsumer) Initialize(config *events.CloudEventsConfig) error {
-	return nil
-}
-
-func (m *MessageCDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) error {
-	if cm == nil {
+func (c *MessageCDCConsumer) Consume(ctx context.Context, session sarama.ConsumerGroupSession, msg *sarama.ConsumerMessage) error {
+	if msg == nil {
 		return nil
 	}
 
-	return m.handleMessage(cm)
+	err := c.HandleMessage(ctx, msg)
+	if err != nil {
+		session.MarkMessage(msg, fmt.Sprintf("I have given up after error: %s", err))
+		c.logger.Warnw("Unable to consume redox message", "error", err)
+		return err
+	}
+	return nil
 }
 
-func (m *MessageCDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
-	m.logger.Debugw("handling kafka message", "offset", cm.Offset)
+func (c *MessageCDCConsumer) HandleMessage(ctx context.Context, cm *sarama.ConsumerMessage) error {
+	c.logger.Debugw("handling kafka message", "offset", cm.Offset)
 	event := cdc.Event[models.MessageEnvelope]{
 		Offset: cm.Offset,
 	}
 
-	if err := m.unmarshalEvent(cm.Value, &event); err != nil {
-		m.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
+	if err := c.unmarshalEvent(cm.Value, &event); err != nil {
+		c.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
 		return err
 	}
 
-	if err := m.handleCDCEvent(event); err != nil {
-		m.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
+	if err := c.handleCDCEvent(ctx, event); err != nil {
+		c.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
 		return err
 	}
 
 	return nil
 }
 
-func (m *MessageCDCConsumer) unmarshalEvent(value []byte, event *cdc.Event[models.MessageEnvelope]) error {
+func (c *MessageCDCConsumer) unmarshalEvent(value []byte, event *cdc.Event[models.MessageEnvelope]) error {
 	return bson.UnmarshalExtJSON(value, true, event)
 }
 
-func (m *MessageCDCConsumer) handleCDCEvent(event cdc.Event[models.MessageEnvelope]) error {
+func (c *MessageCDCConsumer) handleCDCEvent(ctx context.Context, event cdc.Event[models.MessageEnvelope]) error {
 	if event.FullDocument == nil {
-		m.logger.Infow("skipping event with no full document", "offset", event.Offset)
+		c.logger.Infow("skipping event with no full document", "offset", event.Offset)
 		return nil
 	}
 
 	if !event.FullDocument.Meta.IsValid() {
-		m.logger.Infow("skipping event with invalid meta", "offset", event.Offset)
+		c.logger.Infow("skipping event with invalid meta", "offset", event.Offset)
 		return nil
 	}
 
 	// We only expect orders for now
 	if event.FullDocument.Meta.DataModel != DataModelOrder {
-		m.logger.Infow("unexpected data model", "order", event.FullDocument.Meta, "offset", event.Offset)
+		c.logger.Infow("unexpected data model", "order", event.FullDocument.Meta, "offset", event.Offset)
 		return nil
 	}
 
@@ -121,19 +127,15 @@ func (m *MessageCDCConsumer) handleCDCEvent(event cdc.Event[models.MessageEnvelo
 	case EventTypeNewOrder:
 		order := models.NewOrder{}
 		if err := bson.Unmarshal(event.FullDocument.Message, &order); err != nil {
-			m.logger.Errorw("unable to unmarshal order", "offset", event.Offset, zap.Error(err))
+			c.logger.Errorw("unable to unmarshal order", "offset", event.Offset, zap.Error(err))
 			return err
 		}
 
-		m.logger.Debugw("successfully unmarshalled new order", "offset", event.Offset, "order", order.Meta)
-
-		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-		defer cancel()
-
-		m.logger.Debugw("processing new order", "offset", event.Offset, "order", order.Meta)
-		return m.orderProcessor.ProcessOrder(ctx, *event.FullDocument, order)
+		c.logger.Debugw("successfully unmarshalled new order", "offset", event.Offset, "order", order.Meta)
+		c.logger.Debugw("processing new order", "offset", event.Offset, "order", order.Meta)
+		return c.orderProcessor.ProcessOrder(ctx, *event.FullDocument, order)
 	default:
-		m.logger.Infow("unexpected order event type", "order", event.FullDocument.Meta, "offset", event.Offset)
+		c.logger.Infow("unexpected order event type", "order", event.FullDocument.Meta, "offset", event.Offset)
 	}
 
 	return nil

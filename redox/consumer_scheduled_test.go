@@ -1,6 +1,7 @@
 package redox_test
 
 import (
+	"context"
 	"github.com/IBM/sarama"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -8,12 +9,11 @@ import (
 	"github.com/tidepool-org/clinic-worker/redox"
 	redoxTest "github.com/tidepool-org/clinic-worker/redox/test"
 	"github.com/tidepool-org/clinic-worker/test"
-	"github.com/tidepool-org/go-common/events"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
 
-var _ = Describe("Consumer Scheduled", func() {
+var _ = Describe("MessageConsumer Scheduled", func() {
 	Describe("UnmarshalEvent", func() {
 		It("works correctly", func() {
 			eventFxiture, err := test.LoadFixture("test/fixtures/scheduledorderevent.json")
@@ -30,28 +30,26 @@ var _ = Describe("Consumer Scheduled", func() {
 	})
 
 	Describe("Handle Kafka Message", func() {
-		var consumer events.MessageConsumer
+		var consumer *redox.ScheduledSummaryAndReportsCDCConsumer
 		var processor *redoxTest.ScheduledOrderProcessor
 
 		BeforeEach(func() {
 			processor = &redoxTest.ScheduledOrderProcessor{}
 
-			var err error
-			consumer, err = redox.NewScheduledSummaryAndReportsCDCConsumer(redox.ScheduledSummaryAndReportsCDCConsumerParams{
+			consumer = &redox.ScheduledSummaryAndReportsCDCConsumer{
 				Logger: zap.NewNop().Sugar(),
 				Config: redox.ModuleConfig{
 					Enabled: true,
 				},
 				Processor: processor,
-			})
-			Expect(err).ToNot(HaveOccurred())
+			}
 		})
 
-		It("uses the processor for handling valid messages", func() {
+		It("uses the Processor for handling valid messages", func() {
 			message, err := test.LoadFixture("test/fixtures/scheduledorderevent.json")
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(consumer.HandleKafkaMessage(&sarama.ConsumerMessage{
+			Expect(consumer.HandleMessage(context.Background(), &sarama.ConsumerMessage{
 				Value: message,
 			})).To(Succeed())
 			Expect(processor.Scheduled).To(HaveLen(1))
@@ -64,7 +62,7 @@ var _ = Describe("Consumer Scheduled", func() {
 			message, err := test.LoadFixture("test/fixtures/invalidscheduledevent.json")
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(consumer.HandleKafkaMessage(&sarama.ConsumerMessage{
+			Expect(consumer.HandleMessage(context.Background(), &sarama.ConsumerMessage{
 				Value: message,
 			})).To(Succeed())
 			Expect(processor.Scheduled).To(BeEmpty())

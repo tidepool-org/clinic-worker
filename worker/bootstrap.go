@@ -3,6 +3,7 @@ package worker
 import (
 	"github.com/tidepool-org/clinic-worker/merge"
 	"github.com/tidepool-org/clinic-worker/redox"
+	"github.com/tidepool-org/go-common/asyncevents"
 	"net/http"
 
 	"github.com/tidepool-org/clinic-worker/cdc"
@@ -59,7 +60,8 @@ func New() *fx.App {
 type Components struct {
 	fx.In
 
-	Consumers         []events.EventConsumer `group:"consumers"`
+	Consumers         []events.EventConsumer           `group:"consumers"`
+	Runners           []asyncevents.SaramaEventsRunner `group:"runners"`
 	HealthCheckServer *http.Server
 	Lifecycle         fx.Lifecycle
 	Shutdowner        fx.Shutdowner
@@ -68,5 +70,8 @@ type Components struct {
 func startConsumers(components Components) {
 	for _, consumer := range components.Consumers {
 		cdc.AttachConsumerGroupHooks(consumer, components.Lifecycle, components.Shutdowner)
+	}
+	for _, runner := range components.Runners {
+		cdc.AttachSaramaRunnerHooks(runner, components.Lifecycle, components.Shutdowner)
 	}
 }
