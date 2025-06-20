@@ -99,9 +99,9 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 			cgmSummary.Dates.LastUpdatedReason = []string{}
 		}
 
-		patientUpdate.CgmStats = &clinics.PatientCGMStats{
+		patientUpdate.CgmStats = &clinics.CgmStatsV1{
 			Id: cgmSummary.Id,
-			Dates: clinics.PatientSummaryDates{
+			Dates: clinics.SummaryDatesV1{
 				LastUpdatedDate:   lastUpdatedDate,
 				LastUpdatedReason: &cgmSummary.Dates.LastUpdatedReason,
 				OutdatedReason:    &cgmSummary.Dates.OutdatedReason,
@@ -114,17 +114,17 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 				HasOutdatedSince:  cgmSummary.Dates.OutdatedSince != nil,
 				OutdatedSince:     cgmSummary.Dates.OutdatedSince,
 			},
-			Config: clinics.PatientSummaryConfig(cgmSummary.Config),
+			Config: clinics.SummaryConfigV1(cgmSummary.Config),
 		}
 
 		if cgmSummary.Periods != nil {
-			cgmPeriods, err := cgmSummary.Periods.AsCgmperiodsV5()
+			cgmPeriods, err := cgmSummary.Periods.AsCgmPeriodsV5()
 			if err != nil {
 				return clinics.UpdatePatientSummaryJSONRequestBody{}, errors.Wrapf(err, "unable to unserialize CGM summary stats for userId %s", *cgmSummary.UserId)
 			}
 
 			daysRe := regexp.MustCompile("(\\d+)d")
-			patientUpdate.CgmStats.Periods = clinics.PatientCGMPeriods{}
+			patientUpdate.CgmStats.Periods = clinics.CgmPeriodsV1{}
 			for k := range cgmPeriods {
 				// get integer portion of 1d/7d/14d/30d map string
 				m := daysRe.FindStringSubmatch(k)
@@ -165,9 +165,9 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 			bgmSummary.Dates.LastUpdatedReason = []string{}
 		}
 
-		patientUpdate.BgmStats = &clinics.PatientBGMStats{
+		patientUpdate.BgmStats = &clinics.BgmStatsV1{
 			Id: bgmSummary.Id,
-			Dates: clinics.PatientSummaryDates{
+			Dates: clinics.SummaryDatesV1{
 				LastUpdatedDate:   lastUpdatedDate,
 				LastUpdatedReason: &bgmSummary.Dates.LastUpdatedReason,
 				OutdatedReason:    &bgmSummary.Dates.OutdatedReason,
@@ -180,17 +180,17 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 				HasOutdatedSince:  bgmSummary.Dates.OutdatedSince != nil,
 				OutdatedSince:     bgmSummary.Dates.OutdatedSince,
 			},
-			Config: clinics.PatientSummaryConfig(bgmSummary.Config),
+			Config: clinics.SummaryConfigV1(bgmSummary.Config),
 		}
 
 		if bgmSummary.Periods != nil {
-			bgmPeriods, err := bgmSummary.Periods.AsBgmperiodsV5()
+			bgmPeriods, err := bgmSummary.Periods.AsBgmPeriodsV5()
 			if err != nil {
 				return clinics.UpdatePatientSummaryJSONRequestBody{}, errors.Wrapf(err, "unable to unserialize BGM summary stats for userId %s", *bgmSummary.UserId)
 			}
 
 			daysRe := regexp.MustCompile("(\\d+)d")
-			patientUpdate.BgmStats.Periods = clinics.PatientBGMPeriods{}
+			patientUpdate.BgmStats.Periods = clinics.BgmPeriodsV1{}
 			for k := range bgmPeriods {
 				m := daysRe.FindStringSubmatch(k)
 				if len(m) >= 2 {

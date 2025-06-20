@@ -1,9 +1,10 @@
 package redox
 
 import (
+	"time"
+
 	"github.com/tidepool-org/clinic-worker/types"
 	models "github.com/tidepool-org/clinic/redox_models"
-	"time"
 )
 
 const (
@@ -128,7 +129,7 @@ func SetVisitLocationInResult(order models.NewOrder, result *models.NewResults) 
 	if order.Visit == nil {
 		return
 	}
-	
+
 	if result.Visit == nil {
 		result.Visit = types.NewStructPtr(result.Visit)
 	}
