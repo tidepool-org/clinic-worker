@@ -1,10 +1,12 @@
 package worker
 
 import (
+	"net/http"
+
 	"github.com/tidepool-org/clinic-worker/merge"
 	"github.com/tidepool-org/clinic-worker/redox"
-	"github.com/tidepool-org/go-common/asyncevents"
-	"net/http"
+
+	"go.uber.org/fx"
 
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/clinicians"
@@ -16,7 +18,6 @@ import (
 	"github.com/tidepool-org/clinic-worker/patientsummary"
 	"github.com/tidepool-org/clinic-worker/users"
 	"github.com/tidepool-org/go-common/events"
-	"go.uber.org/fx"
 )
 
 var dependencies = fx.Provide(
@@ -47,6 +48,7 @@ var Modules = []fx.Option{
 	redox.Module,
 	users.Module,
 	marketo.Module,
+	cdc.Module,
 }
 
 func New() *fx.App {
@@ -60,8 +62,7 @@ func New() *fx.App {
 type Components struct {
 	fx.In
 
-	Consumers         []events.EventConsumer           `group:"consumers"`
-	Runners           []asyncevents.SaramaEventsRunner `group:"runners"`
+	Consumers         []events.EventConsumer `group:"consumers"`
 	HealthCheckServer *http.Server
 	Lifecycle         fx.Lifecycle
 	Shutdowner        fx.Shutdowner
@@ -70,8 +71,5 @@ type Components struct {
 func startConsumers(components Components) {
 	for _, consumer := range components.Consumers {
 		cdc.AttachConsumerGroupHooks(consumer, components.Lifecycle, components.Shutdowner)
-	}
-	for _, runner := range components.Runners {
-		cdc.AttachSaramaRunnerHooks(runner, components.Lifecycle, components.Shutdowner)
 	}
 }

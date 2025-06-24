@@ -1,10 +1,12 @@
 package redox
 
 import (
-	"github.com/kelseyhightower/envconfig"
-	"github.com/tidepool-org/clinic-worker/report"
-	"go.uber.org/fx"
 	"time"
+
+	"github.com/kelseyhightower/envconfig"
+	"go.uber.org/fx"
+
+	"github.com/tidepool-org/clinic-worker/report"
 )
 
 var Module = fx.Provide(

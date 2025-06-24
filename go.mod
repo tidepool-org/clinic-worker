@@ -15,7 +15,7 @@ require (
 	github.com/onsi/gomega v1.36.2
 	github.com/tidepool-org/clinic/client v0.0.0-20250521172904-b61821ac9973
 	github.com/tidepool-org/clinic/redox_models v0.0.0-20250521172904-b61821ac9973
-	github.com/tidepool-org/go-common v0.12.3-0.20250613120630-656deb326ad3
+	github.com/tidepool-org/go-common v0.12.3-0.20250625233514-f3a3357c3d91
 	github.com/tidepool-org/hydrophone/client v0.0.0-20250317164837-a8cd51fd6677
 	go.mongodb.org/mongo-driver v1.17.3
 	go.uber.org/fx v1.23.0

@@ -3,13 +3,15 @@ package redox
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/IBM/sarama"
-	"github.com/tidepool-org/clinic-worker/cdc"
-	"github.com/tidepool-org/go-common/asyncevents"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"time"
+
+	"github.com/tidepool-org/clinic-worker/cdc"
+	"github.com/tidepool-org/go-common/asyncevents"
 )
 
 const (
@@ -25,7 +27,7 @@ type ScheduledSummaryAndReportsCDCConsumerParams struct {
 	Processor ScheduledSummaryAndReportProcessor
 }
 
-func NewScheduledSummaryAndReportsRunner(p ScheduledSummaryAndReportsCDCConsumerParams) (asyncevents.SaramaEventsRunner, error) {
+func NewScheduledSummaryAndReportsRunner(p ScheduledSummaryAndReportsCDCConsumerParams) (asyncevents.Runner, error) {
 	if !p.Config.Enabled {
 		return &cdc.DisabledSaramaEventsRunner{}, nil
 	}
@@ -40,25 +42,27 @@ func NewScheduledSummaryAndReportsRunner(p ScheduledSummaryAndReportsCDCConsumer
 
 	prefixedTopics := []string{config.GetPrefixedTopic()}
 
-	runnerCfg := asyncevents.SaramaRunnerConfig{
-		Brokers: config.KafkaBrokers,
-		GroupID: config.KafkaConsumerGroup,
-		Topics:  prefixedTopics,
-		Sarama:  config.SaramaConfig,
-		MessageConsumer: &ScheduledSummaryAndReportsCDCConsumer{
-			Config:    p.Config,
-			Logger:    p.Logger,
-			Processor: p.Processor,
-		},
-	}
-
 	delays := []time.Duration{0, time.Second * 60, time.Second * 300}
 	logger := &cdc.AsynceventsLoggerAdapter{
 		SugaredLogger: p.Logger,
 	}
 
-	eventsRunner := asyncevents.NewCascadingSaramaEventsRunner(runnerCfg, logger, delays, defaultTimeout)
-	return eventsRunner, nil
+	managerConfig := asyncevents.CascadingSaramaEventsManagerConfig{
+		Consumer: &ScheduledSummaryAndReportsCDCConsumer{
+			Config:    p.Config,
+			Logger:    p.Logger,
+			Processor: p.Processor,
+		},
+		Brokers:            config.KafkaBrokers,
+		GroupID:            config.KafkaConsumerGroup,
+		Topics:             prefixedTopics,
+		ConsumptionTimeout: defaultTimeout,
+		Delays:             delays,
+		Logger:             logger,
+		Sarama:             config.SaramaConfig,
+	}
+	eventsManager := asyncevents.NewCascadingSaramaEventsManager(managerConfig)
+	return eventsManager, nil
 }
 
 // ScheduledSummaryAndReportsCDCConsumer is kafka consumer for scheduled summary and reports CDC events
