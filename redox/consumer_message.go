@@ -3,14 +3,16 @@ package redox
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/IBM/sarama"
-	"github.com/tidepool-org/clinic-worker/cdc"
-	models "github.com/tidepool-org/clinic/redox_models"
-	"github.com/tidepool-org/go-common/asyncevents"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"time"
+
+	"github.com/tidepool-org/clinic-worker/cdc"
+	models "github.com/tidepool-org/clinic/redox_models"
+	"github.com/tidepool-org/go-common/asyncevents"
 )
 
 const (
@@ -33,7 +35,7 @@ type MessageCDCConsumer struct {
 	orderProcessor NewOrderProcessor
 }
 
-func NewMessageCDCConsumer(p MessageCDCConsumerParams) (asyncevents.SaramaEventsRunner, error) {
+func NewMessageCDCConsumer(p MessageCDCConsumerParams) (asyncevents.Runner, error) {
 	if !p.Config.Enabled {
 		return &cdc.DisabledSaramaEventsRunner{}, nil
 	}
@@ -48,25 +50,27 @@ func NewMessageCDCConsumer(p MessageCDCConsumerParams) (asyncevents.SaramaEvents
 
 	prefixedTopics := []string{config.GetPrefixedTopic()}
 
-	runnerCfg := asyncevents.SaramaRunnerConfig{
-		Brokers: config.KafkaBrokers,
-		GroupID: config.KafkaConsumerGroup,
-		Topics:  prefixedTopics,
-		Sarama:  config.SaramaConfig,
-		MessageConsumer: &MessageCDCConsumer{
-			config:         p.Config,
-			logger:         p.Logger,
-			orderProcessor: p.OrderProcessor,
-		},
-	}
-
 	delays := []time.Duration{0, time.Second * 60, time.Second * 300}
 	logger := &cdc.AsynceventsLoggerAdapter{
 		SugaredLogger: p.Logger,
 	}
 
-	eventsRunner := asyncevents.NewCascadingSaramaEventsRunner(runnerCfg, logger, delays, defaultTimeout)
-	return eventsRunner, nil
+	managerConfig := asyncevents.CascadingSaramaEventsManagerConfig{
+		Consumer: &MessageCDCConsumer{
+			config:         p.Config,
+			logger:         p.Logger,
+			orderProcessor: p.OrderProcessor,
+		},
+		Brokers:            config.KafkaBrokers,
+		GroupID:            config.KafkaConsumerGroup,
+		Topics:             prefixedTopics,
+		ConsumptionTimeout: defaultTimeout,
+		Delays:             delays,
+		Logger:             logger,
+		Sarama:             config.SaramaConfig,
+	}
+	eventsManager := asyncevents.NewCascadingSaramaEventsManager(managerConfig)
+	return eventsManager, nil
 }
 
 func (c *MessageCDCConsumer) Consume(ctx context.Context, session sarama.ConsumerGroupSession, msg *sarama.ConsumerMessage) error {
