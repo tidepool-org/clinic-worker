@@ -67,21 +67,21 @@ type Glucose struct {
 }
 
 type Dates struct {
-	FirstData         *cdc.Date `json:"firstData"`
-	LastData          *cdc.Date `json:"lastData"`
-	LastUpdatedDate   *cdc.Date `json:"lastUpdatedDate"`
+	FirstData         cdc.Date  `json:"firstData,omitempty"`
+	LastData          cdc.Date  `json:"lastData,omitempty"`
+	LastUpdatedDate   cdc.Date  `json:"lastUpdatedDate,omitempty"`
 	LastUpdatedReason []string  `json:"lastUpdatedReason,omitempty"`
-	LastUploadDate    *cdc.Date `json:"lastUploadDate"`
+	LastUploadDate    cdc.Date  `json:"lastUploadDate,omitempty"`
 	OutdatedReason    []string  `json:"outdatedReason,omitempty"`
 	OutdatedSince     *cdc.Date `json:"outdatedSince,omitempty"`
 }
 
 type BaseSummary struct {
-	ID     cdc.ObjectId       `json:"_id"`
-	Type   string             `json:"type"`
-	UserID string             `json:"userId"`
-	Config summaries.ConfigV1 `json:"config"`
-	Dates  Dates              `json:"dates"`
+	ID     cdc.ObjectId              `json:"_id"`
+	Type   string                    `json:"type"`
+	UserID string                    `json:"userId"`
+	Config summaries.SummaryConfigV1 `json:"config"`
+	Dates  Dates                     `json:"dates"`
 }
 
 type Summary struct {
@@ -91,26 +91,26 @@ type Summary struct {
 
 func (p CDCEvent) CreateUpdateBody() (*clinics.UpdatePatientSummaryJSONRequestBody, error) {
 	var firstData *time.Time
-	if p.FullDocument.Dates.FirstData != nil {
-		firstDataVal := time.UnixMilli(p.FullDocument.Dates.FirstData.Value)
+	firstDataVal := time.UnixMilli(p.FullDocument.Dates.FirstData.Value)
+	if !firstDataVal.IsZero() {
 		firstData = &firstDataVal
 	}
 
 	var lastData *time.Time
-	if p.FullDocument.Dates.LastData != nil {
-		lastDataVal := time.UnixMilli(p.FullDocument.Dates.LastData.Value)
+	lastDataVal := time.UnixMilli(p.FullDocument.Dates.LastData.Value)
+	if !lastDataVal.IsZero() {
 		lastData = &lastDataVal
 	}
 
 	var lastUpdatedDate *time.Time
-	if p.FullDocument.Dates.LastUpdatedDate != nil {
-		lastUpdatedDateVal := time.UnixMilli(p.FullDocument.Dates.LastUpdatedDate.Value)
+	lastUpdatedDateVal := time.UnixMilli(p.FullDocument.Dates.LastUpdatedDate.Value)
+	if !lastUpdatedDateVal.IsZero() {
 		lastUpdatedDate = &lastUpdatedDateVal
 	}
 
 	var lastUploadDate *time.Time
-	if p.FullDocument.Dates.LastUploadDate != nil {
-		lastUploadDateVal := time.UnixMilli(p.FullDocument.Dates.LastUploadDate.Value)
+	lastUploadDateVal := time.UnixMilli(p.FullDocument.Dates.LastUploadDate.Value)
+	if !lastUpdatedDateVal.IsZero() {
 		lastUploadDate = &lastUploadDateVal
 	}
 
@@ -128,7 +128,7 @@ func (p CDCEvent) CreateUpdateBody() (*clinics.UpdatePatientSummaryJSONRequestBo
 		p.FullDocument.Dates.LastUpdatedReason = []string{}
 	}
 
-	dates := clinics.PatientSummaryDates{
+	dates := clinics.SummaryDatesV1{
 		LastUpdatedDate:   lastUpdatedDate,
 		LastUpdatedReason: &p.FullDocument.Dates.LastUpdatedReason,
 		OutdatedReason:    &p.FullDocument.Dates.OutdatedReason,
@@ -142,18 +142,18 @@ func (p CDCEvent) CreateUpdateBody() (*clinics.UpdatePatientSummaryJSONRequestBo
 		OutdatedSince:     outdatedSince,
 	}
 
-	config := clinics.PatientSummaryConfig(p.FullDocument.Config)
+	config := clinics.SummaryConfigV1(p.FullDocument.Config)
 
 	patientUpdate := &clinics.UpdatePatientSummaryJSONRequestBody{}
 	if p.FullDocument.Type == "cgm" {
-		patientUpdate.CgmStats = &clinics.PatientCGMStats{
+		patientUpdate.CgmStats = &clinics.CgmStatsV1{
 			Id:     &p.FullDocument.ID.Value,
 			Dates:  dates,
 			Config: config,
 		}
 
 		if p.FullDocument.Periods != nil {
-			sourceCGMPeriod, err := p.FullDocument.Periods.AsCgmperiodsV5()
+			sourceCGMPeriod, err := p.FullDocument.Periods.AsCgmPeriodsV5()
 			if err != nil {
 				return nil, err
 			}
@@ -161,14 +161,14 @@ func (p CDCEvent) CreateUpdateBody() (*clinics.UpdatePatientSummaryJSONRequestBo
 		}
 
 	} else if p.FullDocument.Type == "bgm" {
-		patientUpdate.BgmStats = &clinics.PatientBGMStats{
+		patientUpdate.BgmStats = &clinics.BgmStatsV1{
 			Id:     &p.FullDocument.ID.Value,
 			Dates:  dates,
 			Config: config,
 		}
 
 		if p.FullDocument.Periods != nil {
-			sourceBGMPeriod, err := p.FullDocument.Periods.AsBgmperiodsV5()
+			sourceBGMPeriod, err := p.FullDocument.Periods.AsBgmPeriodsV5()
 			if err != nil {
 				return nil, err
 			}
@@ -179,11 +179,11 @@ func (p CDCEvent) CreateUpdateBody() (*clinics.UpdatePatientSummaryJSONRequestBo
 	return patientUpdate, nil
 }
 
-func ExportCGMPeriods(sourcePeriods summaries.CgmperiodsV5, destPeriods *clinics.PatientCGMStats) {
+func ExportCGMPeriods(sourcePeriods summaries.CgmPeriodsV5, destPeriods *clinics.CgmStatsV1) {
 	daysRe := regexp.MustCompile("(\\d+)d")
 
 	if sourcePeriods != nil {
-		destPeriods.Periods = clinics.PatientCGMPeriods{}
+		destPeriods.Periods = clinics.CgmPeriodsV1{}
 		for k := range sourcePeriods {
 			// get integer portion of 1d/7d/14d/30d map string
 			m := daysRe.FindStringSubmatch(k)
@@ -195,8 +195,8 @@ func ExportCGMPeriods(sourcePeriods summaries.CgmperiodsV5, destPeriods *clinics
 	}
 }
 
-func ExportCGMPeriod(period summaries.GlucoseperiodV5, i int) clinics.PatientCGMPeriod {
-	destPeriod := clinics.PatientCGMPeriod{
+func ExportCGMPeriod(period summaries.GlucosePeriodV5, i int) clinics.CgmPeriodV1 {
+	destPeriod := clinics.CgmPeriodV1{
 		AverageDailyRecords:           &period.AverageDailyRecords,
 		AverageDailyRecordsDelta:      &period.Delta.AverageDailyRecords,
 		DaysWithData:                  period.DaysWithData,
@@ -345,11 +345,11 @@ func ExportCGMPeriod(period summaries.GlucoseperiodV5, i int) clinics.PatientCGM
 	return destPeriod
 }
 
-func ExportBGMPeriods(sourcePeriods summaries.BgmperiodsV5, destPeriods *clinics.PatientBGMStats) {
+func ExportBGMPeriods(sourcePeriods summaries.BgmPeriodsV5, destPeriods *clinics.BgmStatsV1) {
 	daysRe := regexp.MustCompile("(\\d+)d")
 
 	if sourcePeriods != nil {
-		destPeriods.Periods = clinics.PatientBGMPeriods{}
+		destPeriods.Periods = clinics.BgmPeriodsV1{}
 		for k := range sourcePeriods {
 			// get integer portion of 1d/7d/14d/30d map string
 			m := daysRe.FindStringSubmatch(k)
@@ -360,8 +360,8 @@ func ExportBGMPeriods(sourcePeriods summaries.BgmperiodsV5, destPeriods *clinics
 	}
 }
 
-func ExportBGMPeriod(period summaries.GlucoseperiodV5) clinics.PatientBGMPeriod {
-	destPeriod := clinics.PatientBGMPeriod{
+func ExportBGMPeriod(period summaries.GlucosePeriodV5) clinics.BgmPeriodV1 {
+	destPeriod := clinics.BgmPeriodV1{
 		AverageDailyRecords:           &period.AverageDailyRecords,
 		AverageDailyRecordsDelta:      &period.Delta.AverageDailyRecords,
 		HasAverageDailyRecords:        period.AverageDailyRecords != 0,

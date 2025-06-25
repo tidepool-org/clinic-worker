@@ -3,12 +3,13 @@ package redox
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	clinics "github.com/tidepool-org/clinic/client"
 	models "github.com/tidepool-org/clinic/redox_models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 const recentDataCutoff = 14 * 24 * time.Hour
@@ -83,9 +84,9 @@ func (r *scheduledSummaryAndReportProcessor) ProcessOrder(ctx context.Context, s
 		return nil
 	}
 
-	match := clinics.EHRMatchResponse{
+	match := clinics.EhrMatchResponseV1{
 		Clinic:   *clinic,
-		Patients: &clinics.Patients{*patient},
+		Patients: &clinics.PatientsV1{*patient},
 		Settings: *settings,
 	}
 
@@ -101,7 +102,7 @@ func (r *scheduledSummaryAndReportProcessor) ProcessOrder(ctx context.Context, s
 	return r.orderProcessor.SendSummaryAndReport(ctx, params)
 }
 
-func (r *scheduledSummaryAndReportProcessor) getPatient(ctx context.Context, clinicId, userId string) (*clinics.Patient, error) {
+func (r *scheduledSummaryAndReportProcessor) getPatient(ctx context.Context, clinicId, userId string) (*clinics.PatientV1, error) {
 	resp, err := r.clinics.GetPatientWithResponse(ctx, clinicId, userId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get patient: %w", err)
@@ -115,7 +116,7 @@ func (r *scheduledSummaryAndReportProcessor) getPatient(ctx context.Context, cli
 	return resp.JSON200, nil
 }
 
-func (r *scheduledSummaryAndReportProcessor) getClinic(ctx context.Context, clinicId string) (*clinics.Clinic, error) {
+func (r *scheduledSummaryAndReportProcessor) getClinic(ctx context.Context, clinicId string) (*clinics.ClinicV1, error) {
 	resp, err := r.clinics.GetClinicWithResponse(ctx, clinicId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get clinic: %w", err)
@@ -129,7 +130,7 @@ func (r *scheduledSummaryAndReportProcessor) getClinic(ctx context.Context, clin
 	return resp.JSON200, nil
 }
 
-func (r *scheduledSummaryAndReportProcessor) getClinicSettings(ctx context.Context, clinicId string) (*clinics.EHRSettings, error) {
+func (r *scheduledSummaryAndReportProcessor) getClinicSettings(ctx context.Context, clinicId string) (*clinics.EhrSettingsV1, error) {
 	resp, err := r.clinics.GetEHRSettingsWithResponse(ctx, clinicId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get clinic ehr settings: %w", err)
@@ -143,13 +144,13 @@ func (r *scheduledSummaryAndReportProcessor) getClinicSettings(ctx context.Conte
 	return resp.JSON200, nil
 }
 
-func patientHasUploadedDataRecently(patient clinics.Patient) bool {
+func patientHasUploadedDataRecently(patient clinics.PatientV1) bool {
 	cutoffDate := time.Now().Add(-recentDataCutoff)
 	mostRecentUploadDate := getMostRecentUploadDate(patient)
 	return mostRecentUploadDate.After(cutoffDate)
 }
 
-func getMostRecentUploadDate(patient clinics.Patient) time.Time {
+func getMostRecentUploadDate(patient clinics.PatientV1) time.Time {
 	var mostRecentUpload time.Time
 	if patient.Summary != nil && patient.Summary.CgmStats != nil && patient.Summary.CgmStats.Dates.LastUploadDate != nil {
 		mostRecentUpload = *patient.Summary.CgmStats.Dates.LastUploadDate

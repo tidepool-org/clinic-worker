@@ -81,9 +81,9 @@ type Observation struct {
 
 // PopulateSummaryStatistics populates a flowsheet with patient summary statistics. If summary statistics are not available,
 // the flowsheet items will be populated with 'NOT AVAILABLE'.
-func PopulateSummaryStatistics(patient clinics.Patient, settings FlowsheetSettings, flowsheet *models.NewFlowsheet) {
-	var cgmStats *clinics.PatientCGMStats
-	var bgmStats *clinics.PatientBGMStats
+func PopulateSummaryStatistics(patient clinics.PatientV1, settings FlowsheetSettings, flowsheet *models.NewFlowsheet) {
+	var cgmStats *clinics.CgmStatsV1
+	var bgmStats *clinics.BgmStatsV1
 	if patient.Summary != nil {
 		cgmStats = patient.Summary.CgmStats
 		bgmStats = patient.Summary.BgmStats
@@ -93,10 +93,10 @@ func PopulateSummaryStatistics(patient clinics.Patient, settings FlowsheetSettin
 	PopulateBGMObservations(bgmStats, settings, flowsheet)
 }
 
-func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetSettings, f *models.NewFlowsheet) {
+func PopulateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettings, f *models.NewFlowsheet) {
 	now := time.Now()
 
-	var period *clinics.PatientCGMPeriod
+	var period *clinics.CgmPeriodV1
 	periodDuration := days14
 	reportingTime := formatTime(&now)
 	var firstData, periodEnd, periodStart *time.Time
@@ -218,10 +218,10 @@ func PopulateCGMObservations(stats *clinics.PatientCGMStats, settings FlowsheetS
 	}
 }
 
-func PopulateBGMObservations(stats *clinics.PatientBGMStats, settings FlowsheetSettings, f *models.NewFlowsheet) {
+func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettings, f *models.NewFlowsheet) {
 	now := time.Now()
 
-	var period *clinics.PatientBGMPeriod
+	var period *clinics.BgmPeriodV1
 	periodDuration := days14
 	reportingTime := formatTime(&now)
 
@@ -337,17 +337,16 @@ func SetAccountNumberInFlowsheet(order models.NewOrder, flowsheet *models.NewFlo
 }
 
 func SetOrderIdInFlowsheet(order models.NewOrder, flowsheet *models.NewFlowsheet) {
-	if order.Order.ID == "" {
-		return
-	}
-
-	initVisitExtensions(flowsheet)
-	(*flowsheet.Visit.Extensions)[AdditionalIdentifierExtensionId] = AdditionalIdentifierExtension{
-		URL: AdditionalIdentifierURI,
-		Identifier: AdditionalIdentifier{
-			Type:  AdditionalIdentifierTypeOrderId,
-			Value: order.Order.ID,
-		},
+	if order.Order.ID != "" {
+		extensions := map[string]any{
+			AdditionalIdentifierExtensionId: AdditionalIdentifierExtension{
+				URL: AdditionalIdentifierURI,
+				Identifier: AdditionalIdentifier{
+					Type:  AdditionalIdentifierTypeOrderId,
+					Value: order.Order.ID,
+				},
+			}}
+		flowsheet.Visit.Extensions = &extensions
 	}
 }
 
