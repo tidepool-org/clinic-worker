@@ -79,8 +79,18 @@ func (r *scheduledSummaryAndReportProcessor) ProcessOrder(ctx context.Context, s
 		return nil
 	}
 
-	if !patientHasUploadedDataRecently(*patient) {
-		r.logger.Infow("ignoring scheduled summary and report request because the user doesn't have recent data", "clinicId", clinicId, "userId", scheduled.UserId)
+	cutoffTime := getOrderTime(scheduled.DecodedOrder)
+	if scheduled.PrecedingDocument != nil {
+		// Check that there is new data uploaded after the previous scheduled message if one exists
+		cutoffTime = scheduled.PrecedingDocument.CreatedTime
+	}
+	if !patientHasUploadedDataRecently(*patient, cutoffTime) {
+		r.logger.Infow(
+			"ignoring scheduled summary and report request because the user doesn't have recent data",
+			"clinicId", clinicId,
+			"userId", scheduled.UserId,
+			"cutoffDate", cutoffTime.Format(time.RFC3339),
+		)
 		return nil
 	}
 
@@ -91,12 +101,10 @@ func (r *scheduledSummaryAndReportProcessor) ProcessOrder(ctx context.Context, s
 	}
 
 	params := SummaryAndReportParameters{
-		Match:      match,
-		Order:      scheduled.DecodedOrder,
-		DocumentId: scheduled.Id.Hex(),
-	}
-	if scheduled.PrecedingDocument != nil {
-		params.PrecedingDocumentId = scheduled.PrecedingDocument.Id.Hex()
+		Match:             match,
+		Order:             scheduled.DecodedOrder,
+		DocumentId:        scheduled.Id.Hex(),
+		PrecedingDocument: scheduled.PrecedingDocument,
 	}
 
 	return r.orderProcessor.SendSummaryAndReport(ctx, params)
@@ -144,10 +152,9 @@ func (r *scheduledSummaryAndReportProcessor) getClinicSettings(ctx context.Conte
 	return resp.JSON200, nil
 }
 
-func patientHasUploadedDataRecently(patient clinics.PatientV1) bool {
-	cutoffDate := time.Now().Add(-recentDataCutoff)
+func patientHasUploadedDataRecently(patient clinics.PatientV1, cutoffTime time.Time) bool {
 	mostRecentUploadDate := getMostRecentUploadDate(patient)
-	return mostRecentUploadDate.After(cutoffDate)
+	return mostRecentUploadDate.After(cutoffTime)
 }
 
 func getMostRecentUploadDate(patient clinics.PatientV1) time.Time {
@@ -159,4 +166,14 @@ func getMostRecentUploadDate(patient clinics.PatientV1) time.Time {
 		mostRecentUpload = *patient.Summary.BgmStats.Dates.LastUploadDate
 	}
 	return mostRecentUpload
+}
+
+func getOrderTime(order models.NewOrder) (result time.Time) {
+	if order.Meta.EventDateTime == nil {
+		return
+	}
+
+	// result will be zero if parsing fails, which is what we want to fallback to
+	result, _ = time.Parse(time.RFC3339, *order.Meta.EventDateTime)
+	return
 }
