@@ -177,18 +177,18 @@ func PopulateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettin
 		{"REPORTING_PERIOD_START_CGM", formatTime(periodStart), "DateTime", nil, reportingTime, "CGM Reporting Period Start"},
 		{"REPORTING_PERIOD_END_CGM", formatTime(periodEnd), "DateTime", nil, reportingTime, "CGM Reporting Period End"},
 		{"REPORTING_PERIOD_START_CGM_DATA", formatTime(firstData), "DateTime", nil, reportingTime, "CGM Reporting Period Start Date of actual Data"},
+		{"TIME_ABOVE_RANGE_VERY_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInVeryHigh)), "Numeric", &unitsPercentage, reportingTime, "CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)"},
+		{"TIME_ABOVE_RANGE_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInHigh)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)"},
+		{"TIME_IN_RANGE_CGM", formatFloat(unitIntervalToPercent(timeInTarget)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)"},
+		{"TIME_BELOW_RANGE_LOW_CGM", formatFloat(unitIntervalToPercent(timeInLow)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time 54–69 mg/dL (3.0–3.8 mmol/L)"},
+		{"TIME_BELOW_RANGE_VERY_LOW_CGM", formatFloat(unitIntervalToPercent(timeInVeryLow)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)"},
+		{"GLUCOSE_MANAGEMENT_INDICATOR", formatFloat(gmi), "Numeric", nil, reportingTime, "CGM Glucose Management Indicator during reporting period"},
+		{"AVERAGE_CGM", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, reportingTime, "CGM Average Glucose during reporting period"},
+		{"STANDARD_DEVIATION_CGM", formatFloat(cgmStdDev), "Numeric", cgmStdDevUnits, reportingTime, "The standard deviation of CGM measurements during the reporting period"},
+		{"COEFFICIENT_OF_VARIATION_CGM", formatFloat(cgmCoeffVar), "Numeric", nil, reportingTime, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period"},
+		{"ACTIVE_WEAR_TIME_CGM", formatFloat(unitIntervalToPercent(cgmUsePercent)), "Numeric", &unitsPercentage, reportingTime, "Percentage of time CGM worn during reporting period"},
 		{"DAYS_WITH_DATA_CGM", formatInt(cgmDaysWithData), "Numeric", &unitsDay, reportingTime, "Number of days with at least one CGM datum during the reporting period"},
 		{"HOURS_WITH_DATA_CGM", formatInt(cgmHoursWithData), "Numeric", &unitsHour, reportingTime, "Number of hours with at least one CGM datum during the reporting period"},
-		{"AVERAGE_CGM", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, reportingTime, "CGM Average Glucose during reporting period"},
-		{"COEFFICIENT_OF_VARIATION_CGM", formatFloat(cgmCoeffVar), "Numeric", nil, reportingTime, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period"},
-		{"STANDARD_DEVIATION_CGM", formatFloat(cgmStdDev), "Numeric", cgmStdDevUnits, reportingTime, "The standard deviation of CGM measurements during the reporting period"},
-		{"ACTIVE_WEAR_TIME_CGM", formatFloat(unitIntervalToPercent(cgmUsePercent)), "Numeric", &unitsPercentage, reportingTime, "Percentage of time CGM worn during reporting period"},
-		{"GLUCOSE_MANAGEMENT_INDICATOR", formatFloat(gmi), "Numeric", nil, reportingTime, "CGM Glucose Management Indicator during reporting period"},
-		{"TIME_BELOW_RANGE_VERY_LOW_CGM", formatFloat(unitIntervalToPercent(timeInVeryLow)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)"},
-		{"TIME_BELOW_RANGE_LOW_CGM", formatFloat(unitIntervalToPercent(timeInLow)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time 54–69 mg/dL (3.0–3.8 mmol/L)"},
-		{"TIME_IN_RANGE_CGM", formatFloat(unitIntervalToPercent(timeInTarget)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)"},
-		{"TIME_ABOVE_RANGE_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInHigh)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)"},
-		{"TIME_ABOVE_RANGE_VERY_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInVeryHigh)), "Numeric", &unitsPercentage, reportingTime, "CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)"},
 	}
 
 	observationsMap := map[string]*Observation{}
@@ -279,10 +279,10 @@ func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettin
 		{"REPORTING_PERIOD_START_SMBG", formatTime(periodStart), "DateTime", nil, reportingTime, "SMBG Reporting Period Start"},
 		{"REPORTING_PERIOD_END_SMBG", formatTime(periodEnd), "DateTime", nil, reportingTime, "SMBG Reporting Period End"},
 		{"REPORTING_PERIOD_START_SMBG_DATA", formatTime(firstData), "DateTime", nil, reportingTime, "SMBG Reporting Period Start Date of actual Data"},
-		{"CHECK_RATE_READINGS_DAY_SMBG", formatFloat(averageDailyRecords), "Numeric", nil, reportingTime, "Average Numeric of SMBG readings per day during reporting period"},
-		{"AVERAGE_SMBG", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, reportingTime, "SMBG Average Glucose during reporting period"},
-		{"READINGS_BELOW_RANGE_VERY_LOW_SMBG", formatInt(timeInVeryLowRecords), "Numeric", nil, reportingTime, "SMBG Level 2 Hypoglycemia Events: Number of readings <54 mg/dL (<3.0 mmol/L) during reporting period"},
 		{"READINGS_ABOVE_RANGE_VERY_HIGH_SMBG", formatInt(timeInVeryHighRecords), "Numeric", nil, reportingTime, "SMBG Level 2 Hyperglycemia: Number of readings above range (TAR-VH) time >250 mg/dL (>13.9 mmol/L) during reporting period"},
+		{"READINGS_BELOW_RANGE_VERY_LOW_SMBG", formatInt(timeInVeryLowRecords), "Numeric", nil, reportingTime, "SMBG Level 2 Hypoglycemia Events: Number of readings <54 mg/dL (<3.0 mmol/L) during reporting period"},
+		{"AVERAGE_SMBG", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, reportingTime, "SMBG Average Glucose during reporting period"},
+		{"CHECK_RATE_READINGS_DAY_SMBG", formatFloat(averageDailyRecords), "Numeric", nil, reportingTime, "Average Numeric of SMBG readings per day during reporting period"},
 	}
 
 	observationsMap := map[string]*Observation{}
