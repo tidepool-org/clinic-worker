@@ -46,17 +46,6 @@ func (p PatientCDCEvent) IsPatientCreateFromExistingUserEvent() bool {
 	return p.OperationType == cdc.OperationTypeInsert && !p.FullDocument.IsCustodial()
 }
 
-func (p PatientCDCEvent) PatientHasPendingConnection() bool {
-	if p.FullDocument.DataSources != nil {
-		for _, dataSource := range *p.FullDocument.DataSources {
-			if *dataSource.State == string(clinics.Pending) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func (p PatientCDCEvent) PatientNeedsSummary() bool {
 	if p.OperationType != cdc.OperationTypeInsert {
 		return false

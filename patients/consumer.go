@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"slices"
 	"strconv"
 	"time"
 
@@ -147,12 +148,8 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			return err
 		}
 
-		// Only send invite email if patient does not have a pending connection request, which also
-		// sends an email that provides a pathway towards claiming the account
-		if !event.PatientHasPendingConnection() {
-			if err := p.applyInviteUpdate(event); err != nil {
-				return err
-			}
+		if err := p.applyInviteUpdate(ctx, event); err != nil {
+			return err
 		}
 	}
 
@@ -177,27 +174,21 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		return p.sendUploadReminder(*event.FullDocument.UserId)
 	}
 
-	connectionRequests := event.UpdateDescription.UpdatedFields.GetUpdatedConnectionRequests()
+	var connectionRequests ConnectionRequests
+	emailUpdated := event.UpdateDescription.UpdatedFields.Email != nil || slices.Contains(event.UpdateDescription.RemovedFields, "email")
+
+	if emailUpdated {
+		// If the email was updated, resend the most recent connection requests for each provider
+		for _, requests := range event.FullDocument.ProviderConnectionRequests {
+			connectionRequests = AppendMostRecentConnectionRequest(connectionRequests, requests)
+		}
+	} else {
+		// If the email was not updated in this event, get all updated connection requests (if any)
+		connectionRequests = event.UpdateDescription.UpdatedFields.GetUpdatedConnectionRequests()
+	}
+
 	if len(connectionRequests) > 0 {
 		p.logger.Infow("processing connection requests", "event", event)
-
-		if event.FullDocument.IsCustodial() {
-			invite := confirmations.UpsertAccountSignupConfirmationJSONRequestBody{
-				ClinicId:  &event.FullDocument.ClinicId.Value,
-				InvitedBy: event.FullDocument.InvitedBy,
-			}
-
-			response, err := p.confirmations.UpsertAccountSignupConfirmationWithResponse(ctx, *event.FullDocument.UserId, invite)
-			if err != nil {
-				return fmt.Errorf("unable to upsert confirmation: %v", err)
-			}
-
-			// Hydrophone returns 403 when there's an existing invite, or 404 if not found, as in the case of
-			// deleted users, so those are expected responses
-			if response.StatusCode() != http.StatusOK && response.StatusCode() != http.StatusForbidden && response.StatusCode() != http.StatusNotFound {
-				return fmt.Errorf("unexpected status code %v when upserting confirmation", response.StatusCode())
-			}
-		}
 
 		providers := map[string]struct{}{}
 		for _, r := range connectionRequests {
@@ -215,18 +206,19 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 				for _, source := range *event.FullDocument.DataSources {
 					if *source.ProviderName == providerName && *source.State == string(clinics.PendingReconnect) {
 						action = "reconnect"
+						break
 					}
 				}
 			}
 
 			templateName := templatePrefix + action
-			errs = append(errs, p.sendProviderConnectEmail(
-				providerName,
-				*event.FullDocument.UserId,
-				event.FullDocument.ClinicId.Value,
-				*event.FullDocument.FullName,
-				templateName,
-			))
+			errs = append(errs, p.sendProviderConnectEmail(ctx, SendProviderConnectEmailParams{
+				ClinicId:     event.FullDocument.ClinicId.Value,
+				ProviderName: providerName,
+				UserId:       *event.FullDocument.UserId,
+				PatientName:  *event.FullDocument.FullName,
+				TemplateName: templateName,
+			}))
 		}
 		if err := errors.Join(errs...); err != nil {
 			return err
@@ -305,33 +297,23 @@ func (p *PatientCDCConsumer) sendUploadReminder(userId string) error {
 	return p.mailer.SendEmailTemplate(ctx, template)
 }
 
-func (p *PatientCDCConsumer) sendProviderConnectEmail(providerName, userId, clinicId, patientName, templateName string) error {
+type SendProviderConnectEmailParams struct {
+	ProviderName         string
+	UserId               string
+	ClinicId             string
+	PatientName          string
+	TemplateName         string
+	RevokeExistingTokens bool
+}
+
+func (p *PatientCDCConsumer) sendProviderConnectEmail(ctx context.Context, params SendProviderConnectEmailParams) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	email, err := p.getUserEmail(userId)
-	if err != nil {
-		return err
-	}
-
-	if email == "" {
-		p.logger.Infow("Abort sending Dexcom connect email - empty email",
-			"userId", userId,
-			"clinicId", clinicId,
-		)
-		return nil
-	}
-
-	clinicName, err := p.getClinicName(ctx, clinicId)
-	if err != nil {
-		return err
-	}
-
-	restrictedTokenPaths := []string{"/v1/oauth/" + providerName}
+	restrictedTokenPaths := []string{"/v1/oauth/" + params.ProviderName}
 	restrictedTokenExpirationTime := time.Now().Add(restrictedTokenExpirationDuration)
 
-	// Create new or update existing restricted token for this path and user
-	currentRestrictedTokens, err := p.getUserRestrictedTokens(userId)
+	currentRestrictedTokens, err := p.getUserRestrictedTokens(params.UserId)
 	if err != nil {
 		return err
 	}
@@ -344,36 +326,54 @@ func (p *PatientCDCConsumer) sendProviderConnectEmail(providerName, userId, clin
 		}
 	}
 
-	var restrictedToken clients.RestrictedToken
+	// Revoke all existing tokens and re-create them to make sure old ones are not valid
+	// in case the email of the patient changed
 	if currentRestrictedTokenId != "" {
-		updatedRestrictedToken, err := p.auth.UpdateRestrictedToken(currentRestrictedTokenId, restrictedTokenExpirationTime, restrictedTokenPaths, p.shoreline.TokenProvide())
+		err := p.auth.DeleteRestrictedToken(currentRestrictedTokenId, p.shoreline.TokenProvide())
 		if err != nil {
 			return err
 		}
-		restrictedToken = *updatedRestrictedToken
-	} else {
-		createdRestrictedToken, err := p.auth.CreateRestrictedToken(userId, restrictedTokenExpirationTime, restrictedTokenPaths, p.shoreline.TokenProvide())
-		if err != nil {
-			return err
-		}
-		restrictedToken = *createdRestrictedToken
+	}
+
+	email, err := p.getUserEmail(params.UserId)
+	if err != nil {
+		return err
+	}
+
+	// Email has been removed, no need to (re)create tokens or send an email
+	if email == "" {
+		p.logger.Infow("Abort sending Dexcom connect email - empty email",
+			"userId", params.UserId,
+			"clinicId", params.ClinicId,
+		)
+		return nil
+	}
+
+	clinicName, err := p.getClinicName(ctx, params.ClinicId)
+	if err != nil {
+		return err
+	}
+
+	createdRestrictedToken, err := p.auth.CreateRestrictedToken(params.UserId, restrictedTokenExpirationTime, restrictedTokenPaths, p.shoreline.TokenProvide())
+	if err != nil {
+		return err
 	}
 
 	// Send the email with restricted token ID
 	p.logger.Infow("Sending Dexcom connect email",
-		"userId", userId,
+		"userId", params.UserId,
 		"email", email,
-		"clinicId", clinicId,
+		"clinicId", params.ClinicId,
 	)
 
 	template := events.SendEmailTemplateEvent{
 		Recipient: email,
-		Template:  templateName,
+		Template:  params.TemplateName,
 		Variables: map[string]string{
 			"ClinicName":        clinicName,
-			"RestrictedTokenId": restrictedToken.ID,
-			"PatientName":       patientName,
-			"ProviderName":      providerName,
+			"RestrictedTokenId": createdRestrictedToken.ID,
+			"PatientName":       params.PatientName,
+			"ProviderName":      params.ProviderName,
 		},
 	}
 
@@ -458,21 +458,18 @@ func (p *PatientCDCConsumer) applyProfileUpdate(event PatientCDCEvent) error {
 	return err
 }
 
-func (p *PatientCDCConsumer) applyInviteUpdate(event PatientCDCEvent) error {
+func (p *PatientCDCConsumer) applyInviteUpdate(ctx context.Context, event PatientCDCEvent) error {
 	p.logger.Debugw("applying invite update", "offset", event.Offset)
 	if event.FullDocument.UserId == nil {
 		return errors.New("expected patient id to be defined")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-	defer cancel()
-
 	invite := confirmations.SendAccountSignupConfirmationJSONRequestBody{
-		ClinicId:  (*confirmations.ClinicId)(&event.FullDocument.ClinicId.Value),
-		InvitedBy: (*confirmations.TidepoolUserId)(event.FullDocument.InvitedBy),
+		ClinicId:  &event.FullDocument.ClinicId.Value,
+		InvitedBy: event.FullDocument.InvitedBy,
 	}
 
-	response, err := p.confirmations.SendAccountSignupConfirmationWithResponse(ctx, confirmations.UserId(*event.FullDocument.UserId), invite)
+	response, err := p.confirmations.SendAccountSignupConfirmationWithResponse(ctx, *event.FullDocument.UserId, invite)
 	if err != nil {
 		return fmt.Errorf("unable to upsert confirmation: %w", err)
 	}
