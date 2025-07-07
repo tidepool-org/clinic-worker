@@ -342,9 +342,10 @@ func (p *PatientCDCConsumer) sendProviderConnectEmail(ctx context.Context, param
 
 	// Email has been removed, no need to (re)create tokens or send an email
 	if email == "" {
-		p.logger.Infow("Abort sending Dexcom connect email - empty email",
+		p.logger.Infow("Abort sending data provider connect email - empty email",
 			"userId", params.UserId,
 			"clinicId", params.ClinicId,
+			"providerName", params.ProviderName,
 		)
 		return nil
 	}
@@ -360,10 +361,11 @@ func (p *PatientCDCConsumer) sendProviderConnectEmail(ctx context.Context, param
 	}
 
 	// Send the email with restricted token ID
-	p.logger.Infow("Sending Dexcom connect email",
+	p.logger.Infow("Sending provider connect email",
 		"userId", params.UserId,
 		"email", email,
 		"clinicId", params.ClinicId,
+		"providerName", params.ProviderName,
 	)
 
 	template := events.SendEmailTemplateEvent{
