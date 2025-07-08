@@ -149,11 +149,8 @@ func PopulateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettin
 			averageGlucose = &val
 		}
 
-		{ // scope to contain val / units to Ptr
-			// Convert standard deviation to preferred units
-			val, _ := bgInUnits(period.StandardDeviation, sourceGlucoseUnits, destGlucoseUnits)
-			cgmStdDev = &val
-		}
+		cgmStdDevVal, _ := bgInUnits(period.StandardDeviation, sourceGlucoseUnits, destGlucoseUnits)
+		cgmStdDev = &cgmStdDevVal
 
 		cgmUsePercent = period.TimeCGMUsePercent
 		cgmCoeffVar = &period.CoefficientOfVariation
