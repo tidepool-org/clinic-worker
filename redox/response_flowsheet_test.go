@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
+
 	"github.com/tidepool-org/clinic-worker/test"
 	api "github.com/tidepool-org/clinic/client"
 	models "github.com/tidepool-org/clinic/redox_models"
