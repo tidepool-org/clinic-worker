@@ -22,6 +22,7 @@ const (
 	EventTypeNewOrder               = "New"
 	DataModelOrder                  = "Order"
 	MinimumAgeSelfOwnedAccountYears = 13
+	NoteReplacementDuration         = -5 * time.Minute
 )
 
 type NewOrderProcessor interface {
@@ -30,16 +31,16 @@ type NewOrderProcessor interface {
 }
 
 type SummaryAndReportParameters struct {
-	Match               clinics.EhrMatchResponseV1
-	Order               models.NewOrder
-	DocumentId          string
-	PrecedingDocumentId string
+	Match             clinics.EhrMatchResponseV1
+	Order             models.NewOrder
+	DocumentId        string
+	PrecedingDocument *PrecedingDocument
 }
 
 func (s SummaryAndReportParameters) ShouldReplacePrecedingReport() bool {
 	if s.Match.Settings.ScheduledReports.OnUploadNoteEventType != nil &&
 		*s.Match.Settings.ScheduledReports.OnUploadNoteEventType == clinics.ScheduledReportsV1OnUploadNoteEventTypeReplace &&
-		s.PrecedingDocumentId != "" {
+		s.PrecedingDocument != nil && s.PrecedingDocument.CreatedTime.After(time.Now().Add(NoteReplacementDuration)) {
 		return true
 	}
 	return false
@@ -563,9 +564,9 @@ func (o *newOrderProcessor) createReportNote(ctx context.Context, params Summary
 			"order", params.Order.Meta,
 			"clinicId", params.Match.Clinic.Id,
 			"patientId", patient.Id,
-			"precedingDocumentId", params.PrecedingDocumentId,
+			"precedingDocumentId", params.PrecedingDocument.Id.Hex(),
 		)
-		notes, err = CreateReplaceNotes(params.PrecedingDocumentId)
+		notes, err = CreateReplaceNotes(params.PrecedingDocument.Id.Hex())
 		if err != nil {
 			return nil, err
 		}
