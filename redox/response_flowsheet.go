@@ -269,29 +269,23 @@ func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettin
 
 	if period != nil {
 		if period.AverageGlucoseMmol != nil {
-			var val float64
 			// Convert blood glucose to preferred units, store unit result overriding preference if unit is not convertable
-			val, destGlucoseUnits = bgInUnits(float64(*period.AverageGlucoseMmol), sourceGlucoseUnits, destGlucoseUnits)
-			averageGlucose = &val
+			averageGlucoseVal, units := bgInUnits(float64(*period.AverageGlucoseMmol), sourceGlucoseUnits, destGlucoseUnits)
+			averageGlucose = &averageGlucoseVal
+			destGlucoseUnits = units
 		}
 
-		{ // scope to contain val to Ptr
-			// Convert standard deviation to preferred units
-			val, _ := bgInUnits(period.StandardDeviation, sourceGlucoseUnits, destGlucoseUnits)
-			bgmStdDev = &val
-		}
+		// Convert standard deviation to preferred units
+		bgmStdDevVal, _ := bgInUnits(period.StandardDeviation, sourceGlucoseUnits, destGlucoseUnits)
+		bgmStdDev = &bgmStdDevVal
 
-		{ // scope to contain val to Ptr
-			// Convert min glucose to preferred units
-			val, _ := bgInUnits(period.Min, sourceGlucoseUnits, destGlucoseUnits)
-			minGlucose = &val
-		}
+		// Convert min glucose to preferred units
+		minGlucoseVal, _ := bgInUnits(period.Min, sourceGlucoseUnits, destGlucoseUnits)
+		minGlucose = &minGlucoseVal
 
-		{ // scope to contain val to Ptr
-			// Convert max glucose to preferred units
-			val, _ := bgInUnits(period.Max, sourceGlucoseUnits, destGlucoseUnits)
-			maxGlucose = &val
-		}
+		// Convert max glucose to preferred units
+		maxGlucoseVal, _ := bgInUnits(period.Max, sourceGlucoseUnits, destGlucoseUnits)
+		maxGlucose = &maxGlucoseVal
 
 		averageDailyRecords = period.AverageDailyRecords
 		timeInVeryLowRecords = period.TimeInVeryLowRecords
