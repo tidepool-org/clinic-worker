@@ -93,11 +93,13 @@
               "timeInVeryHighRecords": 13,
               "timeInVeryLowPercent": 0.057971014492753624,
               "timeInVeryLowRecords": 4,
-              "totalRecords": 69
+              "totalRecords": 69,
+              "max": 15.2,
+              "min": 2.8
             },
             "1d": {
               "averageDailyRecords": 6,
-              "averageGlucoseMmol":8.620528,
+              "averageGlucoseMmol": 8.620528,
               "hasAverageDailyRecords": true,
               "hasAverageGlucose": true,
               "hasTimeInHighPercent": true,
@@ -121,7 +123,9 @@
               "timeInVeryHighRecords": 0,
               "timeInVeryLowPercent": 0,
               "timeInVeryLowRecords": 0,
-              "totalRecords": 6
+              "totalRecords": 6,
+              "max": 15.2,
+              "min": 2.8
             },
             "30d": {
               "averageDailyRecords": 4.9,
@@ -149,7 +153,9 @@
               "timeInVeryHighRecords": 30,
               "timeInVeryLowPercent": 0.08843537414965986,
               "timeInVeryLowRecords": 13,
-              "totalRecords": 147
+              "totalRecords": 147,
+              "max": 15.2,
+              "min": 2.8
             },
             "7d": {
               "averageDailyRecords": 5,
@@ -177,7 +183,9 @@
               "timeInVeryHighRecords": 9,
               "timeInVeryLowPercent": 0.02857142857142857,
               "timeInVeryLowRecords": 1,
-              "totalRecords": 35
+              "totalRecords": 35,
+              "max": 15.2,
+              "min": 2.8
             }
           },
           "totalHours": 715
@@ -244,7 +252,14 @@
               "timeInVeryLowMinutes": 510,
               "timeInVeryLowPercent": 0.0504950495049505,
               "timeInVeryLowRecords": 102,
-              "totalRecords": 2020
+              "totalRecords": 2020,
+              "max": 15.2,
+              "min": 2.8,
+              "coefficientOfVariation": 0.2003709853643661,
+              "coefficientOfVariationDelta": 0.2003709853643661,
+              "standardDeviation": 1.4696946965192512,
+              "standardDeviationDelta": 1.4696946965192512,
+              "daysWithData": 2
             },
             "1d": {
               "averageDailyRecords": 202,
@@ -290,7 +305,14 @@
               "timeInVeryLowMinutes": 95,
               "timeInVeryLowPercent": 0.09405940594059406,
               "timeInVeryLowRecords": 19,
-              "totalRecords": 202
+              "totalRecords": 202,
+              "max": 15.2,
+              "min": 2.8,
+              "coefficientOfVariation": 0.2003709853643661,
+              "coefficientOfVariationDelta": 0.2003709853643661,
+              "standardDeviation": 1.4696946965192512,
+              "standardDeviationDelta": 1.4696946965192512,
+              "daysWithData": 2
             },
             "30d": {
               "averageDailyRecords": 67.33333333333333,
@@ -335,7 +357,14 @@
               "timeInVeryLowMinutes": 510,
               "timeInVeryLowPercent": 0.0504950495049505,
               "timeInVeryLowRecords": 102,
-              "totalRecords": 2020
+              "totalRecords": 2020,
+              "max": 15.2,
+              "min": 2.8,
+              "coefficientOfVariation": 0.2003709853643661,
+              "coefficientOfVariationDelta": 0.2003709853643661,
+              "standardDeviation": 1.4696946965192512,
+              "standardDeviationDelta": 1.4696946965192512,
+              "daysWithData": 2
             },
             "7d": {
               "averageDailyRecords": 202,
@@ -381,7 +410,14 @@
               "timeInVeryLowMinutes": 320,
               "timeInVeryLowPercent": 0.04526166902404526,
               "timeInVeryLowRecords": 64,
-              "totalRecords": 1414
+              "totalRecords": 1414,
+              "max": 15.2,
+              "min": 2.8,
+              "coefficientOfVariation": 0.2003709853643661,
+              "coefficientOfVariationDelta": 0.2003709853643661,
+              "standardDeviation": 1.4696946965192512,
+              "standardDeviationDelta": 1.4696946965192512,
+              "daysWithData": 2
             }
           },
           "totalHours": 234
