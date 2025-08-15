@@ -450,10 +450,10 @@ func ExportBGMPeriod(period summaries.GlucosePeriodV5) clinics.BgmPeriodV1 {
 	}
 
 	if period.Total.Records >= 30 && period.DaysWithData >= 7 {
-		destPeriod.StandardDeviation = period.StandardDeviation
-		destPeriod.StandardDeviationDelta = period.Delta.StandardDeviation
-		destPeriod.CoefficientOfVariation = period.CoefficientOfVariation
-		destPeriod.CoefficientOfVariationDelta = period.Delta.CoefficientOfVariation
+		destPeriod.StandardDeviation = &period.StandardDeviation
+		destPeriod.StandardDeviationDelta = &period.Delta.StandardDeviation
+		destPeriod.CoefficientOfVariation = &period.CoefficientOfVariation
+		destPeriod.CoefficientOfVariationDelta = &period.Delta.CoefficientOfVariation
 	}
 
 	return destPeriod

@@ -272,9 +272,11 @@ func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettin
 			destGlucoseUnits = units
 		}
 
-		// Convert standard deviation to preferred units
-		bgmStdDevVal, _ := bgInUnits(period.StandardDeviation, sourceGlucoseUnits, destGlucoseUnits)
-		bgmStdDev = &bgmStdDevVal
+		if period.StandardDeviation != nil {
+			// Convert standard deviation to preferred units
+			bgmStdDevVal, _ := bgInUnits(*period.StandardDeviation, sourceGlucoseUnits, destGlucoseUnits)
+			bgmStdDev = &bgmStdDevVal
+		}
 
 		// Convert min glucose to preferred units
 		minGlucoseVal, _ := bgInUnits(period.Min, sourceGlucoseUnits, destGlucoseUnits)
@@ -287,7 +289,7 @@ func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettin
 		averageDailyRecords = period.AverageDailyRecords
 		timeInVeryLowRecords = period.TimeInVeryLowRecords
 		timeInVeryHighRecords = period.TimeInVeryHighRecords
-		bgmCoeffVar = &period.CoefficientOfVariation
+		bgmCoeffVar = period.CoefficientOfVariation
 		bgmDaysWithData = &period.DaysWithData
 		bgmTotalRecords = period.TotalRecords
 		timeInVeryLowPercent = period.TimeInVeryLowPercent
