@@ -125,13 +125,13 @@ func PopulateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettin
 	unitsPercentage := percentage
 	unitsDay := day
 	unitsHour := hour
+	sourceGlucoseUnits := string(clinics.MmolL)
+	destGlucoseUnits := settings.PreferredBGUnits
 
 	var cgmUsePercent *float64
 	var averageGlucose *float64
-	var averageGlucoseUnits *string
 	var gmi *float64
 	var cgmStdDev *float64
-	var cgmStdDevUnits *string
 	var cgmCoeffVar *float64
 	var cgmDaysWithData *int
 	var cgmHoursWithData *int
@@ -143,23 +143,14 @@ func PopulateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettin
 
 	if period != nil {
 		if period.AverageGlucoseMmol != nil {
-			val := *period.AverageGlucoseMmol
-			units := string(clinics.MmolL)
-
-			// Convert blood glucose to preferred units
-			val, units = bgInUnits(val, units, settings.PreferredBGUnits)
-
+			var val float64
+			// Convert blood glucose to preferred units, store unit result overriding preference if unit is not convertable
+			val, destGlucoseUnits = bgInUnits(float64(*period.AverageGlucoseMmol), sourceGlucoseUnits, destGlucoseUnits)
 			averageGlucose = &val
-			averageGlucoseUnits = &units
 		}
 
-		{ // scope to contain val / units to Ptr
-			// Convert standard deviation to preferred units
-			val, units := bgInUnits(period.StandardDeviation, string(clinics.MmolL), settings.PreferredBGUnits)
-
-			cgmStdDev = &val
-			cgmStdDevUnits = &units
-		}
+		cgmStdDevVal, _ := bgInUnits(period.StandardDeviation, sourceGlucoseUnits, destGlucoseUnits)
+		cgmStdDev = &cgmStdDevVal
 
 		cgmUsePercent = period.TimeCGMUsePercent
 		cgmCoeffVar = &period.CoefficientOfVariation
@@ -183,8 +174,8 @@ func PopulateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettin
 		{"TIME_BELOW_RANGE_LOW_CGM", formatFloat(unitIntervalToPercent(timeInLow)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time 54–69 mg/dL (3.0–3.8 mmol/L)"},
 		{"TIME_BELOW_RANGE_VERY_LOW_CGM", formatFloat(unitIntervalToPercent(timeInVeryLow)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)"},
 		{"GLUCOSE_MANAGEMENT_INDICATOR", formatFloat(gmi), "Numeric", nil, reportingTime, "CGM Glucose Management Indicator during reporting period"},
-		{"AVERAGE_CGM", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, reportingTime, "CGM Average Glucose during reporting period"},
-		{"STANDARD_DEVIATION_CGM", formatFloat(cgmStdDev), "Numeric", cgmStdDevUnits, reportingTime, "The standard deviation of CGM measurements during the reporting period"},
+		{"AVERAGE_CGM", formatFloat(averageGlucose), "Numeric", &destGlucoseUnits, reportingTime, "CGM Average Glucose during reporting period"},
+		{"STANDARD_DEVIATION_CGM", formatFloat(cgmStdDev), "Numeric", &destGlucoseUnits, reportingTime, "The standard deviation of CGM measurements during the reporting period"},
 		{"COEFFICIENT_OF_VARIATION_CGM", formatFloat(cgmCoeffVar), "Numeric", nil, reportingTime, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period"},
 		{"ACTIVE_WEAR_TIME_CGM", formatFloat(unitIntervalToPercent(cgmUsePercent)), "Numeric", &unitsPercentage, reportingTime, "Percentage of time CGM worn during reporting period"},
 		{"DAYS_WITH_DATA_CGM", formatInt(cgmDaysWithData), "Numeric", &unitsDay, reportingTime, "Number of days with at least one CGM datum during the reporting period"},
@@ -252,37 +243,81 @@ func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettin
 		}
 	}
 
+	unitsDay := day
+	unitsPercentage := percentage
+	sourceGlucoseUnits := string(clinics.MmolL)
+	destGlucoseUnits := settings.PreferredBGUnits
+
 	var averageDailyRecords *float64
 	var averageGlucose *float64
-	var averageGlucoseUnits *string
 	var timeInVeryLowRecords *int
 	var timeInVeryHighRecords *int
+	var timeInVeryLowPercent *float64
+	var timeInLowPercent *float64
+	var timeInTargetPercent *float64
+	var timeInHighPercent *float64
+	var timeInVeryHighPercent *float64
+	var bgmStdDev *float64
+	var bgmCoeffVar *float64
+	var bgmDaysWithData *int
+	var bgmTotalRecords *int
+	var minGlucose *float64
+	var maxGlucose *float64
 
 	if period != nil {
 		if period.AverageGlucoseMmol != nil {
-			val := *period.AverageGlucoseMmol
-			units := string(clinics.MmolL)
-
-			// Convert blood glucose to preferred units
-			val, units = bgInUnits(val, units, settings.PreferredBGUnits)
-
-			averageGlucose = &val
-			averageGlucoseUnits = &units
+			// Convert blood glucose to preferred units, store unit result overriding preference if unit is not convertable
+			averageGlucoseVal, units := bgInUnits(float64(*period.AverageGlucoseMmol), sourceGlucoseUnits, destGlucoseUnits)
+			averageGlucose = &averageGlucoseVal
+			destGlucoseUnits = units
 		}
-		averageDailyRecords = period.AverageDailyRecords
 
+		if period.StandardDeviation != nil {
+			// Convert standard deviation to preferred units
+			bgmStdDevVal, _ := bgInUnits(*period.StandardDeviation, sourceGlucoseUnits, destGlucoseUnits)
+			bgmStdDev = &bgmStdDevVal
+		}
+
+		// Convert min glucose to preferred units
+		minGlucoseVal, _ := bgInUnits(period.Min, sourceGlucoseUnits, destGlucoseUnits)
+		minGlucose = &minGlucoseVal
+
+		// Convert max glucose to preferred units
+		maxGlucoseVal, _ := bgInUnits(period.Max, sourceGlucoseUnits, destGlucoseUnits)
+		maxGlucose = &maxGlucoseVal
+
+		averageDailyRecords = period.AverageDailyRecords
 		timeInVeryLowRecords = period.TimeInVeryLowRecords
 		timeInVeryHighRecords = period.TimeInVeryHighRecords
+		bgmCoeffVar = period.CoefficientOfVariation
+		bgmDaysWithData = &period.DaysWithData
+		bgmTotalRecords = period.TotalRecords
+		timeInVeryLowPercent = period.TimeInVeryLowPercent
+		timeInLowPercent = period.TimeInLowPercent
+		timeInTargetPercent = period.TimeInTargetPercent
+		timeInHighPercent = period.TimeInHighPercent
+		timeInVeryHighPercent = period.TimeInVeryHighPercent
 	}
 
 	observations := []*Observation{
 		{"REPORTING_PERIOD_START_SMBG", formatTime(periodStart), "DateTime", nil, reportingTime, "SMBG Reporting Period Start"},
 		{"REPORTING_PERIOD_END_SMBG", formatTime(periodEnd), "DateTime", nil, reportingTime, "SMBG Reporting Period End"},
 		{"REPORTING_PERIOD_START_SMBG_DATA", formatTime(firstData), "DateTime", nil, reportingTime, "SMBG Reporting Period Start Date of actual Data"},
+		{"TIME_ABOVE_RANGE_VERY_HIGH_SMBG", formatFloat(unitIntervalToPercent(timeInVeryHighPercent)), "Numeric", &unitsPercentage, reportingTime, "% of readings > 250 mg/dL (>13.9 mmol/L)"},
+		{"TIME_ABOVE_RANGE_HIGH_SMBG", formatFloat(unitIntervalToPercent(timeInHighPercent)), "Numeric", &unitsPercentage, reportingTime, "% of readings between 181–250 mg/dL (10.1–13.9 mmol/L)"},
+		{"TIME_IN_RANGE_SMBG", formatFloat(unitIntervalToPercent(timeInTargetPercent)), "Numeric", &unitsPercentage, reportingTime, "% of readings between 70–180 mg/dL (3.9–10.0 mmol/L)"},
+		{"TIME_BELOW_RANGE_LOW_SMBG", formatFloat(unitIntervalToPercent(timeInLowPercent)), "Numeric", &unitsPercentage, reportingTime, "% of readings between 54–69 mg/dL (3.0–3.8 mmol/L)"},
+		{"TIME_BELOW_RANGE_VERY_LOW_SMBG", formatFloat(unitIntervalToPercent(timeInVeryLowPercent)), "Numeric", &unitsPercentage, reportingTime, "% of readings < 54 mg/dL (<3.0 mmol/L)"},
 		{"READINGS_ABOVE_RANGE_VERY_HIGH_SMBG", formatInt(timeInVeryHighRecords), "Numeric", nil, reportingTime, "SMBG Level 2 Hyperglycemia: Number of readings above range (TAR-VH) time >250 mg/dL (>13.9 mmol/L) during reporting period"},
 		{"READINGS_BELOW_RANGE_VERY_LOW_SMBG", formatInt(timeInVeryLowRecords), "Numeric", nil, reportingTime, "SMBG Level 2 Hypoglycemia Events: Number of readings <54 mg/dL (<3.0 mmol/L) during reporting period"},
-		{"AVERAGE_SMBG", formatFloat(averageGlucose), "Numeric", averageGlucoseUnits, reportingTime, "SMBG Average Glucose during reporting period"},
+		{"MAX_SMBG", formatFloat(maxGlucose), "Numeric", &destGlucoseUnits, reportingTime, "Maximum blood glucose reading over the time period"},
+		{"MIN_SMBG", formatFloat(minGlucose), "Numeric", &destGlucoseUnits, reportingTime, "Minimum blood glucose reading over the time period"},
+		{"AVERAGE_SMBG", formatFloat(averageGlucose), "Numeric", &destGlucoseUnits, reportingTime, "SMBG Average Glucose during reporting period"},
+		{"STANDARD_DEVIATION_SMBG", formatFloat(bgmStdDev), "Numeric", &destGlucoseUnits, reportingTime, "The standard deviation of SMBG measurements during the reporting period"},
+		{"COEFFICIENT_OF_VARIATION_SMBG", formatFloat(bgmCoeffVar), "Numeric", nil, reportingTime, "The coefficient of variation (standard deviation * 100 / mean) of SMBG measurements during the reporting period"},
+		{"TOTAL_READING_COUNT_SMBG", formatInt(bgmTotalRecords), "Numeric", nil, reportingTime, "The total number of SMBG readings taken during the SMBG Reporting Period"},
 		{"CHECK_RATE_READINGS_DAY_SMBG", formatFloat(averageDailyRecords), "Numeric", nil, reportingTime, "Average Numeric of SMBG readings per day during reporting period"},
+		{"DAYS_WITH_DATA_SMBG", formatInt(bgmDaysWithData), "Numeric", &unitsDay, reportingTime, "The total number of days with at least 1 SMBG reading over the reporting period"},
 	}
 
 	observationsMap := map[string]*Observation{}
@@ -292,12 +327,26 @@ func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettin
 
 	// For clinics flagged as icode, replace certain values with alternative formatting, as defined in BACK-3476
 	if settings.ICode {
-		// ICode2 defines whole-number precision for average glucose, this is only accurate enough for mg/dl
+		observationsMap["COEFFICIENT_OF_VARIATION_SMBG"].Value = formatFloatWithPrecision(unitIntervalToPercent(bgmCoeffVar), 1)
+		observationsMap["COEFFICIENT_OF_VARIATION_SMBG"].Units = &unitsPercentage
+
+		// ICode2 defines whole-number precision for glucose, this is only accurate enough for mg/dl
 		if strings.ToLower(settings.PreferredBGUnits) == "mg/dl" {
 			observationsMap["AVERAGE_SMBG"].Value = formatFloatConditionalPrecision(averageGlucose)
+			observationsMap["MIN_SMBG"].Value = formatFloatConditionalPrecision(minGlucose)
+			observationsMap["MAX_SMBG"].Value = formatFloatConditionalPrecision(maxGlucose)
 		} else {
 			observationsMap["AVERAGE_SMBG"].Value = formatFloatWithPrecision(averageGlucose, 1)
+			observationsMap["MIN_SMBG"].Value = formatFloatWithPrecision(minGlucose, 1)
+			observationsMap["MAX_SMBG"].Value = formatFloatWithPrecision(maxGlucose, 1)
 		}
+
+		observationsMap["STANDARD_DEVIATION_SMBG"].Value = formatFloatWithPrecision(bgmStdDev, 1)
+		observationsMap["TIME_BELOW_RANGE_VERY_LOW_SMBG"].Value = formatFloatConditionalPrecision(unitIntervalToPercent(timeInVeryLowPercent))
+		observationsMap["TIME_BELOW_RANGE_LOW_SMBG"].Value = formatFloatConditionalPrecision(unitIntervalToPercent(timeInLowPercent))
+		observationsMap["TIME_IN_RANGE_SMBG"].Value = formatFloatConditionalPrecision(unitIntervalToPercent(timeInTargetPercent))
+		observationsMap["TIME_ABOVE_RANGE_HIGH_SMBG"].Value = formatFloatConditionalPrecision(unitIntervalToPercent(timeInHighPercent))
+		observationsMap["TIME_ABOVE_RANGE_VERY_HIGH_SMBG"].Value = formatFloatConditionalPrecision(unitIntervalToPercent(timeInVeryHighPercent))
 	}
 
 	for _, observation := range observations {
@@ -305,7 +354,6 @@ func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettin
 			AppendObservation(f, observation)
 		}
 	}
-
 }
 
 func AppendObservation(f *models.NewFlowsheet, o *Observation) {
