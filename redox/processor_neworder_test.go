@@ -323,6 +323,63 @@ var _ = Describe("NewOrderProcessor", func() {
 			})
 		})
 
+		Context("with custodial subscription order", func() {
+			var order models.NewOrder
+			var envelope models.MessageEnvelope
+			var matchResponse *clinics.MatchClinicAndPatientResponse
+
+			BeforeEach(func() {
+				newOrderFixture, err := test.LoadFixture("test/fixtures/subscriptionorder.json")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(json.Unmarshal(newOrderFixture, &order)).To(Succeed())
+
+				message := bson.Raw{}
+				Expect(bson.UnmarshalExtJSON(newOrderFixture, true, &message)).To(Succeed())
+
+				envelope = models.MessageEnvelope{
+					Id:      primitive.NewObjectID(),
+					Meta:    order.Meta,
+					Message: message,
+				}
+				response := &clinics.EhrMatchResponseV1{}
+				matchFixture, err := test.LoadFixture("test/fixtures/subscriptionmatchresponse_custodial.json")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(json.Unmarshal(matchFixture, response)).To(Succeed())
+
+				matchResponse = &clinics.MatchClinicAndPatientResponse{
+					Body: nil,
+					HTTPResponse: &http.Response{
+						StatusCode: http.StatusOK,
+					},
+					JSON200: response,
+				}
+				clinicClient.EXPECT().
+					MatchClinicAndPatientWithResponse(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(matchResponse, nil)
+			})
+
+			It("sets the custodial email address", func() {
+				clinicClient.EXPECT().UpdatePatientWithResponse(gomock.Any(),
+					gomock.Eq(*matchResponse.JSON200.Clinic.Id),
+					gomock.Eq(*((*matchResponse.JSON200.Patients)[0]).Id),
+					gomock.Any(),
+				).Do(func(ctx context.Context, clinicId, patientId, body any, reqEditors ...any) {
+					request, ok := body.(clinics.UpdatePatientJSONRequestBody)
+					Expect(ok).To(BeTrue())
+					Expect(request.Email).To(PointTo(Equal("test@tidepool.org")))
+				}).Return(&clinics.UpdatePatientResponse{
+					Body: nil,
+					HTTPResponse: &http.Response{
+						StatusCode: http.StatusOK,
+					},
+					JSON200: &(*matchResponse.JSON200.Patients)[0],
+				}, nil)
+
+				Expect(processor.ProcessOrder(context.Background(), envelope, order)).To(Succeed())
+			})
+
+		})
+
 		Context("with create account and enable reports order", func() {
 			var order models.NewOrder
 			var envelope models.MessageEnvelope
