@@ -379,12 +379,19 @@ func (o *newOrderProcessor) updatePatient(ctx context.Context, order models.NewO
 		return err
 	}
 
-	// Update email addresses of custodian users if they don't have an email address
+	// Update email addresses of custodian users if they don't have an email address and the email address isn't already taken
 	var email *string
 	if patient.Permissions != nil && patient.Permissions.Custodian != nil && patient.Email == nil {
 		email, err = GetEmailAddressFromOrder(order)
 		if err != nil {
 			return err
+		}
+		if email != nil {
+			if exists, err := o.emailExists(*email); err != nil {
+				return err
+			} else if exists {
+				email = nil
+			}
 		}
 	}
 
@@ -413,7 +420,7 @@ func (o *newOrderProcessor) updatePatient(ctx context.Context, order models.NewO
 		return err
 	}
 	if resp.StatusCode() != http.StatusOK {
-		return fmt.Errorf("unexpected status code %v replacing tags for patient %s", resp.StatusCode(), *patient.Id)
+		return fmt.Errorf("unexpected status code %v updating patient %s", resp.StatusCode(), *patient.Id)
 	}
 	return nil
 }
