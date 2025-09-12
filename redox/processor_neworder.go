@@ -164,16 +164,11 @@ func (o *newOrderProcessor) handleEnableSummaryReports(ctx context.Context, enab
 	patient := (*match.Patients)[0]
 	o.logger.Infow("successfully matched clinic and patient", "order", params.Order.Meta, "clinicId", params.Match.Clinic.Id, "patientId", patient.Id)
 
-	tags, err := o.createTagsForPatient(ctx, order, *match)
+	err = o.updatePatient(ctx, order, *match)
 	if err != nil {
 		return err
 	}
-	if tags != nil {
-		err = o.replacePatientTags(ctx, *match, tags)
-		if err != nil {
-			return err
-		}
-	}
+
 	if enableReports.OnSuccess != nil {
 		if err := enableReports.OnSuccess(ctx, params); err != nil {
 			return err
@@ -376,26 +371,56 @@ func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order mode
 	return &patientTagIds, nil
 }
 
-func (o *newOrderProcessor) replacePatientTags(ctx context.Context, match clinics.EhrMatchResponseV1, tagIds *clinics.PatientTagIdsV1) error {
-	if tagIds == nil {
+func (o *newOrderProcessor) updatePatient(ctx context.Context, order models.NewOrder, match clinics.EhrMatchResponseV1) error {
+	patient := (*match.Patients)[0]
+
+	tags, err := o.createTagsForPatient(ctx, order, match)
+	if err != nil {
+		return err
+	}
+
+	// Update email addresses of custodian users if they don't have an email address and the email address isn't already taken
+	var email *string
+	if patient.Permissions != nil && patient.Permissions.Custodian != nil && patient.Email == nil {
+		email, err = GetEmailAddressFromOrder(order)
+		if err != nil {
+			return err
+		}
+		if email != nil {
+			if exists, err := o.emailExists(*email); err != nil {
+				return err
+			} else if exists {
+				email = nil
+			}
+		}
+	}
+
+	if email == nil && tags == nil {
+		o.logger.Infow("skipping patient update, because the email and tags did not change")
 		return nil
 	}
 
-	patient := (*match.Patients)[0]
+	if tags == nil {
+		tags = patient.Tags
+	}
+	if email == nil {
+		email = patient.Email
+	}
+
 	update := clinics.UpdatePatientJSONRequestBody{
-		Email:         patient.Email,
+		Email:         email,
 		BirthDate:     patient.BirthDate,
 		FullName:      patient.FullName,
 		Mrn:           patient.Mrn,
 		TargetDevices: patient.TargetDevices,
-		Tags:          tagIds,
+		Tags:          tags,
 	}
 	resp, err := o.clinics.UpdatePatientWithResponse(ctx, *match.Clinic.Id, *patient.Id, update)
 	if err != nil {
 		return err
 	}
 	if resp.StatusCode() != http.StatusOK {
-		return fmt.Errorf("unexpected status code %v replacing tags for patient %s", resp.StatusCode(), *patient.Id)
+		return fmt.Errorf("unexpected status code %v updating patient %s", resp.StatusCode(), *patient.Id)
 	}
 	return nil
 }
