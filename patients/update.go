@@ -29,6 +29,9 @@ func ApplyPatientChangesToProfile(patient Patient, profile map[string]interface{
 		profile["email"] = *patient.Email
 		patientProfile["emails"] = []string{*patient.Email}
 	}
+	if patient.DiagnosisType != "" {
+		patientProfile["diagnosisType"] = patient.DiagnosisType
+	}
 }
 
 func RemoveFieldsFromProfile(removedFields []string, profile map[string]interface{}) {
@@ -53,6 +56,9 @@ func RemoveFieldsFromProfile(removedFields []string, profile map[string]interfac
 	if _, ok := removedFieldsMap["email"]; ok {
 		delete(profile, "email")
 		delete(patientProfile, "emails")
+	}
+	if _, ok := removedFieldsMap["diagnosisType"]; ok {
+		delete(patientProfile, "diagnosisType")
 	}
 }
 

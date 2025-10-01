@@ -102,6 +102,7 @@ type Patient struct {
 	LastUploadReminderTime         *cdc.Date                  `json:"lastUploadReminderTime" bson:"lastUploadReminderTime"`
 	Summary                        *CDCSummary                `json:"summary" bson:"summary"`
 	ProviderConnectionRequests     ProviderConnectionRequests `json:"providerConnectionRequests" bson:"providerConnectionRequests"`
+	DiagnosisType                  string                     `json:"diagnosisType,omitempty" bson:"diagnosisType,omitempty"`
 }
 
 type ProviderConnectionRequests map[string]ConnectionRequests
