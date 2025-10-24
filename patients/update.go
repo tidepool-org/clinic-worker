@@ -29,8 +29,8 @@ func ApplyPatientChangesToProfile(patient Patient, profile map[string]interface{
 		profile["email"] = *patient.Email
 		patientProfile["emails"] = []string{*patient.Email}
 	}
-	if patient.DiagnosisType != "" {
-		patientProfile["diagnosisType"] = patient.DiagnosisType
+	if patient.DiagnosisType != nil {
+		patientProfile["diagnosisType"] = *patient.DiagnosisType
 	}
 }
 
