@@ -84,15 +84,23 @@ type Observation struct {
 // PopulateSummaryStatistics populates a flowsheet with patient summary statistics. If summary statistics are not available,
 // the flowsheet items will be populated with 'NOT AVAILABLE'.
 func PopulateSummaryStatistics(patient clinics.PatientV1, settings FlowsheetSettings, flowsheet *models.NewFlowsheet) {
-	var cgmStats *clinics.CgmStatsV1
-	var bgmStats *clinics.BgmStatsV1
-	if patient.Summary != nil {
-		cgmStats = patient.Summary.CgmStats
-		bgmStats = patient.Summary.BgmStats
+	if patient.Summary == nil {
+		return
 	}
 
-	PopulateCGMObservations(cgmStats, settings, flowsheet)
-	PopulateBGMObservations(bgmStats, settings, flowsheet)
+	cgmStats := patient.Summary.CgmStats
+	if cgmStats != nil && cgmStats.Dates.LastUpdatedDate != nil && cgmStats.Dates.LastData != nil {
+		if !cgmStats.Dates.LastUpdatedDate.IsZero() && !cgmStats.Dates.LastData.IsZero() {
+			PopulateCGMObservations(cgmStats, settings, flowsheet)
+		}
+	}
+
+	bgmStats := patient.Summary.BgmStats
+	if bgmStats != nil && bgmStats.Dates.LastUpdatedDate != nil && bgmStats.Dates.LastData != nil {
+		if !bgmStats.Dates.LastUpdatedDate.IsZero() && !bgmStats.Dates.LastData.IsZero() {
+			PopulateBGMObservations(bgmStats, settings, flowsheet)
+		}
+	}
 }
 
 func PopulateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettings, f *models.NewFlowsheet) {
