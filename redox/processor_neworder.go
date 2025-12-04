@@ -249,7 +249,7 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, create Crea
 	if err != nil {
 		return false, o.handleAccountCreationError(ctx, err, order, *match)
 	}
-	createPatient.Mrn, err = GetMrnFromOrder(order)
+	createPatient.Mrn, err = GetMrnFromOrder(order, match.Settings.MrnIdType)
 	if err != nil {
 		return false, o.handleAccountCreationError(ctx, err, order, *match)
 	}
@@ -867,13 +867,13 @@ func GetFullNameFromOrder(order models.NewOrder) (string, error) {
 	return name, nil
 }
 
-func GetMrnFromOrder(order models.NewOrder) (*string, error) {
+func GetMrnFromOrder(order models.NewOrder, mrnIDType string) (*string, error) {
 	if len(order.Patient.Identifiers) == 0 {
 		return nil, fmt.Errorf("mrn is missing")
 	}
 	var mrn *string
 	for _, identifier := range order.Patient.Identifiers {
-		if strings.ToLower(identifier.IDType) == "mrn" {
+		if strings.EqualFold(identifier.IDType, mrnIDType) {
 			mrn = &identifier.ID
 			break
 		}
