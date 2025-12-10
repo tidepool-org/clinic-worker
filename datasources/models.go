@@ -36,7 +36,6 @@ type DataSource struct {
 	ProviderName *string       `json:"providerName"`
 	ModifiedTime *cdc.Date     `json:"modifiedTime,omitempty"`
 	State        *string       `json:"state"`
-	LastState    *string       `json:"lastState,omitempty"`
 }
 
 type UpdateDescription struct {

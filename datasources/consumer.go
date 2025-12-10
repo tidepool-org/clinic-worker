@@ -122,28 +122,22 @@ func (p *CDCConsumer) unmarshalEvent(value []byte, event *CDCEvent) error {
 }
 
 func (p *CDCConsumer) handleCDCEvent(event CDCEvent) error {
-	if event.ShouldApplyUpdates() {
-		p.logger.Infow("processing data sources event for user", "userid", event.FullDocument.UserID)
-		p.logger.Debugw("event being processed", "event", event)
-		if err := p.applyPatientDataSourcesUpdate(event); err != nil {
-			return err
-		}
-	} else {
+	if !event.ShouldApplyUpdates() {
 		p.logger.Debugw("skipping handling of event", "offset", event.Offset)
 		return nil
 	}
 
-	if p.containsNewDeviceIssues(event) {
-		if err := p.handleDeviceIssuesAfterUpdates(event); err != nil {
-			return err
-		}
+	p.logger.Infow("processing data sources event for user", "userid", event.FullDocument.UserID)
+	p.logger.Debugw("event being processed", "event", event)
+
+	if err := p.applyPatientDataSourcesUpdate(event); err != nil {
+		return err
+	}
+
+	if err := p.handleDeviceIssuesAfterUpdates(event); err != nil {
+		return err
 	}
 	return nil
-}
-
-func (p *CDCConsumer) containsNewDeviceIssues(event CDCEvent) bool {
-	// DataSources start in a disconnected state upon creation so only check state on updates
-	return event.FullDocument.UserID != nil && event.OperationType == cdc.OperationTypeUpdate && event.UpdateDescription.UpdatedFields.State != nil && (*event.UpdateDescription.UpdatedFields.State == "disconnected" || *event.UpdateDescription.UpdatedFields.State == "error")
 }
 
 // handleDeviceIssuesAfterUpdates checks if the conditions are met
@@ -152,21 +146,26 @@ func (p *CDCConsumer) containsNewDeviceIssues(event CDCEvent) bool {
 // order to see more up-to-date information on whether a user shared any data
 // w/ any clinics or not as that determines the email template to send.
 func (p *CDCConsumer) handleDeviceIssuesAfterUpdates(event CDCEvent) error {
-	fmt.Printf("handling device issue %+v\n", event.UpdateDescription.UpdatedFields)
-	if event.UpdateDescription.UpdatedFields.State == nil || event.FullDocument.UserID == nil || *event.FullDocument.UserID == "" || event.FullDocument.ProviderName == nil {
+	// DataSources start in a disconnected state upon creation so only check
+	// state on updates AND check if the updated field contains the `state` field
+	// and its value is "error" or "disconnected". This way users will only be notified
+	// on NEW errors.
+	if event.FullDocument.UserID == nil ||
+		event.OperationType != cdc.OperationTypeUpdate ||
+		event.UpdateDescription.UpdatedFields.State == nil ||
+		(*event.UpdateDescription.UpdatedFields.State != "disconnected" && *event.UpdateDescription.UpdatedFields.State != "error") {
 		return nil
 	}
 
 	eventProviderName := *event.FullDocument.ProviderName
 	updatedState := *event.UpdateDescription.UpdatedFields.State
-	userId := *event.FullDocument.UserID
+	userID := *event.FullDocument.UserID
 
-	// handle personal user account for errors only here. The patients consumer will handle errors/disconnections for patients who have shared data.
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
-	clinicsResponse, err := p.clinics.ListClinicsForPatientWithResponse(ctx, *event.FullDocument.UserID, nil)
+	clinicsResponse, err := p.clinics.ListClinicsForPatientWithResponse(ctx, userID, nil)
 	if err != nil {
-		return fmt.Errorf(`unable to retrieve clinics for patient "%v": %w`, *event.FullDocument.UserID, err)
+		return fmt.Errorf(`unable to retrieve clinics for patient "%v": %w`, userID, err)
 	}
 	hasSharedData := false
 	// To determine which email to send, check if user has shared data w/ any clinics
@@ -200,16 +199,16 @@ func (p *CDCConsumer) handleDeviceIssuesAfterUpdates(event CDCEvent) error {
 
 	// Only send emails to personal users on error. Send emails to users who have shared data on error OR disconnected.
 	if updatedState == "error" || (hasSharedData && updatedState == "disconnected") {
-		// user is not associated w/ any clinic, send personal email on errors only as per [BACK-3478]
-		user, err := p.shoreline.GetUser(*event.FullDocument.UserID, p.shoreline.TokenProvide())
+		user, err := p.shoreline.GetUser(userID, p.shoreline.TokenProvide())
 		if err != nil {
 			return fmt.Errorf(`unable to get user: %w`, err)
 		}
 		if user.Username != "" {
-			restrictedToken, err := token.CreateRestrictedTokenForProvider(p.auth, p.shoreline, userId, *event.FullDocument.ProviderName)
+			restrictedToken, err := token.UpsertRestrictedTokenForProvider(p.auth, p.shoreline, userID, *event.FullDocument.ProviderName)
 			if err != nil {
 				return fmt.Errorf(`error creating restricted token: %w`, err)
 			}
+			// If user is not associated w/ any clinic, send personal email on errors only, otherwise if sharing w/ clinic use sharing data template.
 			template := "device_issue_personal"
 			if hasSharedData {
 				template = "device_issue_shared"
@@ -220,7 +219,7 @@ func (p *CDCConsumer) handleDeviceIssuesAfterUpdates(event CDCEvent) error {
 				EmailTemplate:     template,
 				ProviderName:      *event.FullDocument.ProviderName,
 				RestrictedTokenId: restrictedToken.ID,
-				UserId:            userId,
+				UserId:            userID,
 			}
 			if err := p.data.SendDeviceConnectionIssuesNotification(body); err != nil {
 				return fmt.Errorf(`unable to issue request : %w`, err)

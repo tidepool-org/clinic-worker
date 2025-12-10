@@ -503,7 +503,7 @@ func (p *PatientCDCConsumer) applyInviteUpdate(ctx context.Context, event Patien
 	}
 
 	// Schedule a reminder email only if user wasn't deleted.
-	if response.StatusCode() == http.StatusForbidden || response.StatusCode() == http.StatusOK {
+	if response.StatusCode() != http.StatusNotFound {
 		if email, err := p.getUserEmail(*event.FullDocument.UserId); err == nil && email != "" {
 			body := clients.ClaimAccountReminderData{
 				ClinicId:   event.FullDocument.ClinicId.Value,

@@ -2,7 +2,7 @@ package token
 
 import (
 	"fmt"
-	"reflect"
+	"slices"
 	"time"
 
 	"github.com/tidepool-org/go-common/clients"
@@ -13,7 +13,7 @@ const (
 	RestrictedTokenExpirationDuration = time.Hour * 24 * 30
 )
 
-func CreateRestrictedTokenForProvider(auth clients.AuthClient, shoreline shoreline.Client, userId string, providerName string) (*clients.RestrictedToken, error) {
+func UpsertRestrictedTokenForProvider(auth clients.AuthClient, shoreline shoreline.Client, userId string, providerName string) (*clients.RestrictedToken, error) {
 	restrictedTokenPaths := []string{"/v1/oauth/" + providerName}
 	restrictedTokenExpirationTime := time.Now().Add(RestrictedTokenExpirationDuration)
 
@@ -22,21 +22,24 @@ func CreateRestrictedTokenForProvider(auth clients.AuthClient, shoreline shoreli
 		return nil, fmt.Errorf(`error fetching user restricted tokens: %w`, err)
 	}
 
-	var currentRestrictedTokenId string
+	var existingTokenIDs []string
 	for _, token := range currentRestrictedTokens {
-		if reflect.DeepEqual(token.Paths, &restrictedTokenPaths) {
-			currentRestrictedTokenId = token.ID
-			break
+		if token.Paths != nil && slices.Equal(*token.Paths, restrictedTokenPaths) {
+			existingTokenIDs = append(existingTokenIDs, token.ID)
 		}
 	}
 
-	// Revoke all existing tokens and re-create them to make sure old ones are not valid
-	// in case the email of the patient changed
-	if currentRestrictedTokenId != "" {
-		err := auth.DeleteRestrictedToken(currentRestrictedTokenId, shoreline.TokenProvide())
+	var lastExistingToken *clients.RestrictedToken
+	for _, tokenID := range existingTokenIDs {
+		restrictedToken, err := auth.UpdateRestrictedToken(tokenID, restrictedTokenExpirationTime, restrictedTokenPaths, shoreline.TokenProvide())
 		if err != nil {
-			return nil, fmt.Errorf(`error deleting restricted token: %w`, err)
+			return nil, err
 		}
+		lastExistingToken = restrictedToken
+	}
+
+	if lastExistingToken != nil {
+		return lastExistingToken, nil
 	}
 	return auth.CreateRestrictedToken(userId, restrictedTokenExpirationTime, restrictedTokenPaths, shoreline.TokenProvide())
 }
