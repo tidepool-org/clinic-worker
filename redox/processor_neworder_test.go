@@ -704,7 +704,7 @@ var _ = Describe("NewOrderProcessor", func() {
 		})
 
 		It("returns the mrn of the patient", func() {
-			mrn, err := redox.GetMrnFromOrder(order)
+			mrn, err := redox.GetMrnFromOrder(order, "mrn")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(mrn).ToNot(BeNil())
 			Expect(mrn).To(PointTo(Equal("0000000001")))

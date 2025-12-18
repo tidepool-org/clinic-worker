@@ -44,6 +44,7 @@
       "results": "cf86b7e2-7097-41bf-b3db-3f7180cce0c5"
     },
     "enabled": true,
+    "mrnIdType": "mrn",
     "procedureCodes": {
       "createAccountAndEnableReports": "PRO1093"
     },
