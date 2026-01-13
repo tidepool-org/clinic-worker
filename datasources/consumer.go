@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -157,8 +156,6 @@ func (p *CDCConsumer) handleDeviceIssues(event CDCEvent) error {
 		return fmt.Errorf(`unable to retrieve clinics for patient "%v": %w`, userID, err)
 	}
 	hasSharedData := clinicsResponse.JSON200 != nil && len(*clinicsResponse.JSON200) > 0
-
-	// Only send emails to personal users on error. Send emails to users who have shared data on error OR disconnected.
 	user, err := p.shoreline.GetUser(userID, p.shoreline.TokenProvide())
 	if err != nil {
 		return fmt.Errorf(`unable to get user: %w`, err)
