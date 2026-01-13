@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -134,30 +133,20 @@ func (p *CDCConsumer) handleCDCEvent(event CDCEvent) error {
 		return err
 	}
 
-	if err := p.handleDeviceIssuesAfterUpdates(event); err != nil {
+	if err := p.handleDeviceIssues(event); err != nil {
 		return err
 	}
 	return nil
 }
 
-// handleDeviceIssuesAfterUpdates checks if the conditions are met
-// for sending a notification email to the user to alert them about a device
-// connection issue. It is ran after the patient dataSources are updated in
-// order to see more up-to-date information on whether a user shared any data
-// w/ any clinics or not as that determines the email template to send.
-func (p *CDCConsumer) handleDeviceIssuesAfterUpdates(event CDCEvent) error {
-	// DataSources start in a disconnected state upon creation so only check
-	// state on updates AND check if the updated field contains the `state` field
-	// and its value is "error" or "disconnected". This way users will only be notified
-	// on NEW errors.
+func (p *CDCConsumer) handleDeviceIssues(event CDCEvent) error {
 	if event.FullDocument.UserID == nil ||
 		event.OperationType != cdc.OperationTypeUpdate ||
 		event.UpdateDescription.UpdatedFields.State == nil ||
-		(*event.UpdateDescription.UpdatedFields.State != "disconnected" && *event.UpdateDescription.UpdatedFields.State != "error") {
+		*event.UpdateDescription.UpdatedFields.State != "error" {
 		return nil
 	}
 
-	eventProviderName := *event.FullDocument.ProviderName
 	updatedState := *event.UpdateDescription.UpdatedFields.State
 	userID := *event.FullDocument.UserID
 
@@ -167,63 +156,32 @@ func (p *CDCConsumer) handleDeviceIssuesAfterUpdates(event CDCEvent) error {
 	if err != nil {
 		return fmt.Errorf(`unable to retrieve clinics for patient "%v": %w`, userID, err)
 	}
-	hasSharedData := false
-	// To determine which email to send, check if user has shared data w/ any clinics
-	for _, relationship := range *clinicsResponse.JSON200 {
-		patient := relationship.Patient
-		if patient.ConnectionRequests == nil {
-			continue
-		}
-		connectionRequests := *patient.ConnectionRequests
-
-		providerRequests := append(append(connectionRequests.Abbott, connectionRequests.Dexcom...), connectionRequests.Twiist...)
-		if slices.ContainsFunc(providerRequests, func(req clinics.ProviderConnectionRequestV1) bool {
-			return string(req.ProviderName) == eventProviderName
-		}) {
-			// Potentially has shared data (or does this mean always if the data
-			// source exists in the data_sources collection? Just to be sure, will
-			// check the mirrored version in patients)
-			if patient.DataSources != nil {
-				for _, ds := range *patient.DataSources {
-					if string(ds.ProviderName) == eventProviderName {
-						hasSharedData = true
-						break
-					}
-				}
-				if hasSharedData {
-					break
-				}
-			}
-		}
-	}
+	hasSharedData := clinicsResponse.JSON200 != nil && len(*clinicsResponse.JSON200) > 0
 
 	// Only send emails to personal users on error. Send emails to users who have shared data on error OR disconnected.
-	if updatedState == "error" || (hasSharedData && updatedState == "disconnected") {
-		user, err := p.shoreline.GetUser(userID, p.shoreline.TokenProvide())
+	user, err := p.shoreline.GetUser(userID, p.shoreline.TokenProvide())
+	if err != nil {
+		return fmt.Errorf(`unable to get user: %w`, err)
+	}
+	if user.Username != "" {
+		restrictedToken, err := token.UpsertRestrictedTokenForProvider(p.auth, p.shoreline, userID, *event.FullDocument.ProviderName)
 		if err != nil {
-			return fmt.Errorf(`unable to get user: %w`, err)
+			return fmt.Errorf(`error creating restricted token: %w`, err)
 		}
-		if user.Username != "" {
-			restrictedToken, err := token.UpsertRestrictedTokenForProvider(p.auth, p.shoreline, userID, *event.FullDocument.ProviderName)
-			if err != nil {
-				return fmt.Errorf(`error creating restricted token: %w`, err)
-			}
-			// If user is not associated w/ any clinic, send personal email on errors only, otherwise if sharing w/ clinic use sharing data template.
-			template := "device_issue_personal"
-			if hasSharedData {
-				template = "device_issue_shared"
-			}
-			body := clients.DeviceConnectionIssuesData{
-				DataSourceState:   updatedState,
-				DataSourceId:      event.FullDocument.ID.Value,
-				EmailTemplate:     template,
-				ProviderName:      *event.FullDocument.ProviderName,
-				RestrictedTokenId: restrictedToken.ID,
-				UserId:            userID,
-			}
-			if err := p.data.SendDeviceConnectionIssuesNotification(body); err != nil {
-				return fmt.Errorf(`unable to issue request : %w`, err)
-			}
+		template := "device_issue_personal"
+		if hasSharedData {
+			template = "device_issue_shared"
+		}
+		body := clients.DeviceConnectionIssuesData{
+			DataSourceState:   updatedState,
+			DataSourceId:      event.FullDocument.ID.Value,
+			EmailTemplate:     template,
+			ProviderName:      *event.FullDocument.ProviderName,
+			RestrictedTokenId: restrictedToken.ID,
+			UserId:            userID,
+		}
+		if err := p.data.SendDeviceConnectionIssuesNotification(body); err != nil {
+			return fmt.Errorf(`unable to issue request : %w`, err)
 		}
 	}
 

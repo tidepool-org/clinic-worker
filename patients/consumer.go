@@ -234,7 +234,7 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 					UserId:            *event.FullDocument.UserId,
 					WhenToSend:        time.Now().Add(time.Hour * 24 * 7),
 				}
-				if err := p.data.SendConnectAccountReminder(body); err != nil {
+				if err := p.data.ScheduleConnectAccountReminder(body); err != nil {
 					// Warn but don't fail if unable to send to scheduled email reminder processor, as it is not part of the core functionality.
 					p.logger.Infow("unable to send scheduled connect account reminder to scheduled emails system", "error", fmt.Errorf(`unable to send scheduled email reminder: %w`, err))
 				}
@@ -510,7 +510,7 @@ func (p *PatientCDCConsumer) applyInviteUpdate(ctx context.Context, event Patien
 				UserId:     *event.FullDocument.UserId,
 				WhenToSend: time.Now().Add(time.Hour * 24 * 7),
 			}
-			if err := p.data.SendClaimAccountReminder(body); err != nil {
+			if err := p.data.ScheduleClaimAccountReminder(body); err != nil {
 				// Warn but don't fail if unable to send to scheduled email reminder processor, as it is not part of the core functionality.
 				p.logger.Infow("unable to send scheduled claim account reminder to scheduled emails system", "error", fmt.Errorf(`unable to send scheduled email reminder: %w`, err))
 			}
