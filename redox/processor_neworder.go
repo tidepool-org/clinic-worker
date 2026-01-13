@@ -446,7 +446,7 @@ func (o *newOrderProcessor) getTagNamesFromOrder(order models.NewOrder, match cl
 		return nil
 	}
 
-	if *order.Order.ClinicalInfo == nil {
+	if order.Order.ClinicalInfo == nil || *order.Order.ClinicalInfo == nil {
 		return nil
 	}
 
