@@ -220,6 +220,24 @@ var _ = Describe("Flowsheet", func() {
 				Expect(len(observations)).To(Equal(0))
 			})
 
+			It("does not populate cgm and bgm observations when dates are empty", func() {
+				flowsheet := redox.NewFlowsheet()
+				patient := (*response.Patients)[0]
+				dates := api.SummaryDatesV1{LastUpdatedDate: &time.Time{}, LastData: &time.Time{}}
+
+				patient.Summary.BgmStats.Dates = dates
+				patient.Summary.CgmStats.Dates = dates
+
+				settings := redox.FlowsheetSettings{
+					PreferredBGUnits: string(response.Clinic.PreferredBgUnits),
+					ICode:            true,
+				}
+				redox.PopulateSummaryStatistics(patient, settings, &flowsheet)
+
+				observations := Observations(flowsheet)
+				Expect(len(observations)).To(Equal(0))
+			})
+
 			It("converts blood glucose units to mg/dL when set as preferred bg units icode set", func() {
 				expectedBgUnits := "mg/dL"
 
