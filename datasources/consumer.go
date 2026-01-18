@@ -37,6 +37,7 @@ type CDCConsumer struct {
 	auth      clients.AuthClient
 	clinics   clinics.ClientWithResponsesInterface
 	data      clients.DataClient
+	seagull   clients.Seagull
 	shoreline shoreline.Client
 }
 
@@ -47,6 +48,7 @@ type Params struct {
 	Auth      clients.AuthClient
 	Clinics   clinics.ClientWithResponsesInterface
 	Data      clients.DataClient
+	Seagull   clients.Seagull
 	Shoreline shoreline.Client
 }
 
@@ -77,6 +79,7 @@ func NewCDCConsumer(p Params) (events.MessageConsumer, error) {
 		auth:      p.Auth,
 		clinics:   p.Clinics,
 		data:      p.Data,
+		seagull:   p.Seagull,
 		shoreline: p.Shoreline,
 	}, nil
 }
@@ -156,6 +159,19 @@ func (p *CDCConsumer) handleDeviceIssues(event CDCEvent) error {
 		return fmt.Errorf(`unable to retrieve clinics for patient "%v": %w`, userID, err)
 	}
 	hasSharedData := clinicsResponse.JSON200 != nil && len(*clinicsResponse.JSON200) > 0
+	var profileInfo *struct {
+		FullName string `json:"fullName"`
+	}
+	if err := p.seagull.GetCollection(userID, "profile", p.shoreline.TokenProvide(), &profileInfo); err != nil {
+		return fmt.Errorf(`unable to get profile for user %v: %w`, userID, err)
+	}
+	// Due to the asynchronous nature of profile updates, the user may or may
+	// not have a profile so check for its existence in order to get a name,
+	// otherwise default to something.
+	fullName := "Person"
+	if profileInfo != nil {
+		fullName = profileInfo.FullName
+	}
 	user, err := p.shoreline.GetUser(userID, p.shoreline.TokenProvide())
 	if err != nil {
 		return fmt.Errorf(`unable to get user: %w`, err)
@@ -173,6 +189,7 @@ func (p *CDCConsumer) handleDeviceIssues(event CDCEvent) error {
 			DataSourceState:   updatedState,
 			DataSourceId:      event.FullDocument.ID.Value,
 			EmailTemplate:     template,
+			FullName:          fullName,
 			ProviderName:      *event.FullDocument.ProviderName,
 			RestrictedTokenId: restrictedToken.ID,
 			UserId:            userID,

@@ -213,32 +213,13 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			}
 
 			templateName := templatePrefix + action
-			email, restrictedTokenID, err := p.sendProviderConnectEmail(ctx, SendProviderConnectEmailParams{
+			errs = append(errs, p.sendProviderConnectEmail(ctx, SendProviderConnectEmailParams{
 				ClinicId:     event.FullDocument.ClinicId.Value,
 				ProviderName: providerName,
 				UserId:       *event.FullDocument.UserId,
 				PatientName:  *event.FullDocument.FullName,
 				TemplateName: templateName,
-			})
-			if err != nil {
-				errs = append(errs, err)
-			} else if email != "" && event.FullDocument.IsCustodial() {
-				// Schedule a reminder email to connect a user's account if they have not claimed yet.
-				body := clients.ConnectAccountReminderData{
-					ClinicId:          event.FullDocument.ClinicId.Value,
-					Email:             email,
-					EmailTemplate:     fmt.Sprintf("reminder_%s_connect_custodial", strings.ToLower(providerName)),
-					PatientName:       *event.FullDocument.FullName,
-					ProviderName:      providerName,
-					RestrictedTokenId: restrictedTokenID,
-					UserId:            *event.FullDocument.UserId,
-					WhenToSend:        time.Now().Add(time.Hour * 24 * 7),
-				}
-				if err := p.data.ScheduleConnectAccountReminder(body); err != nil {
-					// Warn but don't fail if unable to send to scheduled email reminder processor, as it is not part of the core functionality.
-					p.logger.Infow("unable to send scheduled connect account reminder to scheduled emails system", "error", fmt.Errorf(`unable to send scheduled email reminder: %w`, err))
-				}
-			}
+			}))
 		}
 		if err := errors.Join(errs...); err != nil {
 			return err
@@ -326,7 +307,7 @@ type SendProviderConnectEmailParams struct {
 	RevokeExistingTokens bool
 }
 
-func (p *PatientCDCConsumer) sendProviderConnectEmail(ctx context.Context, params SendProviderConnectEmailParams) (email string, restrictedTokenID string, err error) {
+func (p *PatientCDCConsumer) sendProviderConnectEmail(ctx context.Context, params SendProviderConnectEmailParams) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
@@ -335,7 +316,7 @@ func (p *PatientCDCConsumer) sendProviderConnectEmail(ctx context.Context, param
 
 	currentRestrictedTokens, err := p.getUserRestrictedTokens(params.UserId)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
 	var currentRestrictedTokenId string
@@ -351,13 +332,13 @@ func (p *PatientCDCConsumer) sendProviderConnectEmail(ctx context.Context, param
 	if currentRestrictedTokenId != "" {
 		err := p.auth.DeleteRestrictedToken(currentRestrictedTokenId, p.shoreline.TokenProvide())
 		if err != nil {
-			return "", "", err
+			return err
 		}
 	}
 
-	email, err = p.getUserEmail(params.UserId)
+	email, err := p.getUserEmail(params.UserId)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
 	// Email has been removed, no need to (re)create tokens or send an email
@@ -367,17 +348,17 @@ func (p *PatientCDCConsumer) sendProviderConnectEmail(ctx context.Context, param
 			"clinicId", params.ClinicId,
 			"providerName", params.ProviderName,
 		)
-		return "", "", nil
+		return nil
 	}
 
 	clinicName, err := p.getClinicName(ctx, params.ClinicId)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
 	createdRestrictedToken, err := p.auth.CreateRestrictedToken(params.UserId, restrictedTokenExpirationTime, restrictedTokenPaths, p.shoreline.TokenProvide())
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
 	// Send the email with restricted token ID
@@ -398,8 +379,28 @@ func (p *PatientCDCConsumer) sendProviderConnectEmail(ctx context.Context, param
 			"ProviderName":      params.ProviderName,
 		},
 	}
+	if err := p.mailer.SendEmailTemplate(ctx, template); err != nil {
+		return err
+	}
 
-	return email, createdRestrictedToken.ID, p.mailer.SendEmailTemplate(ctx, template)
+	// Schedule a reminder email to connect a user's account if they have not
+	// claimed yet within a week.
+	body := clients.ConnectAccountReminderData{
+		ClinicId:          params.ClinicId,
+		Email:             email,
+		EmailTemplate:     fmt.Sprintf("reminder_%s_connect_custodial", strings.ToLower(params.ProviderName)),
+		PatientName:       params.PatientName,
+		ProviderName:      params.ProviderName,
+		RestrictedTokenId: createdRestrictedToken.ID,
+		UserId:            params.UserId,
+		WhenToSend:        time.Now().Add(time.Hour * 24 * 7),
+	}
+	if err := p.data.ScheduleConnectAccountReminder(body); err != nil {
+		// Warn but don't fail if unable to send to scheduled email reminder processor, as it is not part of the core functionality.
+		p.logger.Infow("unable to send scheduled connect account reminder to scheduled emails system", "error", fmt.Errorf(`unable to send scheduled email reminder: %w`, err))
+	}
+
+	return nil
 }
 
 func (p *PatientCDCConsumer) getUserEmail(userId string) (string, error) {
