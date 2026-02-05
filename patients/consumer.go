@@ -34,10 +34,12 @@ const (
 	DexcomDataSourceProviderName      = "dexcom"
 )
 
-var Module = fx.Provide(fx.Annotated{
-	Group:  "consumers",
-	Target: CreateConsumerGroup,
-})
+var Module = fx.Provide(
+	NewEmailRemindersConfig,
+	fx.Annotated{
+		Group:  "consumers",
+		Target: CreateConsumerGroup,
+	})
 
 type PatientCDCConsumer struct {
 	logger *zap.SugaredLogger
@@ -50,6 +52,7 @@ type PatientCDCConsumer struct {
 	clinics       clinics.ClientWithResponsesInterface
 	summaries     summaries.ClientWithResponsesInterface
 	data          clients.DataClient
+	remindersCfg  *EmailRemindersConfig
 }
 
 type Params struct {
@@ -65,6 +68,7 @@ type Params struct {
 	Clinics       clinics.ClientWithResponsesInterface
 	Summaries     summaries.ClientWithResponsesInterface
 	Data          clients.DataClient
+	RemindersCfg  *EmailRemindersConfig
 }
 
 func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
@@ -99,6 +103,7 @@ func NewPatientCDCConsumer(p Params) (events.MessageConsumer, error) {
 		clinics:       p.Clinics,
 		summaries:     p.Summaries,
 		data:          p.Data,
+		remindersCfg:  p.RemindersCfg,
 	}, nil
 }
 
@@ -393,7 +398,7 @@ func (p *PatientCDCConsumer) sendProviderConnectEmail(ctx context.Context, param
 		ProviderName:      params.ProviderName,
 		RestrictedTokenId: createdRestrictedToken.ID,
 		UserId:            params.UserId,
-		WhenToSend:        time.Now().Add(time.Hour * 24 * 7),
+		WhenToSend:        time.Now().Add(p.remindersCfg.Interval),
 	}
 	if err := p.data.ScheduleConnectAccountReminder(body); err != nil {
 		// Warn but don't fail if unable to send to scheduled email reminder processor, as it is not part of the core functionality.
@@ -509,7 +514,7 @@ func (p *PatientCDCConsumer) applyInviteUpdate(ctx context.Context, event Patien
 			body := clients.ClaimAccountReminderData{
 				ClinicId:   event.FullDocument.ClinicId.Value,
 				UserId:     *event.FullDocument.UserId,
-				WhenToSend: time.Now().Add(time.Hour * 24 * 7),
+				WhenToSend: time.Now().Add(p.remindersCfg.Interval),
 			}
 			if err := p.data.ScheduleClaimAccountReminder(body); err != nil {
 				// Warn but don't fail if unable to send to scheduled email reminder processor, as it is not part of the core functionality.
