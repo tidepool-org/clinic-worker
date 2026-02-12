@@ -508,8 +508,8 @@ func (p *PatientCDCConsumer) applyInviteUpdate(ctx context.Context, event Patien
 		return fmt.Errorf("unexpected status code %v when upserting confirmation", response.StatusCode())
 	}
 
-	// Schedule a reminder email only if user wasn't deleted.
-	if response.StatusCode() != http.StatusNotFound {
+	// Schedule a reminder email only if user wasn't deleted and didn't already have an existing signup (status code 403)
+	if response.StatusCode() == http.StatusOK {
 		if email, err := p.getUserEmail(*event.FullDocument.UserId); err == nil && email != "" {
 			body := clients.ClaimAccountReminderData{
 				ClinicId:   event.FullDocument.ClinicId.Value,
