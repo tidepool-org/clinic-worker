@@ -14,11 +14,11 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic-worker/cdc"
+	token "github.com/tidepool-org/clinic-worker/restrictedtoken"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/events"
-	// "github.com/tidepool-org/clinic-worker/restrictedtoken"
 )
 
 const (
@@ -142,62 +142,62 @@ func (p *CDCConsumer) handleCDCEvent(event CDCEvent) error {
 }
 
 func (p *CDCConsumer) handleDeviceIssues(event CDCEvent) error {
-	// if event.FullDocument.UserID == nil ||
-	// 	event.OperationType != cdc.OperationTypeUpdate ||
-	// 	event.UpdateDescription.UpdatedFields.State == nil ||
-	// 	*event.UpdateDescription.UpdatedFields.State != "error" {
-	// 	return nil
-	// }
+	if event.FullDocument.UserID == nil ||
+		event.OperationType != cdc.OperationTypeUpdate ||
+		event.UpdateDescription.UpdatedFields.State == nil ||
+		*event.UpdateDescription.UpdatedFields.State != "error" {
+		return nil
+	}
 
-	// updatedState := *event.UpdateDescription.UpdatedFields.State
-	// userID := *event.FullDocument.UserID
+	updatedState := *event.UpdateDescription.UpdatedFields.State
+	userID := *event.FullDocument.UserID
 
-	// ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-	// defer cancel()
-	// clinicsResponse, err := p.clinics.ListClinicsForPatientWithResponse(ctx, userID, nil)
-	// if err != nil {
-	// 	return fmt.Errorf(`unable to retrieve clinics for patient "%v": %w`, userID, err)
-	// }
-	// hasSharedData := clinicsResponse.JSON200 != nil && len(*clinicsResponse.JSON200) > 0
-	// var profileInfo *struct {
-	// 	FullName string `json:"fullName"`
-	// }
-	// if err := p.seagull.GetCollection(userID, "profile", p.shoreline.TokenProvide(), &profileInfo); err != nil {
-	// 	return fmt.Errorf(`unable to get profile for user %v: %w`, userID, err)
-	// }
-	// // Due to the asynchronous nature of profile updates, the user may or may
-	// // not have a profile so check for its existence in order to get a name,
-	// // otherwise default to something.
-	// fullName := "Person"
-	// if profileInfo != nil {
-	// 	fullName = profileInfo.FullName
-	// }
-	// user, err := p.shoreline.GetUser(userID, p.shoreline.TokenProvide())
-	// if err != nil {
-	// 	return fmt.Errorf(`unable to get user: %w`, err)
-	// }
-	// if user.Username != "" {
-	// 	restrictedToken, err := token.UpsertRestrictedTokenForProvider(p.auth, p.shoreline, userID, *event.FullDocument.ProviderName)
-	// 	if err != nil {
-	// 		return fmt.Errorf(`error creating restricted token: %w`, err)
-	// 	}
-	// 	template := "device_issue_personal"
-	// 	if hasSharedData {
-	// 		template = "device_issue_shared"
-	// 	}
-	// 	body := clients.DeviceConnectionIssuesData{
-	// 		DataSourceState:   updatedState,
-	// 		DataSourceId:      event.FullDocument.ID.Value,
-	// 		EmailTemplate:     template,
-	// 		FullName:          fullName,
-	// 		ProviderName:      *event.FullDocument.ProviderName,
-	// 		RestrictedTokenId: restrictedToken.ID,
-	// 		UserId:            userID,
-	// 	}
-	// 	if err := p.data.SendDeviceConnectionIssuesNotification(body); err != nil {
-	// 		return fmt.Errorf(`unable to issue request : %w`, err)
-	// 	}
-	// }
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+	clinicsResponse, err := p.clinics.ListClinicsForPatientWithResponse(ctx, userID, nil)
+	if err != nil {
+		return fmt.Errorf(`unable to retrieve clinics for patient "%v": %w`, userID, err)
+	}
+	hasSharedData := clinicsResponse.JSON200 != nil && len(*clinicsResponse.JSON200) > 0
+	var profileInfo *struct {
+		FullName string `json:"fullName"`
+	}
+	if err := p.seagull.GetCollection(userID, "profile", p.shoreline.TokenProvide(), &profileInfo); err != nil {
+		return fmt.Errorf(`unable to get profile for user %v: %w`, userID, err)
+	}
+	// Due to the asynchronous nature of profile updates, the user may or may
+	// not have a profile so check for its existence in order to get a name,
+	// otherwise default to something.
+	fullName := "Person"
+	if profileInfo != nil {
+		fullName = profileInfo.FullName
+	}
+	user, err := p.shoreline.GetUser(userID, p.shoreline.TokenProvide())
+	if err != nil {
+		return fmt.Errorf(`unable to get user: %w`, err)
+	}
+	if user.Username != "" {
+		restrictedToken, err := token.UpsertRestrictedTokenForProvider(p.auth, p.shoreline, userID, *event.FullDocument.ProviderName)
+		if err != nil {
+			return fmt.Errorf(`error creating restricted token: %w`, err)
+		}
+		template := "device_issue_personal"
+		if hasSharedData {
+			template = "device_issue_shared"
+		}
+		body := clients.DeviceConnectionIssuesData{
+			DataSourceState:   updatedState,
+			DataSourceId:      event.FullDocument.ID.Value,
+			EmailTemplate:     template,
+			FullName:          fullName,
+			ProviderName:      *event.FullDocument.ProviderName,
+			RestrictedTokenId: restrictedToken.ID,
+			UserId:            userID,
+		}
+		if err := p.data.SendDeviceConnectionIssuesNotification(body); err != nil {
+			return fmt.Errorf(`unable to issue request : %w`, err)
+		}
+	}
 
 	return nil
 }

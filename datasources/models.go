@@ -10,10 +10,10 @@ import (
 )
 
 type CDCEvent struct {
-	Offset        int64      `json:"-"`
-	FullDocument  DataSource `json:"fullDocument"`
-	OperationType string     `json:"operationType"`
-	// UpdateDescription UpdateDescription `json:"updateDescription"`
+	Offset            int64             `json:"-"`
+	FullDocument      DataSource        `json:"fullDocument"`
+	OperationType     string            `json:"operationType"`
+	UpdateDescription UpdateDescription `json:"updateDescription"`
 }
 
 func (p CDCEvent) ShouldApplyUpdates() bool {
