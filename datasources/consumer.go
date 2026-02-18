@@ -165,10 +165,7 @@ func (p *CDCConsumer) handleDeviceIssues(event CDCEvent) error {
 	if err := p.seagull.GetCollection(userID, "profile", p.shoreline.TokenProvide(), &profileInfo); err != nil {
 		return fmt.Errorf(`unable to get profile for user %v: %w`, userID, err)
 	}
-	// Due to the asynchronous nature of profile updates, the user may or may
-	// not have a profile so check for its existence in order to get a name,
-	// otherwise default to something.
-	fullName := "Person"
+	fullName := ""
 	if profileInfo != nil {
 		fullName = profileInfo.FullName
 	}
@@ -177,13 +174,14 @@ func (p *CDCConsumer) handleDeviceIssues(event CDCEvent) error {
 		return fmt.Errorf(`unable to get user: %w`, err)
 	}
 	if user.Username != "" {
-		restrictedToken, err := token.UpsertRestrictedTokenForProvider(p.auth, p.shoreline, userID, *event.FullDocument.ProviderName)
+		providerName := *event.FullDocument.ProviderName
+		restrictedToken, err := token.UpsertRestrictedTokenForProvider(p.auth, p.shoreline, userID, providerName)
 		if err != nil {
 			return fmt.Errorf(`error creating restricted token: %w`, err)
 		}
-		template := "device_issue_personal"
+		template := fmt.Sprintf("device_issue_%s_personal", providerName)
 		if hasSharedData {
-			template = "device_issue_shared"
+			template = fmt.Sprintf("device_issue_%s_shared", providerName)
 		}
 		body := clients.DeviceConnectionIssuesData{
 			DataSourceState:   updatedState,
