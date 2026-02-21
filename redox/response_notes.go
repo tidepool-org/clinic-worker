@@ -27,6 +27,7 @@ const (
 type Notes interface {
 	SetAccountNumberFromOrder(order models.NewOrder)
 	SetSourceFromClient(client Client)
+	SetComponents(components *[]models.NoteComponent)
 	SetDestination(destinationId string)
 	SetPatientFromOrder(order models.NewOrder)
 	SetProviderFromOrder(order models.NewOrder)

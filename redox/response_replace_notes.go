@@ -42,6 +42,10 @@ func (n *ReplaceNotes) SetDestination(destinationId string) {
 	(*n.Meta.Destinations)[0].ID = &destinationId
 }
 
+func (n *ReplaceNotes) SetComponents(components *[]models.NoteComponent) {
+	n.Note.Components = components
+}
+
 func (n *ReplaceNotes) SetPatientFromOrder(order models.NewOrder) {
 	n.Patient.Identifiers = order.Patient.Identifiers
 	n.Patient.Demographics = order.Patient.Demographics
