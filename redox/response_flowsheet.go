@@ -68,8 +68,9 @@ func NewFlowsheet() models.NewFlowsheet {
 }
 
 type FlowsheetSettings struct {
-	PreferredBGUnits string
-	ICode            bool
+	PreferredBGUnits    string
+	ICode               bool
+	SendSeparateGMINote bool
 }
 
 type Observation struct {
@@ -373,6 +374,21 @@ func AppendObservation(f *models.NewFlowsheet, o *Observation) {
 	observation.Description = &o.Description
 	observation.DateTime = o.DateTime
 	f.Observations = append(f.Observations, observation)
+}
+
+func extractObservations(f *models.NewFlowsheet) []Observation {
+	var observations []Observation
+	for _, o := range f.Observations {
+		observations = append(observations, Observation{
+			Code:        o.Code,
+			Value:       o.Value,
+			ValueType:   o.ValueType,
+			Units:       o.Units,
+			DateTime:    o.DateTime,
+			Description: *o.Description,
+		})
+	}
+	return observations
 }
 
 func SetVisitNumberInFlowsheet(order models.NewOrder, flowsheet *models.NewFlowsheet) {

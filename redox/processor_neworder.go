@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/mail"
+	"slices"
 	"strings"
 	"time"
 
@@ -511,7 +512,7 @@ func (o *newOrderProcessor) SendSummaryAndReport(ctx context.Context, params Sum
 		return nil
 	}
 
-	notes, err := o.createReportNote(ctx, params)
+	notes, err := o.createReportNote(ctx, params, extractObservations(&flowsheet))
 	if err != nil {
 		// return the error so we can retry the request
 		return err
@@ -552,8 +553,9 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 	}}
 
 	settings := FlowsheetSettings{
-		PreferredBGUnits: string(params.Match.Clinic.PreferredBgUnits),
-		ICode:            params.Match.Settings.Flowsheets.Icode,
+		PreferredBGUnits:    string(params.Match.Clinic.PreferredBgUnits),
+		ICode:               params.Match.Settings.Flowsheets.Icode,
+		SendSeparateGMINote: params.Match.Settings.Flowsheets.SendSeparateGMINote,
 	}
 
 	flowsheet := NewFlowsheet()
@@ -572,7 +574,7 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 	return flowsheet, nil
 }
 
-func (o *newOrderProcessor) createReportNote(ctx context.Context, params SummaryAndReportParameters) (Notes, error) {
+func (o *newOrderProcessor) createReportNote(ctx context.Context, params SummaryAndReportParameters, observations []Observation) (Notes, error) {
 	patient, err := params.GetMatchingPatient()
 	if err != nil {
 		return nil, err
@@ -621,6 +623,23 @@ func (o *newOrderProcessor) createReportNote(ctx context.Context, params Summary
 	notes.SetPatientFromOrder(params.Order)
 	notes.SetProcedureFromOrder(params.Order)
 	notes.SetProviderFromOrder(params.Order)
+
+	if params.Match.Settings.Flowsheets.SendSeparateGMINote {
+		gmiObservations := slices.DeleteFunc(slices.Clone(observations), func(o Observation) bool {
+			return o.Code != "GLUCOSE_MANAGEMENT_INDICATOR"
+		})
+		var components []models.NoteComponent
+		for _, observation := range gmiObservations {
+			id := documentId
+			components = append(components, models.NoteComponent{
+				ID:       &id,
+				Name:     &observation.Code,
+				Value:    &observation.Value,
+				Comments: &observation.DateTime,
+			})
+		}
+		notes.SetComponents(&components)
+	}
 
 	reportParameters := report.Parameters{
 		UserDetail: report.UserDetail{
