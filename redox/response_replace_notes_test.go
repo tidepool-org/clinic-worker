@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/tidepool-org/clinic-worker/redox"
@@ -131,7 +132,7 @@ var _ = Describe("Notes", func() {
 						{"DAYS_WITH_DATA_SMBG", "3", "Numeric", &dayUnits, reportingTime, "The total number of days with at least 1 SMBG reading over the reporting period"},
 					}
 					expectedNoteComponents := []noteComponent{
-						{ID: "GLUCOSE_MANAGEMENT_INDICATOR", Name: "GLUCOSE_MANAGEMENT_INDICATOR", Value: "6.7206", Comments: reportingTime},
+						{ID: "GLUCOSE_MANAGEMENT_INDICATOR", Name: "CGM Glucose Management Indicator during reporting period", Value: "6.7206", Comments: fmt.Sprintf("DateTime Observed: %s", reportingTime)},
 					}
 					noteComponents := redox.ObservationsToGMINoteComponents(observations)
 					notes.SetComponents(&noteComponents)
