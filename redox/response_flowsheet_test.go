@@ -112,6 +112,7 @@ var _ = Describe("Flowsheet", func() {
 					MatchObservation(Observation{"TIME_IN_RANGE_CGM", "56.2871", "Numeric", &expectedPercentageUnits, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)"}),
 					MatchObservation(Observation{"TIME_BELOW_RANGE_LOW_CGM", "8.6139", "Numeric", &expectedPercentageUnits, "CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time 54–69 mg/dL (3.0–3.8 mmol/L)"}),
 					MatchObservation(Observation{"TIME_BELOW_RANGE_VERY_LOW_CGM", "5.0495", "Numeric", &expectedPercentageUnits, "CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)"}),
+					MatchObservation(Observation{"GLUCOSE_MANAGEMENT_INDICATOR", "6.7206", "Numeric", nil, "CGM Glucose Management Indicator during reporting period"}),
 					MatchObservation(Observation{"AVERAGE_CGM", "7.9212", "Numeric", &expectedBgUnits, "CGM Average Glucose during reporting period"}),
 					MatchObservation(Observation{"STANDARD_DEVIATION_CGM", "1.4697", "Numeric", &expectedBgUnits, "The standard deviation of CGM measurements during the reporting period"}),
 					MatchObservation(Observation{"COEFFICIENT_OF_VARIATION_CGM", "0.2004", "Numeric", nil, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period"}),
@@ -161,6 +162,7 @@ var _ = Describe("Flowsheet", func() {
 					MatchObservation(Observation{"TIME_IN_RANGE_CGM", "56", "Numeric", &expectedPercentageUnits, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)"}),
 					MatchObservation(Observation{"TIME_BELOW_RANGE_LOW_CGM", "9", "Numeric", &expectedPercentageUnits, "CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time 54–69 mg/dL (3.0–3.8 mmol/L)"}),
 					MatchObservation(Observation{"TIME_BELOW_RANGE_VERY_LOW_CGM", "5", "Numeric", &expectedPercentageUnits, "CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)"}),
+					MatchObservation(Observation{"GLUCOSE_MANAGEMENT_INDICATOR", "6.7", "Numeric", nil, "CGM Glucose Management Indicator during reporting period"}),
 					MatchObservation(Observation{"AVERAGE_CGM", "7.9", "Numeric", &expectedBgUnits, "CGM Average Glucose during reporting period"}),
 					MatchObservation(Observation{"STANDARD_DEVIATION_CGM", "1.5", "Numeric", &expectedBgUnits, "The standard deviation of CGM measurements during the reporting period"}),
 					MatchObservation(Observation{"COEFFICIENT_OF_VARIATION_CGM", "20.0", "Numeric", &expectedPercentageUnits, "The coefficient of variation (standard deviation * 100 / mean) of CGM measurements during the reporting period"}),
@@ -243,7 +245,7 @@ var _ = Describe("Flowsheet", func() {
 
 				flowsheet := redox.NewFlowsheet()
 				patient := (*response.Patients)[0]
-				response.Clinic.PreferredBgUnits = api.MgdL
+				response.Clinic.PreferredBgUnits = api.ClinicV1PreferredBgUnitsMgdL
 
 				settings := redox.FlowsheetSettings{
 					PreferredBGUnits: string(response.Clinic.PreferredBgUnits),
@@ -267,7 +269,7 @@ var _ = Describe("Flowsheet", func() {
 
 				flowsheet := redox.NewFlowsheet()
 				patient := (*response.Patients)[0]
-				response.Clinic.PreferredBgUnits = api.MgdL
+				response.Clinic.PreferredBgUnits = api.ClinicV1PreferredBgUnitsMgdL
 
 				settings := redox.FlowsheetSettings{
 					PreferredBGUnits: string(response.Clinic.PreferredBgUnits),

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/mail"
-	"slices"
 	"strings"
 	"time"
 
@@ -625,20 +624,8 @@ func (o *newOrderProcessor) createReportNote(ctx context.Context, params Summary
 	notes.SetProviderFromOrder(params.Order)
 
 	if params.Match.Settings.Flowsheets.SendSeparateGMINote {
-		gmiObservations := slices.DeleteFunc(slices.Clone(observations), func(o Observation) bool {
-			return o.Code != "GLUCOSE_MANAGEMENT_INDICATOR"
-		})
-		var components []models.NoteComponent
-		for _, observation := range gmiObservations {
-			id := documentId
-			components = append(components, models.NoteComponent{
-				ID:       &id,
-				Name:     &observation.Code,
-				Value:    &observation.Value,
-				Comments: &observation.DateTime,
-			})
-		}
-		notes.SetComponents(&components)
+		notecomponents := ObservationsToGMINoteComponents(observations)
+		notes.SetComponents(&notecomponents)
 	}
 
 	reportParameters := report.Parameters{
