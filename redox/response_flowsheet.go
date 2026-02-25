@@ -2,6 +2,7 @@ package redox
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -532,4 +533,20 @@ func bgInUnits(val float64, sourceUnits string, targetUnits string) (float64, st
 	}
 
 	return val, sourceUnits
+}
+
+func ObservationsToGMINoteComponents(observations []Observation) []models.NoteComponent {
+	gmiObservations := slices.DeleteFunc(slices.Clone(observations), func(o Observation) bool {
+		return o.Code != "GLUCOSE_MANAGEMENT_INDICATOR"
+	})
+	var components []models.NoteComponent
+	for _, observation := range gmiObservations {
+		components = append(components, models.NoteComponent{
+			Comments: &observation.DateTime,
+			ID:       &observation.Code,
+			Name:     &observation.Code,
+			Value:    &observation.Value,
+		})
+	}
+	return components
 }
