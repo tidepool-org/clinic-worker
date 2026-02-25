@@ -541,12 +541,17 @@ func ObservationsToGMINoteComponents(observations []Observation) []models.NoteCo
 	})
 	var components []models.NoteComponent
 	for _, observation := range gmiObservations {
-		components = append(components, models.NoteComponent{
-			Comments: &observation.DateTime,
-			ID:       &observation.Code,
-			Name:     &observation.Code,
-			Value:    &observation.Value,
-		})
+		components = append(components, ObservationToGMINoteComponent(observation))
 	}
 	return components
+}
+
+func ObservationToGMINoteComponent(o Observation) models.NoteComponent {
+	dateTimeComment := fmt.Sprintf("DateTime Observed: %s", o.DateTime)
+	return models.NoteComponent{
+		Comments: &dateTimeComment,
+		ID:       &o.Code,
+		Name:     &o.Description,
+		Value:    &o.Value,
+	}
 }
