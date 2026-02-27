@@ -17,3 +17,6 @@ func NewItemPtrForSlice[T any, P *T](_ []P) P {
 	return P(new(T))
 }
 
+func NewItemForSlicePtr[T any](_ *[]T) (result T) {
+	return
+}

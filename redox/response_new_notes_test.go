@@ -149,7 +149,7 @@ var _ = Describe("Notes", func() {
 					hourUnits := "hour"
 					reportingTime := "2026-02-25T11:06:39"
 
-					observations := []redox.Observation{
+					observations := []*redox.Observation{
 						{"REPORTING_PERIOD_START_CGM", "2023-04-09T17:44:09Z", "DateTime", nil, reportingTime, "CGM Reporting Period Start"},
 						{"REPORTING_PERIOD_END_CGM", "2023-04-23T17:44:09Z", "DateTime", nil, reportingTime, "CGM Reporting Period End"},
 						{"REPORTING_PERIOD_START_CGM_DATA", "2023-04-14T00:00:00Z", "DateTime", nil, reportingTime, "CGM Reporting Period Start Date of actual Data"},
@@ -184,11 +184,11 @@ var _ = Describe("Notes", func() {
 						{"CHECK_RATE_READINGS_DAY_SMBG", "4.9286", "Numeric", nil, reportingTime, "Average Numeric of SMBG readings per day during reporting period"},
 						{"DAYS_WITH_DATA_SMBG", "3", "Numeric", &dayUnits, reportingTime, "The total number of days with at least 1 SMBG reading over the reporting period"},
 					}
-					expectedNoteComponents := []noteComponent{
+					expectedNoteComponents := []redox.NoteComponent{
 						{ID: "GLUCOSE_MANAGEMENT_INDICATOR", Name: "CGM Glucose Management Indicator during reporting period", Value: "6.7206", Comments: fmt.Sprintf("DateTime Observed: %s", reportingTime)},
 					}
 					noteComponents := redox.ObservationsToGMINoteComponents(observations)
-					notes.SetComponents(&noteComponents)
+					notes.SetComponents(noteComponents)
 					Expect(notes.Note.Components).ToNot(BeNil())
 					Expect(*notes.Note.Components).To(HaveLen(1))
 					Expect(*notes.Note.Components).To(matchNoteComponents(expectedNoteComponents))
