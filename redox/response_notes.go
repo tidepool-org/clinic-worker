@@ -24,10 +24,17 @@ const (
 	NoteReportFileName         = "report.pdf"
 )
 
+type NoteComponent struct {
+	Comments string
+	ID       string
+	Name     string
+	Value    string
+}
+
 type Notes interface {
 	SetAccountNumberFromOrder(order models.NewOrder)
 	SetSourceFromClient(client Client)
-	SetComponents(components *[]models.NoteComponent)
+	SetComponents(components []NoteComponent)
 	SetDestination(destinationId string)
 	SetPatientFromOrder(order models.NewOrder)
 	SetProviderFromOrder(order models.NewOrder)
