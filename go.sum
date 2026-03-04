@@ -119,6 +119,8 @@ github.com/tidepool-org/clinic/client v0.0.0-20260227081917-828bdcb95761 h1:lP8+
 github.com/tidepool-org/clinic/client v0.0.0-20260227081917-828bdcb95761/go.mod h1:k23OfUIbA30QCPs7gBF9DHDjOXJ7faS0x3amXlI2XsE=
 github.com/tidepool-org/clinic/client v0.0.0-20260227113033-a37a81a42196 h1:U1clOV1LfJXZ5m+h6pjehWqdhR9BMhz4ThfBx4PJOJA=
 github.com/tidepool-org/clinic/client v0.0.0-20260227113033-a37a81a42196/go.mod h1:k23OfUIbA30QCPs7gBF9DHDjOXJ7faS0x3amXlI2XsE=
+github.com/tidepool-org/clinic/client v0.0.0-20260304153151-be04f2280a4f h1:/vYXk8WJqyOwkTKuuoKqbvJX2bWlnBPuzrcd4NFHUYc=
+github.com/tidepool-org/clinic/client v0.0.0-20260304153151-be04f2280a4f/go.mod h1:k23OfUIbA30QCPs7gBF9DHDjOXJ7faS0x3amXlI2XsE=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20250609170750-6b55d8d08796 h1:TE0weNP/EexzMc+60rFFZjyiEe3flghMOUNUjs3afw0=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20250609170750-6b55d8d08796/go.mod h1:bQ9DZxk015RhmGG1tR6jRScP9KxyHvS8tzPbVtr82DE=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20260220234317-ae9963f30e89 h1:Er5Bo8+/4USZnNaKi2oRNoLUc56QUxBalt14X75b9LY=
@@ -131,6 +133,8 @@ github.com/tidepool-org/clinic/redox_models v0.0.0-20260227081917-828bdcb95761 h
 github.com/tidepool-org/clinic/redox_models v0.0.0-20260227081917-828bdcb95761/go.mod h1:bQ9DZxk015RhmGG1tR6jRScP9KxyHvS8tzPbVtr82DE=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20260227113033-a37a81a42196 h1:T3uNyNC/plsPX4F723EhUkfasYih3i1qNL6O7YRxKww=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20260227113033-a37a81a42196/go.mod h1:bQ9DZxk015RhmGG1tR6jRScP9KxyHvS8tzPbVtr82DE=
+github.com/tidepool-org/clinic/redox_models v0.0.0-20260304153151-be04f2280a4f h1:Kqj+7Fmi5PkBU4kYREFNNBbE08FicZ3csnSNr28m3ak=
+github.com/tidepool-org/clinic/redox_models v0.0.0-20260304153151-be04f2280a4f/go.mod h1:bQ9DZxk015RhmGG1tR6jRScP9KxyHvS8tzPbVtr82DE=
 github.com/tidepool-org/go-common v0.12.3-0.20250815100533-ae054e29ec1c h1:/4vjiYrZg9wd/FUC7qzao8BqS0q1W0JyqwFbhU4BWXs=
 github.com/tidepool-org/go-common v0.12.3-0.20250815100533-ae054e29ec1c/go.mod h1:v93bMGDHiHcltQY5s7LYTTEe3u9CiGWqBFKah6C0650=
 github.com/tidepool-org/hydrophone/client v0.0.0-20250317164837-a8cd51fd6677 h1:P3C1YTvLHu7NFHOeh6NDPo5ieVXcF9a+SY4FTToR8B4=
