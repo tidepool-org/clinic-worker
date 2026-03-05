@@ -228,12 +228,16 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, create Crea
 	}
 
 	permission := make(map[string]interface{})
+	integration := clinics.PatientCreationMetadataV1IntegrationRedox
 	createPatient := clinics.CreatePatientAccountJSONRequestBody{
 		Permissions: &clinics.PatientPermissionsV1{
 			Custodian: &permission,
 			Note:      &permission,
 			Upload:    &permission,
 			View:      &permission,
+		},
+		CreationMetadata: &clinics.PatientCreationMetadataV1{
+			Integration: &integration,
 		},
 	}
 

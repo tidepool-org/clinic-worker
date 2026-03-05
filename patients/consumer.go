@@ -466,9 +466,35 @@ func (p *PatientCDCConsumer) applyInviteUpdate(ctx context.Context, event Patien
 		return errors.New("expected patient id to be defined")
 	}
 
+	var restrictedTokenID *string
+	if event.FullDocument.CreationMetadata != nil && event.FullDocument.CreationMetadata.Integration == IntegrationRedox {
+		isNewAccount := event.OperationType == cdc.OperationTypeInsert
+		emailEmptyOrUpdated := event.FullDocument.Email == nil || *event.FullDocument.Email == "" || event.UpdateDescription.UpdatedFields.Email != nil
+
+		// If this is not a new account and the email hasn't been updated, we don't need to resend or delete the invite
+		// If the email is empty, we want to make sure the existing invite is revoked
+		if !isNewAccount && !emailEmptyOrUpdated {
+			return nil
+		}
+
+		// Make sure all existing restricted tokens are deleted in case this event is being retried
+		err := p.revokeAllRestrictedTokens(*event.FullDocument.UserId)
+		if err != nil {
+			return fmt.Errorf("unable to revoke existing restricted tokens")
+		}
+
+		token, err := p.createOAuthRestrictedToken(*event.FullDocument.UserId)
+		if err != nil {
+			return fmt.Errorf("unable to create restricted token: %w", err)
+		}
+
+		restrictedTokenID = &token.ID
+	}
+
 	invite := confirmations.SendAccountSignupConfirmationJSONRequestBody{
-		ClinicId:  &event.FullDocument.ClinicId.Value,
-		InvitedBy: event.FullDocument.InvitedBy,
+		ClinicId:          &event.FullDocument.ClinicId.Value,
+		InvitedBy:         event.FullDocument.InvitedBy,
+		RestrictedTokenId: restrictedTokenID,
 	}
 
 	response, err := p.confirmations.SendAccountSignupConfirmationWithResponse(ctx, *event.FullDocument.UserId, invite)
@@ -483,6 +509,25 @@ func (p *PatientCDCConsumer) applyInviteUpdate(ctx context.Context, event Patien
 	}
 
 	return nil
+}
+
+func (p *PatientCDCConsumer) revokeAllRestrictedTokens(userId string) error {
+	tokens, err := p.getUserRestrictedTokens(userId)
+	if err != nil {
+		return err
+	}
+	for _, token := range tokens {
+		if err := p.auth.DeleteRestrictedToken(token.ID, p.shoreline.TokenProvide()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *PatientCDCConsumer) createOAuthRestrictedToken(userId string) (*clients.RestrictedToken, error) {
+	paths := []string{"/v1/oauth"}
+	expirationTime := time.Now().Add(restrictedTokenExpirationDuration)
+	return p.auth.CreateRestrictedToken(userId, expirationTime, paths, p.shoreline.TokenProvide())
 }
 
 func (p *PatientCDCConsumer) addPatientDataSources(event PatientCDCEvent) error {

@@ -103,6 +103,18 @@ type Patient struct {
 	Summary                        *CDCSummary                `json:"summary" bson:"summary"`
 	ProviderConnectionRequests     ProviderConnectionRequests `json:"providerConnectionRequests" bson:"providerConnectionRequests"`
 	DiagnosisType                  *string                    `json:"diagnosisType" bson:"diagnosisType"`
+	CreationMetadata               *CreationMetadata          `json:"creationMetadata" bson:"creationMetadata"`
+}
+
+type Integration string
+
+const (
+	IntegrationRedox  Integration = "redox"
+	IntegrationXealth Integration = "xealth"
+)
+
+type CreationMetadata struct {
+	Integration Integration `bson:"integration,omitempty"`
 }
 
 type ProviderConnectionRequests map[string]ConnectionRequests
