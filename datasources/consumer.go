@@ -10,12 +10,15 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/tidepool-org/clinic-worker/cdc"
-	clinics "github.com/tidepool-org/clinic/client"
-	"github.com/tidepool-org/go-common/clients"
-	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	"github.com/tidepool-org/clinic-worker/cdc"
+	token "github.com/tidepool-org/clinic-worker/restrictedtoken"
+	clinics "github.com/tidepool-org/clinic/client"
+	"github.com/tidepool-org/go-common/clients"
+	"github.com/tidepool-org/go-common/clients/shoreline"
+	"github.com/tidepool-org/go-common/events"
 )
 
 const (
@@ -31,16 +34,22 @@ var Module = fx.Provide(fx.Annotated{
 type CDCConsumer struct {
 	logger *zap.SugaredLogger
 
-	clinics clinics.ClientWithResponsesInterface
-	data    clients.DataClient
+	auth      clients.AuthClient
+	clinics   clinics.ClientWithResponsesInterface
+	data      clients.DataClient
+	seagull   clients.Seagull
+	shoreline shoreline.Client
 }
 
 type Params struct {
 	fx.In
 
-	Logger  *zap.SugaredLogger
-	Clinics clinics.ClientWithResponsesInterface
-	Data    clients.DataClient
+	Logger    *zap.SugaredLogger
+	Auth      clients.AuthClient
+	Clinics   clinics.ClientWithResponsesInterface
+	Data      clients.DataClient
+	Seagull   clients.Seagull
+	Shoreline shoreline.Client
 }
 
 func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
@@ -66,9 +75,12 @@ func CreateConsumer(p Params) events.ConsumerFactory {
 
 func NewCDCConsumer(p Params) (events.MessageConsumer, error) {
 	return &CDCConsumer{
-		logger:  p.Logger,
-		clinics: p.Clinics,
-		data:    p.Data,
+		logger:    p.Logger,
+		auth:      p.Auth,
+		clinics:   p.Clinics,
+		data:      p.Data,
+		seagull:   p.Seagull,
+		shoreline: p.Shoreline,
 	}, nil
 }
 
@@ -119,7 +131,73 @@ func (p *CDCConsumer) handleCDCEvent(event CDCEvent) error {
 	p.logger.Infow("processing data sources event for user", "userid", event.FullDocument.UserID)
 	p.logger.Debugw("event being processed", "event", event)
 
-	return p.applyPatientDataSourcesUpdate(event)
+	if err := p.applyPatientDataSourcesUpdate(event); err != nil {
+		return err
+	}
+
+	if err := p.handleDeviceIssues(event); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *CDCConsumer) handleDeviceIssues(event CDCEvent) error {
+	if event.FullDocument.UserID == nil ||
+		event.OperationType != cdc.OperationTypeUpdate ||
+		event.UpdateDescription.UpdatedFields.State == nil ||
+		*event.UpdateDescription.UpdatedFields.State != "error" {
+		return nil
+	}
+
+	updatedState := *event.UpdateDescription.UpdatedFields.State
+	userID := *event.FullDocument.UserID
+
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+	clinicsResponse, err := p.clinics.ListClinicsForPatientWithResponse(ctx, userID, nil)
+	if err != nil {
+		return fmt.Errorf(`unable to retrieve clinics for patient "%v": %w`, userID, err)
+	}
+	hasSharedData := clinicsResponse.JSON200 != nil && len(*clinicsResponse.JSON200) > 0
+	var profileInfo *struct {
+		FullName string `json:"fullName"`
+	}
+	if err := p.seagull.GetCollection(userID, "profile", p.shoreline.TokenProvide(), &profileInfo); err != nil {
+		return fmt.Errorf(`unable to get profile for user %v: %w`, userID, err)
+	}
+	fullName := ""
+	if profileInfo != nil {
+		fullName = profileInfo.FullName
+	}
+	user, err := p.shoreline.GetUser(userID, p.shoreline.TokenProvide())
+	if err != nil {
+		return fmt.Errorf(`unable to get user: %w`, err)
+	}
+	if user.Username != "" {
+		providerName := *event.FullDocument.ProviderName
+		restrictedToken, err := token.UpsertRestrictedTokenForProvider(p.auth, p.shoreline, userID, providerName)
+		if err != nil {
+			return fmt.Errorf(`error creating restricted token: %w`, err)
+		}
+		template := fmt.Sprintf("device_issue_%s_personal", providerName)
+		if hasSharedData {
+			template = fmt.Sprintf("device_issue_%s_shared", providerName)
+		}
+		body := clients.DeviceConnectionIssuesData{
+			DataSourceState:   updatedState,
+			DataSourceId:      event.FullDocument.ID.Value,
+			EmailTemplate:     template,
+			FullName:          fullName,
+			ProviderName:      *event.FullDocument.ProviderName,
+			RestrictedTokenId: restrictedToken.ID,
+			UserId:            userID,
+		}
+		if err := p.data.SendDeviceConnectionIssuesNotification(body); err != nil {
+			return fmt.Errorf(`unable to issue request : %w`, err)
+		}
+	}
+
+	return nil
 }
 
 func (p *CDCConsumer) applyPatientDataSourcesUpdate(event CDCEvent) error {
