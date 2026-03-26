@@ -243,7 +243,7 @@ var _ = Describe("Flowsheet", func() {
 
 				flowsheet := redox.NewFlowsheet()
 				patient := (*response.Patients)[0]
-				response.Clinic.PreferredBgUnits = api.MgdL
+				response.Clinic.PreferredBgUnits = api.ClinicV1PreferredBgUnitsMgdL
 
 				settings := redox.FlowsheetSettings{
 					PreferredBGUnits: string(response.Clinic.PreferredBgUnits),
@@ -267,7 +267,7 @@ var _ = Describe("Flowsheet", func() {
 
 				flowsheet := redox.NewFlowsheet()
 				patient := (*response.Patients)[0]
-				response.Clinic.PreferredBgUnits = api.MgdL
+				response.Clinic.PreferredBgUnits = api.ClinicV1PreferredBgUnitsMgdL
 
 				settings := redox.FlowsheetSettings{
 					PreferredBGUnits: string(response.Clinic.PreferredBgUnits),
