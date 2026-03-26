@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
+
 	"github.com/tidepool-org/clinic-worker/test"
 	api "github.com/tidepool-org/clinic/client"
 	models "github.com/tidepool-org/clinic/redox_models"
@@ -243,7 +244,7 @@ var _ = Describe("Flowsheet", func() {
 
 				flowsheet := redox.NewFlowsheet()
 				patient := (*response.Patients)[0]
-				response.Clinic.PreferredBgUnits = api.MgdL
+				response.Clinic.PreferredBgUnits = api.ClinicV1PreferredBgUnitsMgdL
 
 				settings := redox.FlowsheetSettings{
 					PreferredBGUnits: string(response.Clinic.PreferredBgUnits),
@@ -267,7 +268,7 @@ var _ = Describe("Flowsheet", func() {
 
 				flowsheet := redox.NewFlowsheet()
 				patient := (*response.Patients)[0]
-				response.Clinic.PreferredBgUnits = api.MgdL
+				response.Clinic.PreferredBgUnits = api.ClinicV1PreferredBgUnitsMgdL
 
 				settings := redox.FlowsheetSettings{
 					PreferredBGUnits: string(response.Clinic.PreferredBgUnits),
