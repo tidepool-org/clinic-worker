@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/IBM/sarama"
-	"github.com/avast/retry-go"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	models "github.com/tidepool-org/clinic/redox_models"
 	"github.com/tidepool-org/go-common/events"
