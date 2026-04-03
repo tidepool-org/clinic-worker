@@ -49,5 +49,10 @@ func (p CDCEvent) CreateUpdateBody(source clients.DataSource) clinics.DataSource
 		patientUpdate.ModifiedTime = &modifiedTimeVal
 	}
 
+	if source.LatestDataTime != nil {
+		latest := clinics.DatetimeV1(source.LatestDataTime.Format(time.RFC3339))
+		patientUpdate.LatestDataTime = &latest
+	}
+
 	return patientUpdate
 }

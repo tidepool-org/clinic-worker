@@ -133,7 +133,7 @@ func PopulateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettin
 	unitsPercentage := percentage
 	unitsDay := day
 	unitsHour := hour
-	sourceGlucoseUnits := string(clinics.MmolL)
+	sourceGlucoseUnits := string(clinics.ClinicV1PreferredBgUnitsMmolL)
 	destGlucoseUnits := settings.PreferredBGUnits
 
 	var cgmUsePercent *float64
@@ -253,7 +253,7 @@ func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettin
 
 	unitsDay := day
 	unitsPercentage := percentage
-	sourceGlucoseUnits := string(clinics.MmolL)
+	sourceGlucoseUnits := string(clinics.ClinicV1PreferredBgUnitsMmolL)
 	destGlucoseUnits := settings.PreferredBGUnits
 
 	var averageDailyRecords *float64
