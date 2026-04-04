@@ -2,6 +2,7 @@ package redox
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -83,27 +84,29 @@ type Observation struct {
 
 // PopulateSummaryStatistics populates a flowsheet with patient summary statistics. If summary statistics are not available,
 // the flowsheet items will be populated with 'NOT AVAILABLE'.
-func PopulateSummaryStatistics(patient clinics.PatientV1, settings FlowsheetSettings, flowsheet *models.NewFlowsheet) {
+func PopulateSummaryStatistics(patient clinics.PatientV1, settings FlowsheetSettings, flowsheet *models.NewFlowsheet) []*Observation {
 	if patient.Summary == nil {
-		return
+		return nil
 	}
 
+	var observations []*Observation
 	cgmStats := patient.Summary.CgmStats
 	if cgmStats != nil && cgmStats.Dates.LastUpdatedDate != nil && cgmStats.Dates.LastData != nil {
 		if !cgmStats.Dates.LastUpdatedDate.IsZero() && !cgmStats.Dates.LastData.IsZero() {
-			PopulateCGMObservations(cgmStats, settings, flowsheet)
+			observations = append(observations, PopulateCGMObservations(cgmStats, settings, flowsheet)...)
 		}
 	}
 
 	bgmStats := patient.Summary.BgmStats
 	if bgmStats != nil && bgmStats.Dates.LastUpdatedDate != nil && bgmStats.Dates.LastData != nil {
 		if !bgmStats.Dates.LastUpdatedDate.IsZero() && !bgmStats.Dates.LastData.IsZero() {
-			PopulateBGMObservations(bgmStats, settings, flowsheet)
+			observations = append(observations, PopulateBGMObservations(bgmStats, settings, flowsheet)...)
 		}
 	}
+	return observations
 }
 
-func PopulateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettings, f *models.NewFlowsheet) {
+func CalculateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettings) []*Observation {
 	now := time.Now()
 
 	var period *clinics.CgmPeriodV1
@@ -133,7 +136,7 @@ func PopulateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettin
 	unitsPercentage := percentage
 	unitsDay := day
 	unitsHour := hour
-	sourceGlucoseUnits := string(clinics.MmolL)
+	sourceGlucoseUnits := string(clinics.ClinicV1PreferredBgUnitsMmolL)
 	destGlucoseUnits := settings.PreferredBGUnits
 
 	var cgmUsePercent *float64
@@ -217,14 +220,20 @@ func PopulateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettin
 		observationsMap["TIME_ABOVE_RANGE_VERY_HIGH_CGM"].Value = formatFloatConditionalPrecision(unitIntervalToPercent(timeInVeryHigh))
 	}
 
-	for _, observation := range observations {
-		if observation.Value != missingValue {
-			AppendObservation(f, observation)
-		}
-	}
+	return slices.DeleteFunc(observations, func(o *Observation) bool {
+		return o.Value == missingValue
+	})
 }
 
-func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettings, f *models.NewFlowsheet) {
+func PopulateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettings, f *models.NewFlowsheet) []*Observation {
+	observations := CalculateCGMObservations(stats, settings)
+	for _, observation := range observations {
+		AppendObservation(f, observation)
+	}
+	return observations
+}
+
+func CalculateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettings) []*Observation {
 	now := time.Now()
 
 	var period *clinics.BgmPeriodV1
@@ -253,7 +262,7 @@ func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettin
 
 	unitsDay := day
 	unitsPercentage := percentage
-	sourceGlucoseUnits := string(clinics.MmolL)
+	sourceGlucoseUnits := string(clinics.ClinicV1PreferredBgUnitsMmolL)
 	destGlucoseUnits := settings.PreferredBGUnits
 
 	var averageDailyRecords *float64
@@ -357,11 +366,17 @@ func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettin
 		observationsMap["TIME_ABOVE_RANGE_VERY_HIGH_SMBG"].Value = formatFloatConditionalPrecision(unitIntervalToPercent(timeInVeryHighPercent))
 	}
 
+	return slices.DeleteFunc(observations, func(o *Observation) bool {
+		return o.Value == missingValue
+	})
+}
+
+func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettings, f *models.NewFlowsheet) []*Observation {
+	observations := CalculateBGMObservations(stats, settings)
 	for _, observation := range observations {
-		if observation.Value != missingValue {
-			AppendObservation(f, observation)
-		}
+		AppendObservation(f, observation)
 	}
+	return observations
 }
 
 func AppendObservation(f *models.NewFlowsheet, o *Observation) {
@@ -516,4 +531,25 @@ func bgInUnits(val float64, sourceUnits string, targetUnits string) (float64, st
 	}
 
 	return val, sourceUnits
+}
+
+func ObservationsToGMINoteComponents(observations []*Observation) []NoteComponent {
+	gmiObservations := slices.DeleteFunc(slices.Clone(observations), func(o *Observation) bool {
+		return o.Code != "GLUCOSE_MANAGEMENT_INDICATOR"
+	})
+	var components []NoteComponent
+	for _, observation := range gmiObservations {
+		components = append(components, ObservationToGMINoteComponent(observation))
+	}
+	return components
+}
+
+func ObservationToGMINoteComponent(o *Observation) NoteComponent {
+	dateTimeComment := fmt.Sprintf("DateTime Observed: %s", o.DateTime)
+	return NoteComponent{
+		Comments: dateTimeComment,
+		ID:       o.Code,
+		Name:     o.Description,
+		Value:    o.Value,
+	}
 }
