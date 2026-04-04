@@ -201,8 +201,8 @@ github.com/pierrec/lz4/v4/internal/xxh32
 # github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 ## explicit
 github.com/rcrowley/go-metrics
-# github.com/tidepool-org/clinic/client v0.0.0-20250815131418-a4af894ce248
-## explicit; go 1.22
+# github.com/tidepool-org/clinic/client v0.0.0-20260305132028-b89b3d7dc141
+## explicit; go 1.24.1
 github.com/tidepool-org/clinic/client
 # github.com/tidepool-org/clinic/redox_models v0.0.0-20250609170750-6b55d8d08796
 ## explicit; go 1.22
@@ -219,7 +219,7 @@ github.com/tidepool-org/go-common/clients/summary
 github.com/tidepool-org/go-common/errors
 github.com/tidepool-org/go-common/events
 github.com/tidepool-org/go-common/jepson
-# github.com/tidepool-org/hydrophone/client v0.0.0-20250317164837-a8cd51fd6677
+# github.com/tidepool-org/hydrophone/client v0.0.0-20260305134113-7f67853ea2a0
 ## explicit; go 1.22
 github.com/tidepool-org/hydrophone/client
 # github.com/xdg/scram v1.0.5
