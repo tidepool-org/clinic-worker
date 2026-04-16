@@ -9,6 +9,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic-worker/redox"
 	testRedox "github.com/tidepool-org/clinic-worker/redox/test"
 	"github.com/tidepool-org/clinic-worker/report"
@@ -16,10 +21,6 @@ import (
 	clinics "github.com/tidepool-org/clinic/client"
 	models "github.com/tidepool-org/clinic/redox_models"
 	"github.com/tidepool-org/go-common/clients/shoreline"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.uber.org/mock/gomock"
-	"go.uber.org/zap"
 )
 
 var _ = Describe("NewOrderProcessor", func() {
@@ -141,7 +142,7 @@ var _ = Describe("NewOrderProcessor", func() {
 					adultName := "ADULT"
 
 					matchResponse.JSON200.Clinic.PatientTags = &[]clinics.PatientTagV1{
-						{&t1dId, t1dName, 1},
+						{Id: &t1dId, Name: t1dName, NumPatients: 1},
 					}
 
 					clinicClient.EXPECT().
@@ -157,8 +158,8 @@ var _ = Describe("NewOrderProcessor", func() {
 
 					updatedClinic := matchResponse.JSON200.Clinic
 					updatedClinic.PatientTags = &[]clinics.PatientTagV1{
-						{&t1dId, t1dName, 1},
-						{&adultId, adultName, 1},
+						{Id: &t1dId, Name: t1dName, NumPatients: 1},
+						{Id: &adultId, Name: adultName, NumPatients: 1},
 					}
 
 					clinicClient.EXPECT().
@@ -194,7 +195,7 @@ var _ = Describe("NewOrderProcessor", func() {
 					adultName := "ADULT"
 
 					matchResponse.JSON200.Clinic.PatientTags = &[]clinics.PatientTagV1{
-						{&t1dId, t1dName, 1},
+						{Id: &t1dId, Name: t1dName, NumPatients: 1},
 					}
 
 					clinicClient.EXPECT().
@@ -210,7 +211,7 @@ var _ = Describe("NewOrderProcessor", func() {
 
 					updatedClinic := matchResponse.JSON200.Clinic
 					updatedClinic.PatientTags = &[]clinics.PatientTagV1{
-						{&t1dId, t1dName, 1},
+						{Id: &t1dId, Name: t1dName, NumPatients: 1},
 					}
 
 					clinicClient.EXPECT().

@@ -10,9 +10,10 @@ import (
 )
 
 type CDCEvent struct {
-	Offset        int64      `json:"-"`
-	FullDocument  DataSource `json:"fullDocument"`
-	OperationType string     `json:"operationType"`
+	Offset            int64             `json:"-"`
+	FullDocument      DataSource        `json:"fullDocument"`
+	OperationType     string            `json:"operationType"`
+	UpdateDescription UpdateDescription `json:"updateDescription"`
 }
 
 func (p CDCEvent) ShouldApplyUpdates() bool {
@@ -37,6 +38,15 @@ type DataSource struct {
 	State        *string       `json:"state"`
 }
 
+type UpdateDescription struct {
+	UpdatedFields UpdatedFields `json:"updatedFields"`
+	RemovedFields []string      `json:"removedFields"`
+}
+
+type UpdatedFields struct {
+	DataSource
+}
+
 func (p CDCEvent) CreateUpdateBody(source clients.DataSource) clinics.DataSourceV1 {
 	patientUpdate := clinics.DataSourceV1{
 		DataSourceId: &p.FullDocument.ID.Value,
@@ -47,6 +57,11 @@ func (p CDCEvent) CreateUpdateBody(source clients.DataSource) clinics.DataSource
 	if source.ModifiedTime != nil {
 		modifiedTimeVal := clinics.DatetimeV1(source.ModifiedTime.Format(time.RFC3339))
 		patientUpdate.ModifiedTime = &modifiedTimeVal
+	}
+
+	if source.LatestDataTime != nil {
+		latest := clinics.DatetimeV1(source.LatestDataTime.Format(time.RFC3339))
+		patientUpdate.LatestDataTime = &latest
 	}
 
 	return patientUpdate

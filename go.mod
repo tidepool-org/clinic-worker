@@ -1,6 +1,6 @@
 module github.com/tidepool-org/clinic-worker
 
-go 1.24.1
+go 1.25.7
 
 require (
 	github.com/IBM/sarama v1.45.1
@@ -10,14 +10,14 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/oapi-codegen/runtime v1.1.1
+	github.com/oapi-codegen/runtime v1.1.2
 	github.com/onsi/ginkgo/v2 v2.23.0
 	github.com/onsi/gomega v1.36.2
-	github.com/tidepool-org/clinic/client v0.0.0-20260305132028-b89b3d7dc141
+	github.com/tidepool-org/clinic/client v0.0.0-20260416091219-9389bf70e126
 	github.com/tidepool-org/clinic/redox_models v0.0.0-20250609170750-6b55d8d08796
-	github.com/tidepool-org/go-common v0.12.3-0.20250815100533-ae054e29ec1c
-	github.com/tidepool-org/hydrophone/client v0.0.0-20260305134113-7f67853ea2a0
-	go.mongodb.org/mongo-driver v1.17.4
+	github.com/tidepool-org/go-common v0.12.3-0.20260127220519-7130ed0c28d2
+	github.com/tidepool-org/hydrophone/client v0.0.0-20260325073654-3a32ef4ba483
+	go.mongodb.org/mongo-driver v1.17.7
 	go.uber.org/fx v1.23.0
 	go.uber.org/mock v0.5.2
 	go.uber.org/ratelimit v0.3.1
@@ -26,18 +26,23 @@ require (
 )
 
 require (
+	github.com/ant0ine/go-json-rest v3.3.2+incompatible // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
+	github.com/aws/aws-sdk-go v1.54.11 // indirect
 	github.com/benbjohnson/clock v1.3.5 // indirect
+	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2 v2.15.2 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/eapache/go-resiliency v1.7.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
+	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20250317173921-a4b03ec1a45e // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
@@ -46,19 +51,29 @@ require (
 	github.com/jcmturner/gofork v1.7.6 // indirect
 	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
+	github.com/tidepool-org/hydrophone v0.9.1-0.20260325073654-3a32ef4ba483 // indirect
+	github.com/tidepool-org/platform v1.33.1-0.20240814160553-f9955fff3f1e // indirect
+	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
+	github.com/xdg-go/scram v1.1.2 // indirect
+	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/xdg/scram v1.0.5 // indirect
 	github.com/xdg/stringprep v1.0.3 // indirect
+	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/dig v1.18.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
-	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/oauth2 v0.21.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/tools v0.31.0 // indirect

@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -33,10 +34,12 @@ const (
 	DexcomDataSourceProviderName      = "dexcom"
 )
 
-var Module = fx.Provide(fx.Annotated{
-	Group:  "consumers",
-	Target: CreateConsumerGroup,
-})
+var Module = fx.Provide(
+	NewEmailRemindersConfig,
+	fx.Annotated{
+		Group:  "consumers",
+		Target: CreateConsumerGroup,
+	})
 
 type PatientCDCConsumer struct {
 	logger *zap.SugaredLogger
@@ -49,6 +52,7 @@ type PatientCDCConsumer struct {
 	clinics       clinics.ClientWithResponsesInterface
 	summaries     summaries.ClientWithResponsesInterface
 	data          clients.DataClient
+	remindersCfg  *EmailRemindersConfig
 }
 
 type Params struct {
@@ -64,6 +68,7 @@ type Params struct {
 	Clinics       clinics.ClientWithResponsesInterface
 	Summaries     summaries.ClientWithResponsesInterface
 	Data          clients.DataClient
+	RemindersCfg  *EmailRemindersConfig
 }
 
 func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
@@ -98,6 +103,7 @@ func NewPatientCDCConsumer(p Params) (events.MessageConsumer, error) {
 		clinics:       p.Clinics,
 		summaries:     p.Summaries,
 		data:          p.Data,
+		remindersCfg:  p.RemindersCfg,
 	}, nil
 }
 
@@ -378,8 +384,28 @@ func (p *PatientCDCConsumer) sendProviderConnectEmail(ctx context.Context, param
 			"ProviderName":      params.ProviderName,
 		},
 	}
+	if err := p.mailer.SendEmailTemplate(ctx, template); err != nil {
+		return err
+	}
 
-	return p.mailer.SendEmailTemplate(ctx, template)
+	// Schedule a reminder email to connect a user's account if they have not
+	// claimed yet within a week.
+	body := clients.ConnectAccountReminderData{
+		ClinicId:          params.ClinicId,
+		Email:             email,
+		EmailTemplate:     fmt.Sprintf("reminder_%s_connect_custodial", strings.ToLower(params.ProviderName)),
+		PatientName:       params.PatientName,
+		ProviderName:      params.ProviderName,
+		RestrictedTokenId: createdRestrictedToken.ID,
+		UserId:            params.UserId,
+		WhenToSend:        time.Now().Add(p.remindersCfg.Interval),
+	}
+	if err := p.data.ScheduleConnectAccountReminder(body); err != nil {
+		// Warn but don't fail if unable to send to scheduled email reminder processor, as it is not part of the core functionality.
+		p.logger.Errorw("unable to send scheduled connect account reminder to scheduled emails system", "error", fmt.Errorf(`unable to send scheduled email reminder: %w`, err))
+	}
+
+	return nil
 }
 
 func (p *PatientCDCConsumer) getUserEmail(userId string) (string, error) {
@@ -513,6 +539,23 @@ func (p *PatientCDCConsumer) applyInviteUpdate(ctx context.Context, event Patien
 	}
 
 	p.logger.Debugw("invite was successfully processed", "offset", event.Offset)
+
+	// Schedule a reminder email only if user wasn't deleted and didn't already have an existing signup (status code 403)
+	if response.StatusCode() == http.StatusOK {
+		if email, err := p.getUserEmail(*event.FullDocument.UserId); err == nil && email != "" {
+			body := clients.ClaimAccountReminderData{
+				ClinicId:   event.FullDocument.ClinicId.Value,
+				UserId:     *event.FullDocument.UserId,
+				WhenToSend: time.Now().Add(p.remindersCfg.Interval),
+			}
+			if err := p.data.ScheduleClaimAccountReminder(body); err != nil {
+				// Warn but don't fail if unable to send to scheduled email reminder processor, as it is not part of the core functionality.
+				p.logger.Errorw("unable to send scheduled claim account reminder to scheduled emails system", "error", fmt.Errorf(`unable to send scheduled email reminder: %w`, err))
+			}
+		}
+	}
+
+
 	return nil
 }
 
