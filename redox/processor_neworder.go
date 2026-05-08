@@ -622,7 +622,7 @@ func (o *newOrderProcessor) createReportNote(ctx context.Context, params Summary
 	notes.SetProcedureFromOrder(params.Order)
 	notes.SetProviderFromOrder(params.Order)
 
-	if params.Match.Settings.Notes.IncludeGmi {
+	if params.Match.Settings.Notes.IncludeGMI {
 		notecomponents := ObservationsToGMINoteComponents(observations)
 		notes.SetComponents(notecomponents)
 	}
