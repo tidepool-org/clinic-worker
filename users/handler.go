@@ -35,7 +35,7 @@ func (u *userEventsHandler) HandleUpdateUserEvent(payload ev.UpdateUserEvent) er
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	if payload.Original.Username != payload.Updated.Username {
+	if payload.Original.Username != payload.Updated.Username && payload.Updated.Username != "" {
 		u.logger.Infow("updating user email", "userId", userId)
 		email := types.Email(payload.Updated.Username)
 		update := clinics.UpdateClinicUserDetailsJSONRequestBody{
