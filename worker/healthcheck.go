@@ -14,7 +14,8 @@ func healthCheckServerProvider() *http.Server {
 	})
 
 	return &http.Server{
-		Addr:    ":8080",
+		// Addr: ":8080",
+		Addr: ":8085",
 		Handler: mux,
 	}
 }

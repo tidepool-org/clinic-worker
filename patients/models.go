@@ -13,10 +13,11 @@ import (
 )
 
 type PatientCDCEvent struct {
-	Offset            int64             `json:"-"`
-	FullDocument      Patient           `json:"fullDocument"`
-	OperationType     string            `json:"operationType"`
-	UpdateDescription UpdateDescription `json:"updateDescription"`
+	Offset                   int64             `json:"-"`
+	FullDocument             Patient           `json:"fullDocument"`
+	FullDocumentBeforeChange Patient           `json:"fullDocumentBeforeChange"`
+	OperationType            string            `json:"operationType"`
+	UpdateDescription        UpdateDescription `json:"updateDescription"`
 }
 
 func (p PatientCDCEvent) IsUploadReminderEvent() bool {
@@ -44,6 +45,10 @@ func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
 
 func (p PatientCDCEvent) IsPatientCreateFromExistingUserEvent() bool {
 	return p.OperationType == cdc.OperationTypeInsert && !p.FullDocument.IsCustodial()
+}
+
+func (p PatientCDCEvent) IsDeletedCustodialPatientEvent() bool {
+	return p.OperationType == cdc.OperationTypeDelete && p.FullDocumentBeforeChange.UserId != nil && *p.FullDocumentBeforeChange.UserId != "" && p.FullDocumentBeforeChange.IsCustodial()
 }
 
 func (p PatientCDCEvent) PatientNeedsSummary() bool {

@@ -207,8 +207,8 @@ github.com/tidepool-org/clinic/client
 # github.com/tidepool-org/clinic/redox_models v0.0.0-20250609170750-6b55d8d08796
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/redox_models
-# github.com/tidepool-org/go-common v0.12.3-0.20260127220519-7130ed0c28d2
-## explicit; go 1.24.1
+# github.com/tidepool-org/go-common v0.12.3-0.20260507231508-a6c1fb80b4a2
+## explicit; go 1.25.7
 github.com/tidepool-org/go-common/clients
 github.com/tidepool-org/go-common/clients/disc
 github.com/tidepool-org/go-common/clients/hakken

@@ -124,10 +124,16 @@ func (p *PatientCDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 	event := PatientCDCEvent{
 		Offset: cm.Offset,
 	}
+	fmt.Printf("\n\n\nNew RawMessage Value at %s:\n  %s\n", time.Now().Format("Mon Jan 02 2006 03:04:05PM MST"), string(cm.Value))
+	// fmt.Printf("\nRawMessage Key: %s\n", string(cm.Key))
+
 	if err := UnmarshalEvent(cm.Value, &event); err != nil {
+		fmt.Printf("ERROR!!: \nUnable to unmarshal message: %v\n", err)
 		p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
 		return err
 	}
+	// JIMMYTODO: Debug
+	// fmt.Printf("\n\n\nxxx: handleMessage: %v\n", event.OperationType)
 
 	if err := p.handleCDCEvent(event); err != nil {
 		p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
@@ -167,6 +173,44 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		}
 	}
 
+	// JIMMYTODO: Debug
+	if event.OperationType == cdc.OperationTypeDelete {
+		fmt.Printf("\n\n\nxxx: FullDocumentBeforeChange:\n  %#v\n\n", event.FullDocumentBeforeChange)
+		if event.FullDocumentBeforeChange.UserId != nil {
+			fmt.Printf("\n\n\nxxx: Non-nil UserId: IsDeletedCustodialPatientEvent: %v\n  OperationType: %v\n  IsCustodial: %v\n  userId: %v\n", event.IsDeletedCustodialPatientEvent(), event.OperationType, event.FullDocumentBeforeChange.IsCustodial(), *event.FullDocumentBeforeChange.UserId)
+		} else {
+			fmt.Printf("\n\n\nxxx: NIL UserId: IsDeletedCustodialPatientEvent: %v\n  OperationType: %v\n  IsCustodial: %v\n", event.IsDeletedCustodialPatientEvent(), event.OperationType, event.FullDocumentBeforeChange.IsCustodial())
+
+		}
+	}
+
+	if event.IsDeletedCustodialPatientEvent() && event.FullDocumentBeforeChange.UserId != nil {
+		userID := *event.FullDocumentBeforeChange.UserId
+		hasData, err := p.data.HasAnyData(userID)
+		fmt.Printf("\n\n\nxxx: CustodialPatient hasData: %v\n  err: %v\n\n", hasData, err)
+		if err != nil {
+			return fmt.Errorf(`unable to check if custodial patient has data: %w`, err)
+		}
+		// Only custodial users with NO data can have their keycloak user account actually deleted.
+		if !hasData {
+			if err := p.shoreline.DeleteUser(userID, p.shoreline.TokenProvide()); err != nil {
+				return fmt.Errorf(`unable to delete custodial user without data: %w`, err)
+			}
+		} else {
+			// Otherwise if patient has data, remove the email from the user but do not delete the user.
+			emptyUsername := ""
+			emptyEmails := []string{}
+			update := shoreline.UserUpdate{
+				Username: &emptyUsername,
+				Emails:   &emptyEmails,
+			}
+			if err := p.shoreline.UpdateUser(userID, update, p.shoreline.TokenProvide()); err != nil {
+				return fmt.Errorf(`unable to update custodial user with data to empty email: %w`, err)
+			}
+		}
+	}
+
+	// JIMMYTODO:  Probably update this to NOT try to do summary if deleted
 	if event.PatientNeedsSummary() {
 		p.logger.Infow("processing summary initialization", "event", event)
 		err := p.populateSummary(*event.FullDocument.UserId)
