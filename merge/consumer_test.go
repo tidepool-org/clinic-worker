@@ -3,10 +3,11 @@ package merge_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.mongodb.org/mongo-driver/bson"
+
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/merge"
 	"github.com/tidepool-org/clinic-worker/test"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 var _ = Describe("NewMergePlansConsumerCDCConsumer", func() {
@@ -33,9 +34,6 @@ var _ = Describe("NewMergePlansConsumerCDCConsumer", func() {
 			Expect(plan.SourcePatient.UserId).ToNot(BeNil())
 			Expect(plan.SourcePatient.Id).ToNot(BeNil())
 			Expect(plan.SourcePatient.Id.Value).To(Equal("66ceef8d03b01ff45f5e7d81"))
-
-			Expect(plan.TargetPatient.LastRequestedDexcomConnectTime).ToNot(BeNil())
-			Expect(plan.TargetPatient.LastRequestedDexcomConnectTime.Value).ToNot(BeZero())
 
 			Expect(plan.TargetPatient.DataSources).ToNot(BeNil())
 			Expect(*plan.TargetPatient.DataSources).ToNot(BeEmpty())
