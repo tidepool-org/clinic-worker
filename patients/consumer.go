@@ -13,8 +13,10 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/tidepool-org/clinic-worker/cdc"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
 
+	"github.com/tidepool-org/clinic-worker/cdc"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
@@ -22,8 +24,6 @@ import (
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"github.com/tidepool-org/go-common/events"
 	confirmations "github.com/tidepool-org/hydrophone/client"
-	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 const (
@@ -188,6 +188,10 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		for _, requests := range event.FullDocument.ProviderConnectionRequests {
 			connectionRequests = AppendMostRecentConnectionRequest(connectionRequests, requests)
 		}
+	} else if event.UpdateDescription.UpdatedFields.IsConnectionRequestMigration() {
+		// A migration may rewrite the connection requests of every provider, so none of
+		// them are new, and no emails should be sent.
+		p.logger.Infow("skipping migrated connection requests", "offset", event.Offset)
 	} else {
 		// If the email was not updated in this event, get all updated connection requests (if any)
 		connectionRequests = event.UpdateDescription.UpdatedFields.GetUpdatedConnectionRequests()
@@ -210,7 +214,7 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			}
 			if event.FullDocument.DataSources != nil {
 				for _, source := range *event.FullDocument.DataSources {
-					if *source.ProviderName == providerName && *source.State == string(clinics.PendingReconnect) {
+					if *source.ProviderName == providerName {
 						action = "reconnect"
 						break
 					}
@@ -218,6 +222,7 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			}
 
 			templateName := templatePrefix + action
+
 			errs = append(errs, p.sendProviderConnectEmail(ctx, SendProviderConnectEmailParams{
 				ClinicId:     event.FullDocument.ClinicId.Value,
 				ProviderName: providerName,
