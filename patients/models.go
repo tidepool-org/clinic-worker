@@ -86,23 +86,22 @@ type CDCSummary struct {
 }
 
 type Patient struct {
-	Id                             *cdc.ObjectId              `json:"_id" bson:"_id"`
-	ClinicId                       *cdc.ObjectId              `json:"clinicId" bson:"clinicId"`
-	UserId                         *string                    `json:"userId" bson:"userId"`
-	BirthDate                      *string                    `json:"birthDate" bson:"birthDate"`
-	Email                          *string                    `json:"email" bson:"email"`
-	FullName                       *string                    `json:"fullName" bson:"fullName"`
-	Mrn                            *string                    `json:"mrn" bson:"mrn"`
-	TargetDevices                  *[]string                  `json:"targetDevices" bson:"targetDevices"`
-	DataSources                    *[]PatientDataSource       `json:"dataSources" bson:"dataSources"`
-	Permissions                    *Permissions               `json:"permissions" bson:"permissions"`
-	IsMigrated                     bool                       `json:"isMigrated" bson:"isMigrated"`
-	InvitedBy                      *string                    `json:"invitedBy" bson:"invitedBy"`
-	LastRequestedDexcomConnectTime *cdc.Date                  `json:"lastRequestedDexcomConnectTime" bson:"lastRequestedDexcomConnectTime"`
-	LastUploadReminderTime         *cdc.Date                  `json:"lastUploadReminderTime" bson:"lastUploadReminderTime"`
-	Summary                        *CDCSummary                `json:"summary" bson:"summary"`
-	ProviderConnectionRequests     ProviderConnectionRequests `json:"providerConnectionRequests" bson:"providerConnectionRequests"`
-	DiagnosisType                  *string                    `json:"diagnosisType" bson:"diagnosisType"`
+	Id                         *cdc.ObjectId              `json:"_id" bson:"_id"`
+	ClinicId                   *cdc.ObjectId              `json:"clinicId" bson:"clinicId"`
+	UserId                     *string                    `json:"userId" bson:"userId"`
+	BirthDate                  *string                    `json:"birthDate" bson:"birthDate"`
+	Email                      *string                    `json:"email" bson:"email"`
+	FullName                   *string                    `json:"fullName" bson:"fullName"`
+	Mrn                        *string                    `json:"mrn" bson:"mrn"`
+	TargetDevices              *[]string                  `json:"targetDevices" bson:"targetDevices"`
+	DataSources                *[]PatientDataSource       `json:"dataSources" bson:"dataSources"`
+	Permissions                *Permissions               `json:"permissions" bson:"permissions"`
+	IsMigrated                 bool                       `json:"isMigrated" bson:"isMigrated"`
+	InvitedBy                  *string                    `json:"invitedBy" bson:"invitedBy"`
+	LastUploadReminderTime     *cdc.Date                  `json:"lastUploadReminderTime" bson:"lastUploadReminderTime"`
+	Summary                    *CDCSummary                `json:"summary" bson:"summary"`
+	ProviderConnectionRequests ProviderConnectionRequests `json:"providerConnectionRequests" bson:"providerConnectionRequests"`
+	DiagnosisType              *string                    `json:"diagnosisType" bson:"diagnosisType"`
 }
 
 type ProviderConnectionRequests map[string]ConnectionRequests
@@ -112,6 +111,9 @@ type ConnectionRequests []ConnectionRequest
 type ConnectionRequest struct {
 	ProviderName string   `json:"providerName" bson:"providerName"`
 	CreatedTime  cdc.Date `json:"createdTime" bson:"createdTime"`
+	// MigratedTime in an updated connection request indicates that the update is part of a
+	// migration. Things like email reminders may want to be skipped if this is present.
+	MigratedTime *cdc.Date `json:"migratedTime,omitempty" bson:"migratedTime,omitempty"`
 }
 
 func (p PatientCDCEvent) CreateDataSourceBody(source clients.DataSource) clinics.DataSourceV1 {
