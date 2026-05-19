@@ -13,7 +13,11 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
+
 	"github.com/tidepool-org/clinic-worker/cdc"
+
+	"go.uber.org/fx"
+	"go.uber.org/zap"
 
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
@@ -22,8 +26,6 @@ import (
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"github.com/tidepool-org/go-common/events"
 	confirmations "github.com/tidepool-org/hydrophone/client"
-	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 const (
@@ -203,6 +205,10 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 
 		errs := make([]error, 0, len(providers))
 		for providerName := range providers {
+			if p.isMigratedTimeModified(event, providerName) {
+				continue
+			}
+
 			templatePrefix := fmt.Sprintf("request_%s_", providerName)
 			action := "connect"
 			if event.FullDocument.IsCustodial() {
@@ -210,7 +216,7 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			}
 			if event.FullDocument.DataSources != nil {
 				for _, source := range *event.FullDocument.DataSources {
-					if *source.ProviderName == providerName && *source.State == string(clinics.PendingReconnect) {
+					if *source.ProviderName == providerName {
 						action = "reconnect"
 						break
 					}
@@ -218,6 +224,7 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 			}
 
 			templateName := templatePrefix + action
+
 			errs = append(errs, p.sendProviderConnectEmail(ctx, SendProviderConnectEmailParams{
 				ClinicId:     event.FullDocument.ClinicId.Value,
 				ProviderName: providerName,
@@ -232,6 +239,37 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 	}
 
 	return nil
+}
+
+func (p *PatientCDCConsumer) isMigratedTimeModified(event PatientCDCEvent,
+	providerName string) bool {
+
+	created := event.UpdateDescription.UpdatedFields.ProviderConnectionRequests
+	for _, pcr := range created[providerName] {
+		if pcr.MigratedTime != nil && pcr.MigratedTime.Value > 0 {
+			return true
+		}
+	}
+
+	var modified ConnectionRequests
+	switch providerName {
+	case "dexcom":
+		modified = event.UpdateDescription.UpdatedFields.ProviderConnectionRequestsDexcom
+	case "abbott":
+		modified = event.UpdateDescription.UpdatedFields.ProviderConnectionRequestsAbbott
+	case "twiist":
+		modified = event.UpdateDescription.UpdatedFields.ProviderConnectionRequestsTwiist
+	default:
+		p.logger.Errorw("isMigratedTimeModified: unhandled provider",
+			"providerName", providerName)
+	}
+	for _, pcr := range modified {
+		if pcr.MigratedTime != nil && pcr.MigratedTime.Value > 0 {
+			return true
+		}
+	}
+
+	return false
 }
 
 /*

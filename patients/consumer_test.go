@@ -1,11 +1,15 @@
 package patients_test
 
 import (
+	"bytes"
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/patients"
 	"github.com/tidepool-org/clinic-worker/test"
-	"strings"
 )
 
 var _ = Describe("PatientCDCConsumer", func() {
@@ -15,15 +19,65 @@ var _ = Describe("PatientCDCConsumer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Some editors add a new line at the end of the file by default, remove it
-			fixture = []byte(strings.TrimSuffix(string(fixture), "\n"))
+			fixture = bytes.TrimSpace(fixture)
 
 			event := patients.PatientCDCEvent{}
 			err = patients.UnmarshalEvent(fixture, &event)
 			Expect(err).ToNot(HaveOccurred())
+		})
 
-			// Make sure cdc.Date is parsed correctly
-			Expect(event.FullDocument.LastRequestedDexcomConnectTime).ToNot(BeNil())
-			Expect(event.FullDocument.LastRequestedDexcomConnectTime.Value).To(Equal(int64(1725664480753)))
+		Context("connection request is modified", func() {
+			It("can read migratedTime", func() {
+				fixture, err := test.LoadFixture("test/fixtures/patient_event_conn_modified.txt")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Some editors add a new line at the end of the file by default, remove it
+				fixture = []byte(bytes.TrimSpace(fixture))
+
+				event := patients.PatientCDCEvent{}
+				err = patients.UnmarshalEvent(fixture, &event)
+				Expect(err).ToNot(HaveOccurred())
+
+				exp := patients.ConnectionRequest{
+					MigratedTime: &cdc.Date{
+						Value: 1728059814765,
+					},
+					ProviderName: "dexcom",
+					CreatedTime: cdc.Date{
+						Value: 1728059814765,
+					},
+				}
+
+				pcrs := event.UpdateDescription.UpdatedFields.ProviderConnectionRequestsDexcom
+				Expect(pcrs[0]).To(Equal(exp))
+			})
+		})
+
+		Context("connection request is newly created", func() {
+			It("can read migratedTime", func() {
+				fixture, err := test.LoadFixture("test/fixtures/patient_event_new_conn.txt")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Some editors add a new line at the end of the file by default, remove it
+				fixture = []byte(bytes.TrimSpace(fixture))
+
+				event := patients.PatientCDCEvent{}
+				err = patients.UnmarshalEvent(fixture, &event)
+				Expect(err).ToNot(HaveOccurred())
+
+				exp := patients.ConnectionRequest{
+					MigratedTime: &cdc.Date{
+						Value: 1728059814765,
+					},
+					ProviderName: "dexcom",
+					CreatedTime: cdc.Date{
+						Value: 1728059814765,
+					},
+				}
+
+				pcrs := event.UpdateDescription.UpdatedFields.ProviderConnectionRequests["dexcom"]
+				Expect(pcrs[0]).To(Equal(exp))
+			})
 		})
 	})
 
