@@ -15,9 +15,9 @@ require (
 	github.com/onsi/gomega v1.36.2
 	github.com/tidepool-org/clinic/client v0.0.0-20260413090812-7a1c1f3d0bc8
 	github.com/tidepool-org/clinic/redox_models v0.0.0-20250609170750-6b55d8d08796
-	github.com/tidepool-org/go-common v0.12.3-0.20260526124720-21f2828bafee
+	github.com/tidepool-org/go-common v0.12.3-0.20260526143448-43c23f314f85
 	github.com/tidepool-org/hydrophone/client v0.0.0-20250317164837-a8cd51fd6677
-	github.com/tidepool-org/platform v1.33.1-0.20260526135848-682bed1e620f
+	github.com/tidepool-org/platform v1.33.1-0.20260526142334-38b38aee563f
 	go.mongodb.org/mongo-driver v1.17.7
 	go.uber.org/fx v1.23.0
 	go.uber.org/mock v0.5.2
@@ -39,6 +39,9 @@ require (
 	github.com/eapache/go-resiliency v1.7.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
+	github.com/fatih/color v1.18.0 // indirect
+	github.com/fsnotify/fsnotify v1.8.0 // indirect
+	github.com/githubnemo/CompileDaemon v1.4.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
@@ -54,6 +57,8 @@ require (
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
@@ -63,6 +68,7 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/radovskyb/watcher v1.0.7 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
@@ -75,6 +81,8 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
+	golang.org/x/lint v0.0.0-20241112194109-818c5a804067 // indirect
+	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
