@@ -14,9 +14,11 @@ import (
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/events"
+	"github.com/tidepool-org/platform/data"
 	dataclient "github.com/tidepool-org/platform/data/client"
 	platformlog "github.com/tidepool-org/platform/log"
 	"github.com/tidepool-org/platform/log/null"
+	"github.com/tidepool-org/platform/page"
 )
 
 const (
@@ -115,10 +117,15 @@ func (p *PatientDeletionsCDCConsumer) handleCDCEvent(event PatientDeletionsCDCEv
 	defer cancel()
 
 	userID := event.FullDocument.Patient.UserId
-	hasData, err := p.data.HasAnyData(ctx, userID)
-	if err != nil {
-		return fmt.Errorf(`unable to check if custodial patient has data: %w`, err)
+	pagination := &page.Pagination{
+		Size: 1,
 	}
+
+	dataSets, err := p.data.ListUserDataSets(ctx, userID, data.NewDataSetFilter(), pagination)
+	if err != nil {
+		return fmt.Errorf(`unable to check custodial patient's data sets: %w`, err)
+	}
+	hasData := len(dataSets) > 0
 	// Only custodial users with NO data can have their keycloak user account actually deleted.
 	if !hasData {
 		p.logger.Infow("processing custodial patient deletion without data", "event", event)

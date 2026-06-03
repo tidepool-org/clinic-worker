@@ -26,7 +26,6 @@ type DataSetAccessor interface {
 	GetDataSet(ctx context.Context, id string) (*DataSet, error)
 	UpdateDataSet(ctx context.Context, id string, update *DataSetUpdate) (*DataSet, error)
 	DeleteDataSet(ctx context.Context, id string) error
-	HasAnyData(ctx context.Context, userID string) (has bool, err error)
 }
 
 const (
