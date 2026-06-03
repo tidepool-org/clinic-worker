@@ -107,7 +107,7 @@ func (p *PatientDeletionsCDCConsumer) handleCDCEvent(event PatientDeletionsCDCEv
 	if event.OperationType != cdc.OperationTypeInsert ||
 		!event.FullDocument.IsCustodial() ||
 		event.FullDocument.Patient.UserId == "" {
-		p.logger.Debugw("skipping handling of event", "offset", event.Offset)
+		p.logger.Debugw("skipping handling of patient deletion event", "offset", event.Offset)
 		return nil
 	}
 
@@ -121,10 +121,12 @@ func (p *PatientDeletionsCDCConsumer) handleCDCEvent(event PatientDeletionsCDCEv
 	}
 	// Only custodial users with NO data can have their keycloak user account actually deleted.
 	if !hasData {
+		p.logger.Infow("processing custodial patient deletion without data", "event", event)
 		if err := p.shoreline.DeleteUser(userID, p.shoreline.TokenProvide()); err != nil {
 			return fmt.Errorf(`unable to delete custodial user without data: %w`, err)
 		}
 	} else {
+		p.logger.Infow("processing custodial patient deletion with data", "event", event)
 		// Otherwise if patient has data, remove the email from the user but do not
 		// delete the user. Note the API expects no `username` field and an EMPTY
 		// (not null) array for the `emails` field in order to "remove" an email.

@@ -18,9 +18,6 @@ type Permissions struct {
 type Permission map[string]interface{}
 
 type Patient struct {
-	// ClinicId    *cdc.ObjectId `json:"clinicId" bson:"clinicId"`
-	// UserId      *string       `json:"userId" bson:"userId"`
-	// Permissions *Permissions  `json:"permissions" bson:"permissions"`
 	ClinicId    *cdc.ObjectId `json:"clinicId" bson:"clinicId"`
 	UserId      string        `json:"userId" bson:"userId"`
 	Permissions Permissions   `json:"permissions" bson:"permissions"`
