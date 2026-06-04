@@ -53,7 +53,7 @@ func NewScheduledSummaryAndReportsConsumer(p ScheduledSummaryAndReportsCDCConsum
 		if err != nil {
 			return nil, err
 		}
-		return cdc.NewRetryingConsumerWithOpts(delegate, retryOptions), nil
+		return cdc.NewRetryingConsumerWithOpts(p.Logger, delegate, retryOptions), nil
 	}
 }
 

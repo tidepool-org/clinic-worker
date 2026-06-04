@@ -59,7 +59,7 @@ func NewMergePlansConsumer(p MergePlansConsumerCDCConsumerParams) events.Consume
 		if err != nil {
 			return nil, err
 		}
-		return cdc.NewRetryingConsumer(delegate), nil
+		return cdc.NewRetryingConsumer(p.Logger, delegate), nil
 	}
 }
 
