@@ -179,6 +179,11 @@ var _ = Describe("CDCConsumer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		It("ignores tombstone (empty value) messages", func() {
+			err := consumer.HandleKafkaMessage(&sarama.ConsumerMessage{Offset: 19, Value: nil})
+			Expect(err).ToNot(HaveOccurred())
+		})
+
 		It("ignores delete events", func() {
 			err := consumer.HandleKafkaMessage(message(`{"op":"d","before":{"user_id":"1234567890","event_type":"LOGIN","event_time":1700000000000},"after":null}`))
 			Expect(err).ToNot(HaveOccurred())
