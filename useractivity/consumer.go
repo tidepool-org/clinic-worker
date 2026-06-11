@@ -85,6 +85,15 @@ func (p *CDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) error {
 
 func (p *CDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
 	p.logger.Debugw("handling kafka message", "offset", cm.Offset)
+
+	// Debezium emits a tombstone (null value) alongside deletes, and the Filter SMT
+	// passes tombstones through. There is nothing to project from an empty value, so
+	// skip it — otherwise json.Unmarshal fails and the message is retried forever.
+	if len(cm.Value) == 0 {
+		p.logger.Debugw("skipping message with empty value", "offset", cm.Offset)
+		return nil
+	}
+
 	event := Envelope{
 		Offset: cm.Offset,
 	}
