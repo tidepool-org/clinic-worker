@@ -109,8 +109,8 @@ github.com/tidepool-org/clinic/client v0.0.0-20260610084638-fd5647b4a1b4 h1:zqHF
 github.com/tidepool-org/clinic/client v0.0.0-20260610084638-fd5647b4a1b4/go.mod h1:k23OfUIbA30QCPs7gBF9DHDjOXJ7faS0x3amXlI2XsE=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20250609170750-6b55d8d08796 h1:TE0weNP/EexzMc+60rFFZjyiEe3flghMOUNUjs3afw0=
 github.com/tidepool-org/clinic/redox_models v0.0.0-20250609170750-6b55d8d08796/go.mod h1:bQ9DZxk015RhmGG1tR6jRScP9KxyHvS8tzPbVtr82DE=
-github.com/tidepool-org/go-common v0.12.3-0.20260127220519-7130ed0c28d2 h1:tT12ZkhdfERsTA1G79gB3D5QIhn8gS/GZ+yJXF/Q4AA=
-github.com/tidepool-org/go-common v0.12.3-0.20260127220519-7130ed0c28d2/go.mod h1:79F3FC1MOAzwDW44d8QnP3SEC9j9rmr39XgERrDOMO8=
+github.com/tidepool-org/go-common v0.12.3-0.20260611154408-884aa76b8737 h1:CgjMn1VEC/0QlEk/FEPAwfm78JxNhurLXlzuVwV2XnA=
+github.com/tidepool-org/go-common v0.12.3-0.20260611154408-884aa76b8737/go.mod h1:SVhG+l2q6w579IsqcNm4MhjzY9URxCFPudIZMpw3vok=
 github.com/tidepool-org/hydrophone/client v0.0.0-20250317164837-a8cd51fd6677 h1:P3C1YTvLHu7NFHOeh6NDPo5ieVXcF9a+SY4FTToR8B4=
 github.com/tidepool-org/hydrophone/client v0.0.0-20250317164837-a8cd51fd6677/go.mod h1:gon+x+jAh8DZZ2hD23fBWqrYwOizVSwIBbxEsuXCbZ4=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
