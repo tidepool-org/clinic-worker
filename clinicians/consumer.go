@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/IBM/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/marketo"
@@ -16,9 +20,6 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 const (
@@ -195,7 +196,7 @@ func (p *ClinicianCDCConsumer) backfillSecurityProfile(userId string) error {
 	if err != nil {
 		return err
 	}
-	if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNotFound) {
+	if !(response.StatusCode() == http.StatusNoContent || response.StatusCode() == http.StatusNotFound) {
 		return fmt.Errorf("unexpected status code when updating clinician security profile %v", response.StatusCode())
 	}
 	return nil
