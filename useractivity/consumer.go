@@ -147,7 +147,7 @@ func (p *CDCConsumer) handleCDCEvent(event Envelope) error {
 
 	// A 404 means the user is not a clinician (e.g. a patient); the event is still
 	// a no-op success since the outbox covers every keycloak user.
-	if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNotFound) {
+	if !(response.StatusCode() == http.StatusNoContent || response.StatusCode() == http.StatusNotFound) {
 		return fmt.Errorf("unexpected status code when updating clinician security profile %v", response.StatusCode())
 	}
 
