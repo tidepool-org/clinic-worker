@@ -42,6 +42,7 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 		var order models.NewOrder
 		var scheduled redox.ScheduledSummaryAndReport
 		var patient *clinics.PatientV1
+		var flowsheetObservations []clinics.FlowsheetObservationV1
 
 		BeforeEach(func() {
 			response := &clinics.EhrMatchResponseV1{}
@@ -79,6 +80,22 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 					HTTPResponse: &http.Response{StatusCode: http.StatusOK},
 					JSON200:      &response.Settings,
 				}, nil)
+
+			// Summary statistics are now computed and formatted by the clinic
+			// service; the worker maps the returned entries onto the flowsheet.
+			percentUnits := "%"
+			flowsheetObservations = []clinics.FlowsheetObservationV1{
+				{Code: "TIME_IN_RANGE_CGM", Value: "56.2871", ValueType: clinics.Numeric, Units: &percentUnits, DateTime: "2023-06-22T23:44:16Z", Description: "CGM Time in Range"},
+				{Code: "GLUCOSE_MANAGEMENT_INDICATOR", Value: "6.7206", ValueType: clinics.Numeric, DateTime: "2023-06-22T23:44:16Z", Description: "CGM Glucose Management Indicator during reporting period"},
+			}
+			clinicClient.EXPECT().
+				GetPatientFlowsheetWithResponse(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(&clinics.GetPatientFlowsheetResponse{
+					Body:         nil,
+					HTTPResponse: &http.Response{StatusCode: http.StatusOK},
+					JSON200:      &flowsheetObservations,
+				}, nil).
+				AnyTimes()
 
 			newOrderFixture, err := test.LoadFixture("test/fixtures/subscriptionorder.json")
 			Expect(err).ToNot(HaveOccurred())
@@ -127,6 +144,14 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 					"EventType": Equal("New"),
 				}),
 			}))
+
+			// The flowsheet observations are mapped verbatim, and in order,
+			// from the clinic service's response.
+			Expect(flowsheet.Observations).To(HaveLen(len(flowsheetObservations)))
+			Expect(flowsheet.Observations[0].Code).To(Equal("TIME_IN_RANGE_CGM"))
+			Expect(flowsheet.Observations[0].Value).To(Equal("56.2871"))
+			Expect(flowsheet.Observations[0].Units).To(PointTo(Equal("%")))
+			Expect(flowsheet.Observations[1].Code).To(Equal("GLUCOSE_MANAGEMENT_INDICATOR"))
 
 			Expect(notes).To(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Meta": MatchFields(IgnoreExtras, Fields{
