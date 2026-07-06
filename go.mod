@@ -65,3 +65,7 @@ require (
 	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+// TODO: Remove this replace directive and re-pin github.com/tidepool-org/clinic/client
+// to a published pseudo-version once the clinic PR adding GetPatientFlowsheet merges.
+replace github.com/tidepool-org/clinic/client => ../clinic/client
