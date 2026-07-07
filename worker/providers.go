@@ -24,14 +24,15 @@ import (
 )
 
 type DependenciesConfig struct {
-	ShorelineHost  string `envconfig:"TIDEPOOL_SHORELINE_CLIENT_ADDRESS" default:"http://shoreline:9107"`
-	SeagullHost    string `envconfig:"TIDEPOOL_SEAGULL_CLIENT_ADDRESS" default:"http://seagull:9120"`
-	GatekeeperHost string `envconfig:"TIDEPOOL_GATEKEEPER_CLIENT_ADDRESS" default:"http://gatekeeper:9123"`
-	ClinicsHost    string `envconfig:"TIDEPOOL_CLINIC_CLIENT_ADDRESS" default:"http://clinic:8080"`
-	DataHost       string `envconfig:"TIDEPOOL_DATA_CLIENT_ADDRESS" default:"http://data:9220"`
-	HydrophoneHost string `envconfig:"TIDEPOOL_CONFIRMATION_CLIENT_ADDRESS" default:"http://hydrophone:9157"`
-	AuthHost       string `envconfig:"TIDEPOOL_DOCKER_PLATFORM_AUTH_HOST" default:"http://auth:9222"`
-	ServerSecret   string `envconfig:"TIDEPOOL_SERVER_SECRET"`
+	ShorelineHost    string `envconfig:"TIDEPOOL_SHORELINE_CLIENT_ADDRESS" default:"http://shoreline:9107"`
+	SeagullHost      string `envconfig:"TIDEPOOL_SEAGULL_CLIENT_ADDRESS" default:"http://seagull:9120"`
+	GatekeeperHost   string `envconfig:"TIDEPOOL_GATEKEEPER_CLIENT_ADDRESS" default:"http://gatekeeper:9123"`
+	ClinicsHost      string `envconfig:"TIDEPOOL_CLINIC_CLIENT_ADDRESS" default:"http://clinic:8080"`
+	DataHost         string `envconfig:"TIDEPOOL_DATA_CLIENT_ADDRESS" default:"http://data:9220"`
+	HydrophoneHost   string `envconfig:"TIDEPOOL_CONFIRMATION_CLIENT_ADDRESS" default:"http://hydrophone:9157"`
+	AuthHost         string `envconfig:"TIDEPOOL_DOCKER_PLATFORM_AUTH_HOST" default:"http://auth:9222"`
+	ServerSecret     string `envconfig:"TIDEPOOL_SERVER_SECRET"`
+	DataServerSecret string `envconfig:"TIDEPOOL_DATA_SERVICE_SECRET"`
 }
 
 func configProvider() (DependenciesConfig, error) {
@@ -150,7 +151,7 @@ func platformDataProvider(config DependenciesConfig) (dataclient.Client, error) 
 		Config: &platformclient.Config{
 			Address: config.DataHost,
 		},
-		ServiceSecret: config.ServerSecret,
+		ServiceSecret: config.DataServerSecret,
 	}
 	client, err := dataclient.New(cfg, platform.AuthorizeAsService)
 	if err != nil {
