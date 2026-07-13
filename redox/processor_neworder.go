@@ -228,16 +228,12 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, create Crea
 	}
 
 	permission := make(map[string]interface{})
-	integration := clinics.PatientCreationMetadataV1IntegrationRedox
 	createPatient := clinics.CreatePatientAccountJSONRequestBody{
 		Permissions: &clinics.PatientPermissionsV1{
 			Custodian: &permission,
 			Note:      &permission,
 			Upload:    &permission,
 			View:      &permission,
-		},
-		CreationMetadata: &clinics.PatientCreationMetadataV1{
-			Integration: &integration,
 		},
 	}
 
@@ -450,7 +446,7 @@ func (o *newOrderProcessor) getTagNamesFromOrder(order models.NewOrder, match cl
 		return nil
 	}
 
-	if *order.Order.ClinicalInfo == nil {
+	if order.Order.ClinicalInfo == nil || *order.Order.ClinicalInfo == nil {
 		return nil
 	}
 
@@ -505,7 +501,7 @@ func (o *newOrderProcessor) SendSummaryAndReport(ctx context.Context, params Sum
 	if err != nil {
 		return err
 	}
-	flowsheet, err := o.createSummaryStatisticsFlowsheet(params)
+	flowsheet, observations, err := o.createSummaryStatisticsFlowsheet(params)
 	if err != nil {
 		return err
 	}
@@ -515,7 +511,7 @@ func (o *newOrderProcessor) SendSummaryAndReport(ctx context.Context, params Sum
 		return nil
 	}
 
-	notes, err := o.createReportNote(ctx, params)
+	notes, err := o.createReportNote(ctx, params, observations)
 	if err != nil {
 		// return the error so we can retry the request
 		return err
@@ -540,10 +536,10 @@ func (o *newOrderProcessor) SendSummaryAndReport(ctx context.Context, params Sum
 	return nil
 }
 
-func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndReportParameters) (models.NewFlowsheet, error) {
+func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndReportParameters) (models.NewFlowsheet, []*Observation, error) {
 	patient, err := params.GetMatchingPatient()
 	if err != nil {
-		return models.NewFlowsheet{}, err
+		return models.NewFlowsheet{}, nil, err
 	}
 
 	source := o.client.GetSource()
@@ -571,12 +567,12 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 	SetAccountNumberInFlowsheet(params.Order, &flowsheet)
 	SetOrderIdInFlowsheet(params.Order, &flowsheet)
 	SetProviderInFlowsheet(params.Order, &flowsheet)
-	PopulateSummaryStatistics(patient, settings, &flowsheet)
+	observations := PopulateSummaryStatistics(patient, settings, &flowsheet)
 
-	return flowsheet, nil
+	return flowsheet, observations, nil
 }
 
-func (o *newOrderProcessor) createReportNote(ctx context.Context, params SummaryAndReportParameters) (Notes, error) {
+func (o *newOrderProcessor) createReportNote(ctx context.Context, params SummaryAndReportParameters, observations []*Observation) (Notes, error) {
 	patient, err := params.GetMatchingPatient()
 	if err != nil {
 		return nil, err
@@ -625,6 +621,11 @@ func (o *newOrderProcessor) createReportNote(ctx context.Context, params Summary
 	notes.SetPatientFromOrder(params.Order)
 	notes.SetProcedureFromOrder(params.Order)
 	notes.SetProviderFromOrder(params.Order)
+
+	if params.Match.Settings.Notes.IncludeGMI {
+		notecomponents := ObservationsToGMINoteComponents(observations)
+		notes.SetComponents(notecomponents)
+	}
 
 	reportParameters := report.Parameters{
 		UserDetail: report.UserDetail{

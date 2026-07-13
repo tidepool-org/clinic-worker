@@ -2,6 +2,7 @@ package redox
 
 import (
 	"context"
+
 	"github.com/IBM/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/go-common/events"
@@ -52,7 +53,7 @@ func NewScheduledSummaryAndReportsConsumer(p ScheduledSummaryAndReportsCDCConsum
 		if err != nil {
 			return nil, err
 		}
-		return cdc.NewRetryingConsumer(delegate), nil
+		return cdc.NewRetryingConsumerWithOpts(delegate, retryOptions), nil
 	}
 }
 

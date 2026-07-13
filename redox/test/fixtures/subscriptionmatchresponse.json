@@ -232,6 +232,7 @@
             "14d": {
               "averageDailyRecords": 144.28571428571428,
               "averageGlucoseMmol": 7.921203,
+              "glucoseManagementIndicator": 6.720553,
               "coefficientOfVariation": 0.2003709853643661,
               "coefficientOfVariationDelta": 0.2003709853643661,
               "daysWithData": 2,
@@ -242,7 +243,7 @@
               "standardDeviationDelta": 1.4696946965192512,
               "hasAverageDailyRecords": true,
               "hasAverageGlucose": true,
-              "hasGlucoseManagementIndicator": false,
+              "hasGlucoseManagementIndicator": true,
               "hasTimeCGMUseMinutes": true,
               "hasTimeCGMUsePercent": true,
               "hasTimeCGMUseRecords": true,

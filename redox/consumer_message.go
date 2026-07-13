@@ -54,7 +54,7 @@ func NewRedoxMessageConsumer(p MessageCDCConsumerParams) events.ConsumerFactory 
 		if err != nil {
 			return nil, err
 		}
-		return cdc.NewRetryingConsumer(delegate), nil
+		return cdc.NewRetryingConsumerWithOpts(delegate, retryOptions), nil
 	}
 }
 

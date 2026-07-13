@@ -1,10 +1,13 @@
 package redox
 
 import (
+	"time"
+
+	"github.com/avast/retry-go"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/report"
 	"go.uber.org/fx"
-	"time"
 )
 
 var Module = fx.Provide(
@@ -24,8 +27,14 @@ var Module = fx.Provide(
 )
 
 const (
-	defaultTimeout = 60 * time.Second
+	defaultTimeout = 180 * time.Second
 )
+
+var retryOptions = cdc.RetryOptions{
+	Attempts:  3,
+	Delay:     15 * time.Second,
+	DelayType: retry.FixedDelay,
+}
 
 type ModuleConfig struct {
 	Enabled bool `envconfig:"TIDEPOOL_REDOX_ENABLED" default:"false"`

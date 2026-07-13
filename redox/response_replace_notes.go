@@ -42,6 +42,19 @@ func (n *ReplaceNotes) SetDestination(destinationId string) {
 	(*n.Meta.Destinations)[0].ID = &destinationId
 }
 
+func (n *ReplaceNotes) SetComponents(cs []NoteComponent) {
+	modelNoteComponents := types.NewSlicePtr(n.Note.Components, len(cs))
+	for i, c := range cs {
+		component := types.NewItemForSlicePtr(n.Note.Components)
+		component.Comments = &c.Comments
+		component.ID = &c.ID
+		component.Name = &c.Name
+		component.Value = &c.Value
+		(*modelNoteComponents)[i] = component
+	}
+	n.Note.Components = modelNoteComponents
+}
+
 func (n *ReplaceNotes) SetPatientFromOrder(order models.NewOrder) {
 	n.Patient.Identifiers = order.Patient.Identifiers
 	n.Patient.Demographics = order.Patient.Demographics
