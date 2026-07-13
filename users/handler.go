@@ -3,13 +3,15 @@ package users
 import (
 	"context"
 	"fmt"
+
 	"github.com/oapi-codegen/runtime/types"
 	clinics "github.com/tidepool-org/clinic/client"
 	ev "github.com/tidepool-org/go-common/events"
 
-	"go.uber.org/zap"
 	"net/http"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 const (
@@ -38,9 +40,11 @@ func (u *userEventsHandler) HandleUpdateUserEvent(payload ev.UpdateUserEvent) er
 	if payload.Original.Username != payload.Updated.Username {
 		u.logger.Infow("updating user email", "userId", userId)
 		email := types.Email(payload.Updated.Username)
-		update := clinics.UpdateClinicUserDetailsJSONRequestBody{
-			Email: &email,
+		update := clinics.UpdateClinicUserDetailsJSONRequestBody{}
+		if email != "" {
+			update.Email = &email
 		}
+
 		resp, err := u.clinics.UpdateClinicUserDetailsWithResponse(ctx, clinics.UserId(userId), update)
 		if err != nil {
 			u.logger.Errorw("could not update clinician user details", "userId", userId, zap.Error(err))
