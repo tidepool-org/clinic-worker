@@ -3,7 +3,12 @@ package clinicians
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/IBM/sarama"
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/marketo"
@@ -15,9 +20,6 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 const (
@@ -126,6 +128,14 @@ func (p *ClinicianCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 
 	p.logger.Infow("processing event", "event", event)
 
+	// First so a failure later in the handler retries an idempotent operation: the clinic
+	// service applies the profile with a partial update keyed by userId.
+	if event.ShouldBackfillSecurityProfile() {
+		if err := p.backfillSecurityProfile(event.FullDocument.UserId); err != nil {
+			return err
+		}
+	}
+
 	if event.FullDocument.UserId != "" {
 		if err := p.refreshMarketoUserDetails(event.FullDocument.UserId); err != nil {
 			return err
@@ -136,6 +146,59 @@ func (p *ClinicianCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		return err
 	}
 
+	return nil
+}
+
+// backfillSecurityProfile seeds the clinician's security profile from the user's current
+// security posture as reported by shoreline (MFA state and IdP links computed live from
+// keycloak, last login from the user's last_login_time attribute). The clinician CDC stream
+// marks the join moment; without this, the profile would stay empty until the user's next
+// login, MFA, or IdP transition flows through the keycloak user-activity pipeline.
+func (p *ClinicianCDCConsumer) backfillSecurityProfile(userId string) error {
+	user, err := p.shoreline.GetUser(userId, p.shoreline.TokenProvide())
+	if err != nil {
+		var statusErr *status.StatusError
+		if errors.As(err, &statusErr) && statusErr.Code == http.StatusNotFound {
+			// The user was deleted before this event was processed.
+			p.logger.Infow("skipping security profile backfill for deleted user", "userId", userId)
+			return nil
+		}
+		return fmt.Errorf("unable to get user %v: %w", userId, err)
+	}
+	if user == nil || user.SecurityProfile == nil {
+		// Unmigrated user, or shoreline doesn't report security profiles yet.
+		p.logger.Infow("no security profile reported for user", "userId", userId)
+		return nil
+	}
+
+	profile := user.SecurityProfile
+	identityProviders := make([]clinics.ClinicianIdentityProviderV1, 0, len(profile.IdentityProviders))
+	for _, idp := range profile.IdentityProviders {
+		identityProviders = append(identityProviders, clinics.ClinicianIdentityProviderV1{
+			Alias: idp.Alias,
+			Name:  idp.Name,
+		})
+	}
+	update := clinics.UpdateClinicianSecurityProfileJSONRequestBody{
+		MfaEnabled:        &profile.MfaEnabled,
+		IdentityProviders: &identityProviders,
+	}
+	if profile.LastLoginTime != nil {
+		lastLogin := clinics.DatetimeV1(profile.LastLoginTime.Format(time.RFC3339))
+		update.LastLoginTime = &lastLogin
+	}
+
+	p.logger.Infow("backfilling clinician security profile", "userId", userId)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	response, err := p.clinics.UpdateClinicianSecurityProfileWithResponse(ctx, clinics.UserId(userId), update)
+	if err != nil {
+		return err
+	}
+	if !(response.StatusCode() == http.StatusNoContent || response.StatusCode() == http.StatusNotFound) {
+		return fmt.Errorf("unexpected status code when updating clinician security profile %v", response.StatusCode())
+	}
 	return nil
 }
 
