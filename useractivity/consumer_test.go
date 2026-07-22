@@ -24,7 +24,7 @@ const (
 
 func okResponse() *clinics.UpdateClinicianSecurityProfileResponse {
 	return &clinics.UpdateClinicianSecurityProfileResponse{
-		HTTPResponse: &http.Response{StatusCode: http.StatusOK},
+		HTTPResponse: &http.Response{StatusCode: http.StatusNoContent},
 	}
 }
 
