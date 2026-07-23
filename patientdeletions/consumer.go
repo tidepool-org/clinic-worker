@@ -14,6 +14,7 @@ import (
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/events"
+	"github.com/tidepool-org/platform/auth"
 	"github.com/tidepool-org/platform/data"
 	dataclient "github.com/tidepool-org/platform/data/client"
 	platformlog "github.com/tidepool-org/platform/log"
@@ -34,8 +35,19 @@ var Module = fx.Provide(fx.Annotated{
 type PatientDeletionsCDCConsumer struct {
 	logger *zap.SugaredLogger
 
-	data      dataclient.Client
-	shoreline shoreline.Client
+	data                 dataclient.Client
+	shoreline            shoreline.Client
+	sessionTokenProvider *serverSessionTokenProvider
+}
+
+// serverSessionTokenProvider is a wrapper around [shoreline.Client] that
+// implements [auth.ServerSessionTokenProvider]
+type serverSessionTokenProvider struct {
+	shoreline.Client
+}
+
+func (s *serverSessionTokenProvider) ServerSessionToken() (string, error) {
+	return s.Client.TokenProvide(), nil
 }
 
 type Params struct {
@@ -69,9 +81,10 @@ func CreateConsumer(p Params) events.ConsumerFactory {
 
 func NewPatientDeletionsCDCConsumer(p Params) (events.MessageConsumer, error) {
 	return &PatientDeletionsCDCConsumer{
-		logger:    p.Logger,
-		data:      p.Data,
-		shoreline: p.Shoreline,
+		logger:               p.Logger,
+		data:                 p.Data,
+		shoreline:            p.Shoreline,
+		sessionTokenProvider: &serverSessionTokenProvider{p.Shoreline},
 	}, nil
 }
 
@@ -113,7 +126,7 @@ func (p *PatientDeletionsCDCConsumer) handleCDCEvent(event PatientDeletionsCDCEv
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(platformlog.NewContextWithLogger(context.Background(), null.NewLogger()), defaultTimeout)
+	ctx, cancel := context.WithTimeout(auth.NewContextWithServerSessionTokenProvider(platformlog.NewContextWithLogger(context.Background(), null.NewLogger()), p.sessionTokenProvider), defaultTimeout)
 	defer cancel()
 
 	userID := event.FullDocument.Patient.UserId
