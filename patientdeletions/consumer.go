@@ -1,0 +1,170 @@
+package patientdeletions
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"time"
+
+	"github.com/IBM/sarama"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
+	"github.com/tidepool-org/clinic-worker/cdc"
+	"github.com/tidepool-org/go-common/clients/shoreline"
+	"github.com/tidepool-org/go-common/events"
+	"github.com/tidepool-org/platform/auth"
+	"github.com/tidepool-org/platform/data"
+	dataclient "github.com/tidepool-org/platform/data/client"
+	platformlog "github.com/tidepool-org/platform/log"
+	"github.com/tidepool-org/platform/log/null"
+	"github.com/tidepool-org/platform/page"
+)
+
+const (
+	patientDeletionsTopic = "clinic.patient_deletions"
+	defaultTimeout        = 30 * time.Second
+)
+
+var Module = fx.Provide(fx.Annotated{
+	Group:  "consumers",
+	Target: CreateConsumerGroup,
+})
+
+type PatientDeletionsCDCConsumer struct {
+	logger *zap.SugaredLogger
+
+	data                 dataclient.Client
+	shoreline            shoreline.Client
+	sessionTokenProvider *serverSessionTokenProvider
+}
+
+// serverSessionTokenProvider is a wrapper around [shoreline.Client] that
+// implements [auth.ServerSessionTokenProvider]
+type serverSessionTokenProvider struct {
+	shoreline.Client
+}
+
+func (s *serverSessionTokenProvider) ServerSessionToken() (string, error) {
+	return s.Client.TokenProvide(), nil
+}
+
+type Params struct {
+	fx.In
+
+	Logger    *zap.SugaredLogger
+	Data      dataclient.Client
+	Shoreline shoreline.Client
+}
+
+func CreateConsumerGroup(p Params) (events.EventConsumer, error) {
+	config, err := cdc.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	config.KafkaTopic = patientDeletionsTopic
+
+	return events.NewFaultTolerantConsumerGroup(config, CreateConsumer(p))
+}
+
+func CreateConsumer(p Params) events.ConsumerFactory {
+	return func() (events.MessageConsumer, error) {
+		delegate, err := NewPatientDeletionsCDCConsumer(p)
+		if err != nil {
+			return nil, err
+		}
+		return cdc.NewRetryingConsumer(delegate), nil
+	}
+}
+
+func NewPatientDeletionsCDCConsumer(p Params) (events.MessageConsumer, error) {
+	return &PatientDeletionsCDCConsumer{
+		logger:               p.Logger,
+		data:                 p.Data,
+		shoreline:            p.Shoreline,
+		sessionTokenProvider: &serverSessionTokenProvider{p.Shoreline},
+	}, nil
+}
+
+func (p *PatientDeletionsCDCConsumer) Initialize(config *events.CloudEventsConfig) error {
+	return nil
+}
+
+func (p *PatientDeletionsCDCConsumer) HandleKafkaMessage(cm *sarama.ConsumerMessage) error {
+	if cm == nil {
+		return nil
+	}
+
+	return p.handleMessage(cm)
+}
+
+func (p *PatientDeletionsCDCConsumer) handleMessage(cm *sarama.ConsumerMessage) error {
+	p.logger.Debugw("handling kafka message", "offset", cm.Offset)
+	event := PatientDeletionsCDCEvent{
+		Offset: cm.Offset,
+	}
+	if err := unmarshalEvent(cm.Value, &event); err != nil {
+		p.logger.Warnw("unable to unmarshal message", "offset", cm.Offset, zap.Error(err))
+		return err
+	}
+
+	if err := p.handleCDCEvent(event); err != nil {
+		p.logger.Errorw("unable to process cdc event", "offset", cm.Offset, zap.Error(err))
+		return err
+	}
+	return nil
+}
+
+func (p *PatientDeletionsCDCConsumer) handleCDCEvent(event PatientDeletionsCDCEvent) error {
+	// Every patient deletion is recorded as an insertion into the patient_deletions collection.
+	if event.OperationType != cdc.OperationTypeInsert ||
+		!event.FullDocument.IsCustodial() ||
+		event.FullDocument.Patient.UserId == "" {
+		p.logger.Debugw("skipping handling of patient deletion event", "offset", event.Offset)
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(auth.NewContextWithServerSessionTokenProvider(platformlog.NewContextWithLogger(context.Background(), null.NewLogger()), p.sessionTokenProvider), defaultTimeout)
+	defer cancel()
+
+	userID := event.FullDocument.Patient.UserId
+	pagination := &page.Pagination{
+		Size: 1,
+	}
+
+	dataSets, err := p.data.ListUserDataSets(ctx, userID, data.NewDataSetFilter(), pagination)
+	if err != nil {
+		return fmt.Errorf(`unable to check custodial patient's data sets: %w`, err)
+	}
+	hasData := len(dataSets) > 0
+	// Only custodial users with NO data can have their keycloak user account actually deleted.
+	if !hasData {
+		p.logger.Infow("processing custodial patient deletion without data", "event", event)
+		if err := p.shoreline.DeleteUser(userID, p.shoreline.TokenProvide()); err != nil {
+			return fmt.Errorf(`unable to delete custodial user without data: %w`, err)
+		}
+	} else {
+		p.logger.Infow("processing custodial patient deletion with data", "event", event)
+		// Otherwise if patient has data, remove the email from the user but do not
+		// delete the user. Note the API expects no `username` field and an EMPTY
+		// (not null) array for the `emails` field in order to "remove" an email.
+		emptyEmails := []string{}
+		update := shoreline.UserUpdate{
+			Emails: &emptyEmails,
+		}
+		if err := p.shoreline.UpdateUser(userID, update, p.shoreline.TokenProvide()); err != nil {
+			return fmt.Errorf(`unable to update custodial user with data to empty email: %w`, err)
+		}
+	}
+	return nil
+}
+
+func unmarshalEvent(value []byte, event *PatientDeletionsCDCEvent) error {
+	message, err := strconv.Unquote(string(value))
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(message), event)
+}
