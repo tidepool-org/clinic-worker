@@ -801,29 +801,19 @@ func GetEmailAddressFromOrder(order models.NewOrder) (*string, error) {
 		return nil, err
 	}
 
-	var email *string
+	var emails []string
 	if shouldUseGuarantorEmail(birthDate) {
-		email, err = GetGuarantorEmailAddressFromOrder(order)
-		if err != nil {
-			return nil, err
-		}
+		emails = GetGuarantorEmailAddressesFromOrder(order)
 	} else {
-		email, err = GetPatientEmailAddressFromOrder(order)
-		if err != nil {
-			return nil, err
-		}
+		emails = GetPatientEmailAddressesFromOrder(order)
 	}
 
-	if email == nil {
+	// Use the first valid email address, or proceed without one if there are none.
+	if len(emails) == 0 {
 		return nil, nil
 	}
 
-	addr, err := mail.ParseAddress(*email)
-	if err != nil {
-		return nil, fmt.Errorf("email address is invalid")
-	}
-
-	return &addr.Address, nil
+	return &emails[0], nil
 }
 
 func shouldUseGuarantorEmail(birthDate codegentypes.Date) bool {
@@ -832,30 +822,38 @@ func shouldUseGuarantorEmail(birthDate codegentypes.Date) bool {
 	return !cutoff.Before(now)
 }
 
-func GetPatientEmailAddressFromOrder(order models.NewOrder) (*string, error) {
-	if order.Patient.Demographics == nil || order.Patient.Demographics.EmailAddresses == nil || len(*order.Patient.Demographics.EmailAddresses) == 0 {
-		return nil, nil
+func GetPatientEmailAddressesFromOrder(order models.NewOrder) []string {
+	if order.Patient.Demographics == nil || order.Patient.Demographics.EmailAddresses == nil {
+		return nil
 	}
 
-	email, ok := (*order.Patient.Demographics.EmailAddresses)[0].(string)
-	if !ok {
-		return nil, fmt.Errorf("patient email address is not a string")
-	}
-
-	return &email, nil
+	return parseEmailAddresses(*order.Patient.Demographics.EmailAddresses)
 }
 
-func GetGuarantorEmailAddressFromOrder(order models.NewOrder) (*string, error) {
-	if order.Visit == nil || order.Visit.Guarantor == nil || order.Visit.Guarantor.EmailAddresses == nil || len(*order.Visit.Guarantor.EmailAddresses) == 0 {
-		return nil, nil
+func GetGuarantorEmailAddressesFromOrder(order models.NewOrder) []string {
+	if order.Visit == nil || order.Visit.Guarantor == nil || order.Visit.Guarantor.EmailAddresses == nil {
+		return nil
 	}
 
-	email, ok := (*order.Visit.Guarantor.EmailAddresses)[0].(string)
-	if !ok {
-		return nil, fmt.Errorf("guarantor email address is not a string")
-	}
+	return parseEmailAddresses(*order.Visit.Guarantor.EmailAddresses)
+}
 
-	return &email, nil
+// parseEmailAddresses returns the valid email addresses from the given list,
+// skipping any entries that are not strings or that fail to parse.
+func parseEmailAddresses(addresses []interface{}) []string {
+	valid := make([]string, 0, len(addresses))
+	for _, candidate := range addresses {
+		email, ok := candidate.(string)
+		if !ok {
+			continue
+		}
+		addr, err := mail.ParseAddress(email)
+		if err != nil {
+			continue
+		}
+		valid = append(valid, addr.Address)
+	}
+	return valid
 }
 
 func GetFullNameFromOrder(order models.NewOrder) (string, error) {

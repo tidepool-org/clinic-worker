@@ -660,6 +660,30 @@ var _ = Describe("NewOrderProcessor", func() {
 			Expect(email).ToNot(BeNil())
 			Expect(email).To(PointTo(Equal("kent@test.com")))
 		})
+
+		It("skips invalid entries and returns the first valid email address", func() {
+			order.Patient.Demographics.EmailAddresses = &[]interface{}{"not-an-email", 42, "tim@test.com", "other@test.com"}
+
+			email, err := redox.GetEmailAddressFromOrder(order)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(email).To(PointTo(Equal("tim@test.com")))
+		})
+
+		It("proceeds without an email address when none are valid", func() {
+			order.Patient.Demographics.EmailAddresses = &[]interface{}{"not-an-email", 42}
+
+			email, err := redox.GetEmailAddressFromOrder(order)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(email).To(BeNil())
+		})
+
+		It("proceeds without an email address when the list is empty", func() {
+			order.Patient.Demographics.EmailAddresses = &[]interface{}{}
+
+			email, err := redox.GetEmailAddressFromOrder(order)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(email).To(BeNil())
+		})
 	})
 
 	Describe("GetFullNameFromOrder", func() {
