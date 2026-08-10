@@ -11,6 +11,7 @@ import (
 	"github.com/tidepool-org/clinic-worker/datasources"
 	"github.com/tidepool-org/clinic-worker/marketo"
 	"github.com/tidepool-org/clinic-worker/migration"
+	"github.com/tidepool-org/clinic-worker/patientdeletions"
 	"github.com/tidepool-org/clinic-worker/patients"
 	"github.com/tidepool-org/clinic-worker/patientsummary"
 	"github.com/tidepool-org/clinic-worker/users"
@@ -32,6 +33,7 @@ var dependencies = fx.Provide(
 	authProvider,
 	clinicProvider,
 	mailerProvider,
+	platformDataProvider,
 )
 
 var Modules = []fx.Option{
@@ -46,6 +48,7 @@ var Modules = []fx.Option{
 	redox.Module,
 	users.Module,
 	marketo.Module,
+	patientdeletions.Module,
 }
 
 func New() *fx.App {

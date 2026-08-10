@@ -3,11 +3,14 @@ package worker
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
+	"go.uber.org/fx"
+
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/disc"
@@ -15,7 +18,9 @@ import (
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"github.com/tidepool-org/go-common/events"
 	confirmations "github.com/tidepool-org/hydrophone/client"
-	"go.uber.org/fx"
+	platformclient "github.com/tidepool-org/platform/client"
+	dataclient "github.com/tidepool-org/platform/data/client"
+	"github.com/tidepool-org/platform/platform"
 )
 
 type DependenciesConfig struct {
@@ -138,4 +143,18 @@ func mailerProvider() (clients.MailerClient, error) {
 	config.SaramaConfig.Producer.Return.Successes = true
 
 	return clients.NewMailerClient(config)
+}
+
+func platformDataProvider(config DependenciesConfig) (dataclient.Client, error) {
+	cfg := &platform.Config{
+		Config: &platformclient.Config{
+			Address:   config.DataHost,
+			UserAgent: "data_provider",
+		},
+	}
+	client, err := dataclient.New(cfg, platform.AuthorizeAsService)
+	if err != nil {
+		return nil, fmt.Errorf(`unable to create platform-data client: %w`, err)
+	}
+	return client, nil
 }
