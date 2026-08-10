@@ -139,6 +139,22 @@ var _ = Describe("CDCConsumer", func() {
 			Expect(*captured.IdentityProviders).To(BeEmpty())
 		})
 
+		It("clears identity providers when the column is the JSON literal null", func() {
+			var captured clinics.ClinicianSecurityProfileUpdateV1
+			clinicsService.EXPECT().
+				UpdateClinicianSecurityProfileWithResponse(gomock.Any(), gomock.Eq(clinics.UserId(userID)), gomock.Any()).
+				DoAndReturn(func(_ any, _ clinics.UserId, body clinics.ClinicianSecurityProfileUpdateV1, _ ...any) (*clinics.UpdateClinicianSecurityProfileResponse, error) {
+					captured = body
+					return okResponse(), nil
+				})
+
+			err := consumer.HandleKafkaMessage(message(`{"op":"c","after":{"user_id":"1234567890","event_type":"IDP_LINKS_CHANGED","identity_providers":"null","event_time":1700000000000}}`))
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(captured.IdentityProviders).ToNot(BeNil())
+			Expect(*captured.IdentityProviders).To(BeEmpty())
+		})
+
 		It("treats a 404 (non-clinician user) as success", func() {
 			clinicsService.EXPECT().
 				UpdateClinicianSecurityProfileWithResponse(gomock.Any(), gomock.Eq(clinics.UserId(userID)), gomock.Any()).
@@ -186,6 +202,11 @@ var _ = Describe("CDCConsumer", func() {
 
 		It("ignores delete events", func() {
 			err := consumer.HandleKafkaMessage(message(`{"op":"d","before":{"user_id":"1234567890","event_type":"LOGIN","event_time":1700000000000},"after":null}`))
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("ignores update events", func() {
+			err := consumer.HandleKafkaMessage(message(`{"op":"u","after":{"user_id":"1234567890","event_type":"LOGIN","event_time":1700000000000}}`))
 			Expect(err).ToNot(HaveOccurred())
 		})
 

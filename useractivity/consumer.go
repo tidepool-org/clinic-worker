@@ -17,11 +17,12 @@ import (
 )
 
 const (
-	// userActivityTopic is the suffix of the Debezium topic carrying changes from
-	// the keycloak Postgres outbox table (connector topic.prefix "keycloak", schema
-	// "public", table tidepool_user_activity_event). The deployment's
-	// KAFKA_TOPIC_PREFIX is prepended by events.GetKafkaTopic, matching how the
-	// mongo CDC consumers (e.g. datasources) resolve their topics.
+	// userActivityTopic is the Debezium topic name for changes from the keycloak
+	// Postgres outbox table: the connector's topic.prefix "keycloak", schema
+	// "public", and table tidepool_user_activity_event joined with dots. The
+	// deployment's KAFKA_TOPIC_PREFIX is prepended by events.GetKafkaTopic to form
+	// the consumed Kafka topic, matching how the mongo CDC consumers (e.g.
+	// datasources) resolve their topics.
 	userActivityTopic = "keycloak.public.tidepool_user_activity_event"
 	defaultTimeout    = 30 * time.Second
 )

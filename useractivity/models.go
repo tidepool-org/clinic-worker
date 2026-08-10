@@ -17,12 +17,16 @@ const (
 	EventTypeIdpLinksChanged = "IDP_LINKS_CHANGED"
 )
 
-// Debezium operation codes (op field of the change envelope).
+// Debezium operation codes (op field of the change envelope). Only inserts and
+// snapshot reads are projected — snapshot reads so a re-created connector can
+// replay retained rows. The outbox is insert-only, so an update ("u") could only
+// come from an out-of-band row edit, and replaying its stale event_time could
+// regress the profile; deletes ("d") are cleanup/pruning. Both are ignored.
 const (
-	opCreate = "c" // insert
-	opRead   = "r" // snapshot read of an existing row
-	opUpdate = "u" // update (not expected: the outbox is insert-only)
-	opDelete = "d" // delete (cleanup/pruning — ignored)
+	opCreate = "c"
+	opRead   = "r"
+	opUpdate = "u"
+	opDelete = "d"
 )
 
 // Envelope is the Debezium change event for a row of the keycloak Postgres outbox
@@ -51,17 +55,15 @@ type Row struct {
 }
 
 // ShouldApplyUpdates reports whether the change event carries a user-activity row
-// we project into the clinic. Deletes are cleanup only and are ignored; rows
-// without a user id or with an unrecognized event type are skipped.
+// we project into the clinic. Only inserts and snapshot reads qualify (see the op
+// code comments); rows without a user id or with an unrecognized event type are
+// skipped.
 func (e Envelope) ShouldApplyUpdates() bool {
-	if e.Op == opDelete || e.After == nil {
-		return false
-	}
-	if e.Op != opCreate && e.Op != opRead && e.Op != opUpdate {
+	if e.Op != opCreate && e.Op != opRead {
 		return false
 	}
 	row := e.After
-	if row.UserID == "" {
+	if row == nil || row.UserID == "" {
 		return false
 	}
 	switch row.EventType {
@@ -88,8 +90,8 @@ func (e Envelope) CreateUpdateBody() (*clinics.ClinicianSecurityProfileUpdateV1,
 		body.MfaEnabled = &enabled
 		body.MfaEnabledTime = &eventTime
 	case EventTypeMfaDisabled:
-		disabled := false
-		body.MfaEnabled = &disabled
+		enabled := false
+		body.MfaEnabled = &enabled
 		// The clinic service clears mfaEnabledTime whenever MFA is disabled.
 	case EventTypeIdpLinksChanged:
 		providers, err := parseIdentityProviders(row.IdentityProviders)
@@ -106,7 +108,8 @@ func (e Envelope) CreateUpdateBody() (*clinics.ClinicianSecurityProfileUpdateV1,
 }
 
 // parseIdentityProviders decodes the IDENTITY_PROVIDERS JSON-array string into the
-// clinic client type. A null/empty column yields an empty (non-nil) slice.
+// clinic client type. A null/empty column — or a column holding the JSON literal
+// "null" — yields an empty (non-nil) slice.
 func parseIdentityProviders(raw *string) ([]clinics.ClinicianIdentityProviderV1, error) {
 	providers := []clinics.ClinicianIdentityProviderV1{}
 	if raw == nil || *raw == "" {
@@ -114,6 +117,11 @@ func parseIdentityProviders(raw *string) ([]clinics.ClinicianIdentityProviderV1,
 	}
 	if err := json.Unmarshal([]byte(*raw), &providers); err != nil {
 		return nil, fmt.Errorf("unable to parse identity providers %q: %w", *raw, err)
+	}
+	if providers == nil {
+		// Unmarshaling the JSON literal "null" resets the slice to nil; normalize so
+		// the update clears the linked IdPs instead of sending null.
+		providers = []clinics.ClinicianIdentityProviderV1{}
 	}
 	return providers, nil
 }
