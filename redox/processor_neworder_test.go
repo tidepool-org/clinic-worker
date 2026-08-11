@@ -142,7 +142,7 @@ var _ = Describe("NewOrderProcessor", func() {
 					adultName := "ADULT"
 
 					matchResponse.JSON200.Clinic.PatientTags = &[]clinics.PatientTagV1{
-						{Id: &t1dId, Name: t1dName},
+						{Id: &t1dId, Name: t1dName, NumPatients: 1},
 					}
 
 					clinicClient.EXPECT().
@@ -158,8 +158,8 @@ var _ = Describe("NewOrderProcessor", func() {
 
 					updatedClinic := matchResponse.JSON200.Clinic
 					updatedClinic.PatientTags = &[]clinics.PatientTagV1{
-						{Id: &t1dId, Name: t1dName},
-						{Id: &adultId, Name: adultName},
+						{Id: &t1dId, Name: t1dName, NumPatients: 1},
+						{Id: &adultId, Name: adultName, NumPatients: 1},
 					}
 
 					clinicClient.EXPECT().
@@ -195,7 +195,7 @@ var _ = Describe("NewOrderProcessor", func() {
 					adultName := "ADULT"
 
 					matchResponse.JSON200.Clinic.PatientTags = &[]clinics.PatientTagV1{
-						{Id: &t1dId, Name: t1dName},
+						{Id: &t1dId, Name: t1dName, NumPatients: 1},
 					}
 
 					clinicClient.EXPECT().
@@ -211,7 +211,7 @@ var _ = Describe("NewOrderProcessor", func() {
 
 					updatedClinic := matchResponse.JSON200.Clinic
 					updatedClinic.PatientTags = &[]clinics.PatientTagV1{
-						{Id: &t1dId, Name: t1dName},
+						{Id: &t1dId, Name: t1dName, NumPatients: 1},
 					}
 
 					clinicClient.EXPECT().
