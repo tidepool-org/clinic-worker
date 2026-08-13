@@ -969,19 +969,20 @@ func GetReportDetail(reports []string, patient clinics.PatientV1, clinic clinics
 	if patient.GlycemicRanges != nil {
 		switch patient.GlycemicRanges.Type {
 		case clinics.Custom:
-			detail.GlycemicRangeType = patient.GlycemicRanges.Type
+			detail.GlycemicRangesType = patient.GlycemicRanges.Type
+			quotedRangesName := &bytes.Buffer{}
+			w := csv.NewWriter(quotedRangesName)
+			w.Write([]string{patient.GlycemicRanges.Custom.Name})
+			w.Flush()
+			quotedName := strings.TrimSpace(quotedRangesName.String())
 			var thresholds []string
 			for _, threshold := range patient.GlycemicRanges.Custom.Thresholds {
-				quotedName := &bytes.Buffer{}
-				w := csv.NewWriter(quotedName)
-				w.Write([]string{threshold.Name})
-				w.Flush()
-				thresholds = append(thresholds, fmt.Sprintf("name,%s,upperBound.value,%f,upperBound.units,%s,inclusive,%t", strings.TrimSpace(quotedName.String()), threshold.UpperBound.Value, threshold.UpperBound.Units, threshold.Inclusive))
+				thresholds = append(thresholds, fmt.Sprintf("name,%s,upperBound.value,%f,upperBound.units,%s,inclusive,%t", quotedName, threshold.UpperBound.Value, threshold.UpperBound.Units, threshold.Inclusive))
 			}
-			detail.GlycemicRangeThresholds = strings.Join(thresholds, ",")
+			detail.GlycemicRangesThresholds = strings.Join(thresholds, ",")
 		case clinics.Preset:
-			detail.GlycemicRangeType = patient.GlycemicRanges.Type
-			detail.GlycemicRangePreset = string(patient.GlycemicRanges.Preset)
+			detail.GlycemicRangesType = patient.GlycemicRanges.Type
+			detail.GlycemicRangesPreset = string(patient.GlycemicRanges.Preset)
 		}
 	}
 	if reportingPeriod != nil {

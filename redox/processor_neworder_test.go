@@ -688,12 +688,12 @@ var _ = Describe("NewOrderProcessor", func() {
 						Type:   clinics.Preset,
 					}
 					expected := report.ReportDetail{
-						Reports:             []string{"all"},
-						BgUnits:             "mmol/L",
-						StartDate:           "2023-04-11T00:57:11Z",
-						EndDate:             "2023-04-25T00:57:11Z",
-						GlycemicRangeType:   "preset",
-						GlycemicRangePreset: "adaStandard",
+						Reports:              []string{"all"},
+						BgUnits:              "mmol/L",
+						StartDate:            "2023-04-11T00:57:11Z",
+						EndDate:              "2023-04-25T00:57:11Z",
+						GlycemicRangesType:   "preset",
+						GlycemicRangesPreset: "adaStandard",
 					}
 					detail := redox.GetReportDetail([]string{"all"}, patient, clinic, reportingPeriod)
 					Expect(detail).To(Equal(expected))
@@ -702,14 +702,22 @@ var _ = Describe("NewOrderProcessor", func() {
 				It("type custom", func() {
 					patient.GlycemicRanges = &clinics.GlycemicRangesV1{
 						Custom: clinics.GlycemicRangesCustomV1{
-							Name: "My Custom",
+							Name: "My Custom Ranges",
 							Thresholds: []clinics.GlycemicRangesThresholdV1{
 								{
 									Inclusive: false,
-									Name:      "Some Name",
+									Name:      "Threshold One",
 									UpperBound: clinics.GlycemicRangesThresholdUpperBoundV1{
 										Units: "mmol/L",
 										Value: 6.38,
+									},
+								},
+								{
+									Inclusive: true,
+									Name:      "Threshold Two",
+									UpperBound: clinics.GlycemicRangesThresholdUpperBoundV1{
+										Units: "mmol/L",
+										Value: 7.700000,
 									},
 								},
 							},
@@ -717,12 +725,12 @@ var _ = Describe("NewOrderProcessor", func() {
 						Type: clinics.Custom,
 					}
 					expected := report.ReportDetail{
-						Reports:                 []string{"all"},
-						BgUnits:                 "mmol/L",
-						StartDate:               "2023-04-11T00:57:11Z",
-						EndDate:                 "2023-04-25T00:57:11Z",
-						GlycemicRangeType:       "custom",
-						GlycemicRangeThresholds: "name,Some Name,upperBound.value,6.380000,upperBound.units,mmol/L,inclusive,false",
+						Reports:                  []string{"all"},
+						BgUnits:                  "mmol/L",
+						StartDate:                "2023-04-11T00:57:11Z",
+						EndDate:                  "2023-04-25T00:57:11Z",
+						GlycemicRangesType:       "custom",
+						GlycemicRangesThresholds: "name,My Custom Ranges,upperBound.value,6.380000,upperBound.units,mmol/L,inclusive,false,name,My Custom Ranges,upperBound.value,7.700000,upperBound.units,mmol/L,inclusive,true",
 					}
 					detail := redox.GetReportDetail([]string{"all"}, patient, clinic, reportingPeriod)
 					Expect(detail).To(Equal(expected))
