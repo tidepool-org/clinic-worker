@@ -501,7 +501,7 @@ func (o *newOrderProcessor) SendSummaryAndReport(ctx context.Context, params Sum
 	if err != nil {
 		return err
 	}
-	flowsheet, observations, err := o.createSummaryStatisticsFlowsheet(params)
+	flowsheet, observations, err := o.createSummaryStatisticsFlowsheet(ctx, params)
 	if err != nil {
 		return err
 	}
@@ -536,7 +536,7 @@ func (o *newOrderProcessor) SendSummaryAndReport(ctx context.Context, params Sum
 	return nil
 }
 
-func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndReportParameters) (models.NewFlowsheet, []*Observation, error) {
+func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(ctx context.Context, params SummaryAndReportParameters) (models.NewFlowsheet, []*Observation, error) {
 	patient, err := params.GetMatchingPatient()
 	if err != nil {
 		return models.NewFlowsheet{}, nil, err
@@ -551,11 +551,6 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 		ID: &destinationId,
 	}}
 
-	settings := FlowsheetSettings{
-		PreferredBGUnits: string(params.Match.Clinic.PreferredBgUnits),
-		ICode:            params.Match.Settings.Flowsheets.Icode,
-	}
-
 	flowsheet := NewFlowsheet()
 	flowsheet.Meta.Source = &source
 	flowsheet.Meta.Destinations = &destinations
@@ -567,9 +562,47 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 	SetAccountNumberInFlowsheet(params.Order, &flowsheet)
 	SetOrderIdInFlowsheet(params.Order, &flowsheet)
 	SetProviderInFlowsheet(params.Order, &flowsheet)
-	observations := PopulateSummaryStatistics(patient, settings, &flowsheet)
+
+	observations, err := o.getSummaryStatistics(ctx, *params.Match.Clinic.Id, *patient.Id)
+	if err != nil {
+		return models.NewFlowsheet{}, nil, err
+	}
+	for _, observation := range observations {
+		AppendObservation(&flowsheet, observation)
+	}
 
 	return flowsheet, observations, nil
+}
+
+// getSummaryStatistics fetches the patient's summary statistics from the clinic
+// service as an ordered list of fully-formatted flowsheet observations. The
+// clinic service performs all metric computation, unit conversion and
+// formatting, so the worker maps the entries onto observations verbatim. A
+// missing patient or summary (404) yields no observations.
+func (o *newOrderProcessor) getSummaryStatistics(ctx context.Context, clinicId, patientId string) ([]*Observation, error) {
+	response, err := o.clinics.GetPatientFlowsheetWithResponse(ctx, clinicId, patientId)
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve patient flowsheet: %w", err)
+	}
+	if response.StatusCode() == http.StatusNotFound {
+		return nil, nil
+	}
+	if response.StatusCode() != http.StatusOK || response.JSON200 == nil {
+		return nil, fmt.Errorf("unexpected response retrieving patient flowsheet: %v", response.StatusCode())
+	}
+
+	observations := make([]*Observation, 0, len(*response.JSON200))
+	for _, entry := range *response.JSON200 {
+		observations = append(observations, &Observation{
+			Code:        entry.Code,
+			Value:       entry.Value,
+			ValueType:   string(entry.ValueType),
+			Units:       entry.Units,
+			DateTime:    entry.DateTime,
+			Description: entry.Description,
+		})
+	}
+	return observations, nil
 }
 
 func (o *newOrderProcessor) createReportNote(ctx context.Context, params SummaryAndReportParameters, observations []*Observation) (Notes, error) {

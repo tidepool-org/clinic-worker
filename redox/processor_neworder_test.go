@@ -54,6 +54,22 @@ var _ = Describe("NewOrderProcessor", func() {
 			clinicClient.EXPECT().
 				MatchClinicAndPatientWithResponse(gomock.Any(), gomock.Any(), gomock.Any()).
 				Return(matchResponse, nil)
+
+			// Summary statistics are now fetched, computed and formatted by the
+			// clinic service; stub the endpoint so the flowsheet is populated.
+			percentUnits := "%"
+			flowsheetObservations := []clinics.FlowsheetObservationV1{
+				{Code: "TIME_IN_RANGE_CGM", Value: "56.2871", ValueType: clinics.Numeric, Units: &percentUnits, DateTime: "2023-06-22T23:44:16Z", Description: "CGM Time in Range"},
+				{Code: "GLUCOSE_MANAGEMENT_INDICATOR", Value: "6.7206", ValueType: clinics.Numeric, DateTime: "2023-06-22T23:44:16Z", Description: "CGM Glucose Management Indicator during reporting period"},
+			}
+			clinicClient.EXPECT().
+				GetPatientFlowsheetWithResponse(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(&clinics.GetPatientFlowsheetResponse{
+					Body:         nil,
+					HTTPResponse: &http.Response{StatusCode: http.StatusOK},
+					JSON200:      &flowsheetObservations,
+				}, nil).
+				AnyTimes()
 		})
 
 		Context("with subscription order", func() {
