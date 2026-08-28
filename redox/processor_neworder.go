@@ -1,11 +1,14 @@
 package redox
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/mail"
+	"slices"
 	"strings"
 	"time"
 
@@ -633,31 +636,14 @@ func (o *newOrderProcessor) createReportNote(ctx context.Context, params Summary
 			FullName:    patient.FullName,
 			DateOfBirth: patient.BirthDate.String(),
 		},
-		ReportDetail: report.ReportDetail{
-			Reports: []string{"all"},
-		},
+		ReportDetail: GetReportDetail([]string{"all"}, patient, params.Match.Clinic, reportingPeriod),
 	}
 	if params.Match.Clinic.Id != nil {
 		reportParameters.ClinicId = *params.Match.Clinic.Id
 	}
-	if params.Match.Clinic.Timezone != nil {
-		reportParameters.ReportDetail.TimezoneName = string(*params.Match.Clinic.Timezone)
-	}
 	if patient.Mrn != nil {
 		reportParameters.UserDetail.MRN = *patient.Mrn
 	}
-	if reportingPeriod != nil {
-		if !reportingPeriod.Start.IsZero() {
-			reportParameters.ReportDetail.StartDate = reportingPeriod.Start.Format(time.RFC3339)
-		}
-		if !reportingPeriod.End.IsZero() {
-			reportParameters.ReportDetail.EndDate = reportingPeriod.End.Format(time.RFC3339)
-		}
-	}
-	if params.Match.Clinic.PreferredBgUnits != "" {
-		reportParameters.ReportDetail.BgUnits = string(params.Match.Clinic.PreferredBgUnits)
-	}
-
 	rprt, err := o.reportGenerator.GenerateReport(ctx, reportParameters)
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate report: %w", err)
@@ -971,4 +957,44 @@ func ProcedureCodesMatch(code string, configuration *string) bool {
 		return false
 	}
 	return code == *configuration
+}
+
+func GetReportDetail(reports []string, patient clinics.PatientV1, clinic clinics.ClinicV1, reportingPeriod *report.PeriodBounds) report.ReportDetail {
+	detail := report.ReportDetail{
+		Reports: slices.Clone(reports),
+	}
+	if clinic.Timezone != nil {
+		detail.TimezoneName = string(*clinic.Timezone)
+	}
+	if patient.GlycemicRanges != nil {
+		switch patient.GlycemicRanges.Type {
+		case clinics.Custom:
+			detail.GlycemicRangesType = patient.GlycemicRanges.Type
+			quotedRangesName := &bytes.Buffer{}
+			w := csv.NewWriter(quotedRangesName)
+			w.Write([]string{patient.GlycemicRanges.Custom.Name})
+			w.Flush()
+			quotedName := strings.TrimSpace(quotedRangesName.String())
+			var thresholds []string
+			for _, threshold := range patient.GlycemicRanges.Custom.Thresholds {
+				thresholds = append(thresholds, fmt.Sprintf("name,%s,upperBound.value,%f,upperBound.units,%s,inclusive,%t", quotedName, threshold.UpperBound.Value, threshold.UpperBound.Units, threshold.Inclusive))
+			}
+			detail.GlycemicRangesThresholds = strings.Join(thresholds, ",")
+		case clinics.Preset:
+			detail.GlycemicRangesType = patient.GlycemicRanges.Type
+			detail.GlycemicRangesPreset = string(patient.GlycemicRanges.Preset)
+		}
+	}
+	if reportingPeriod != nil {
+		if !reportingPeriod.Start.IsZero() {
+			detail.StartDate = reportingPeriod.Start.Format(time.RFC3339)
+		}
+		if !reportingPeriod.End.IsZero() {
+			detail.EndDate = reportingPeriod.End.Format(time.RFC3339)
+		}
+	}
+	if clinic.PreferredBgUnits != "" {
+		detail.BgUnits = string(clinic.PreferredBgUnits)
+	}
+	return detail
 }

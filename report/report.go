@@ -103,11 +103,20 @@ type UserDetail struct {
 }
 
 type ReportDetail struct {
-	TimezoneName string   `json:"tzName,omitempty"`
-	BgUnits      string   `json:"bgUnits,omitempty"`
-	Reports      []string `json:"reports,omitempty"`
-	StartDate    string   `json:"startDate,omitempty"`
-	EndDate      string   `json:"endDate,omitempty"`
+	TimezoneName       string                       `json:"tzName,omitempty"`
+	BgUnits            string                       `json:"bgUnits,omitempty"`
+	Reports            []string                     `json:"reports,omitempty"`
+	StartDate          string                       `json:"startDate,omitempty"`
+	EndDate            string                       `json:"endDate,omitempty"`
+	GlycemicRangesType clinics.GlycemicRangesV1Type `json:"glycemicRangeType,omitempty"`
+	// GlycemicRangesPreset is set if the glycemic preset is not a custom range
+	// and GlycemicRangeType is [clinics.GlycemicRangeTypePreset]. Only one of
+	// GlycemicRangeThresholds and GlycemicRangesPreset should be set.
+	GlycemicRangesPreset string `json:"glycemicRangePreset,omitempty"`
+	// GlycemicRangesThresholds is a comma delimited string of key value pairs in
+	// alternating fashion of the fields of a [patients.GlycemicRangeThreshold].
+	// E.g., `name,foo,upperBound.value,7.000000`
+	GlycemicRangesThresholds string `json:"glycemicRangeThresholds,omitempty"`
 }
 
 type Report struct {
