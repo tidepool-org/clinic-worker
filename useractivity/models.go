@@ -110,8 +110,8 @@ func (e Envelope) CreateUpdateBody() (*clinics.ClinicianSecurityProfileUpdateV1,
 // parseIdentityProviders decodes the IDENTITY_PROVIDERS JSON-array string into the
 // clinic client type. A null/empty column — or a column holding the JSON literal
 // "null" — yields an empty (non-nil) slice.
-func parseIdentityProviders(raw *string) ([]clinics.ClinicianIdentityProviderV1, error) {
-	providers := []clinics.ClinicianIdentityProviderV1{}
+func parseIdentityProviders(raw *string) ([]clinics.IdentityproviderV1, error) {
+	providers := []clinics.IdentityproviderV1{}
 	if raw == nil || *raw == "" {
 		return providers, nil
 	}
@@ -121,7 +121,7 @@ func parseIdentityProviders(raw *string) ([]clinics.ClinicianIdentityProviderV1,
 	if providers == nil {
 		// Unmarshaling the JSON literal "null" resets the slice to nil; normalize so
 		// the update clears the linked IdPs instead of sending null.
-		providers = []clinics.ClinicianIdentityProviderV1{}
+		providers = []clinics.IdentityproviderV1{}
 	}
 	return providers, nil
 }

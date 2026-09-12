@@ -120,7 +120,7 @@ var _ = Describe("CDCConsumer", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(captured.IdentityProviders).ToNot(BeNil())
-			Expect(*captured.IdentityProviders).To(Equal([]clinics.ClinicianIdentityProviderV1{{Alias: "google", Name: "Google"}}))
+			Expect(*captured.IdentityProviders).To(Equal([]clinics.IdentityproviderV1{{Alias: "google", Name: "Google"}}))
 		})
 
 		It("clears identity providers when the array is empty", func() {

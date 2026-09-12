@@ -1297,22 +1297,13 @@ type ClinicianClinicRelationshipV1 struct {
 // ClinicianClinicRelationshipsV1 defines model for clinicianClinicRelationships.v1.
 type ClinicianClinicRelationshipsV1 = []ClinicianClinicRelationshipV1
 
-// ClinicianIdentityProviderV1 An external identity provider linked to a clinician account.
-type ClinicianIdentityProviderV1 struct {
-	// Alias The unique alias identifying the identity provider configuration.
-	Alias string `json:"alias"`
-
-	// Name The display name of the identity provider.
-	Name string `json:"name"`
-}
-
 // ClinicianRolesV1 defines model for clinicianRoles.v1.
 type ClinicianRolesV1 = []string
 
 // ClinicianSecurityProfileV1 Security-related metadata for a clinician account, including multi-factor authentication status, linked identity providers, and last login time.
 type ClinicianSecurityProfileV1 struct {
 	// IdentityProviders The external identity providers linked to the clinician account.
-	IdentityProviders *[]ClinicianIdentityProviderV1 `json:"identityProviders,omitempty"`
+	IdentityProviders *[]IdentityproviderV1 `json:"identityProviders,omitempty"`
 
 	// LastLoginTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	LastLoginTime *DatetimeV1 `json:"lastLoginTime,omitempty"`
@@ -1327,7 +1318,7 @@ type ClinicianSecurityProfileV1 struct {
 // ClinicianSecurityProfileUpdateV1 A partial update to a clinician's security profile, applied by an event-based external system. Only the fields present in the request are modified; omitted fields are left unchanged. Typically a single event updates one group of fields, e.g. multi-factor authentication status, last login time, or linked identity providers.
 type ClinicianSecurityProfileUpdateV1 struct {
 	// IdentityProviders The external identity providers linked to the clinician account.
-	IdentityProviders *[]ClinicianIdentityProviderV1 `json:"identityProviders,omitempty"`
+	IdentityProviders *[]IdentityproviderV1 `json:"identityProviders,omitempty"`
 
 	// LastLoginTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	LastLoginTime *DatetimeV1 `json:"lastLoginTime,omitempty"`
@@ -1553,6 +1544,15 @@ type GlycemicRangesThresholdUpperBoundV1 struct {
 // GlycemicRangesThresholdUpperBoundV1Units defines model for GlycemicRangesThresholdUpperBoundV1.Units.
 type GlycemicRangesThresholdUpperBoundV1Units string
 
+// IdentityproviderV1 An external identity provider linked to the user account.
+type IdentityproviderV1 struct {
+	// Alias The unique alias identifying the identity provider configuration.
+	Alias string `json:"alias"`
+
+	// Name The display name of the identity provider.
+	Name string `json:"name"`
+}
+
 // MembershipRestrictionV1 A user joining a clinic must match all of the defined restrictions
 type MembershipRestrictionV1 struct {
 	// EmailDomain The restriction applies only if the user has an email address with a matching domain
@@ -1650,10 +1650,18 @@ type PatientV1 struct {
 	Sites       []SiteV1              `json:"sites,omitzero"`
 
 	// Summary A summary of a patients recent data
-	Summary       *PatientSummaryV1 `json:"summary,omitempty"`
-	Tags          *PatientTagIdsV1  `json:"tags"`
-	TargetDevices *[]string         `json:"targetDevices,omitempty"`
-	UpdatedTime   *time.Time        `json:"updatedTime,omitempty"`
+	Summary *PatientSummaryV1 `json:"summary,omitempty"`
+	Tags    *PatientTagIdsV1  `json:"tags"`
+
+	// TargetDevices When uploading data, the user selects a target device (typically
+	// make and model) of their data source (i.e. meter or pump) from a
+	// list. This selection is used by the Tidepool Uploader to select the
+	// correct drivers for communicating with the data source.
+	//
+	// These values are stored in the user's profile so that they can be
+	// pre-selected on next use, thereby streamlining the process.
+	TargetDevices *TargetdevicesV1 `json:"targetDevices,omitempty"`
+	UpdatedTime   *time.Time       `json:"updatedTime,omitempty"`
 }
 
 // PatientClinicRelationshipV1 defines model for patientClinicRelationship.v1.
@@ -1903,6 +1911,15 @@ type SummaryIdV1 = string
 type SuppressedNotificationsV1 struct {
 	PatientClinicInvitation *bool `json:"patientClinicInvitation,omitempty"`
 }
+
+// TargetdevicesV1 When uploading data, the user selects a target device (typically
+// make and model) of their data source (i.e. meter or pump) from a
+// list. This selection is used by the Tidepool Uploader to select the
+// correct drivers for communicating with the data source.
+//
+// These values are stored in the user's profile so that they can be
+// pre-selected on next use, thereby streamlining the process.
+type TargetdevicesV1 = []string
 
 // TideConfigV1 defines model for tideConfig.v1.
 type TideConfigV1 struct {

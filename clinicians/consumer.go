@@ -172,9 +172,9 @@ func (p *ClinicianCDCConsumer) backfillSecurityProfile(userId string) error {
 	}
 
 	profile := user.SecurityProfile
-	identityProviders := make([]clinics.ClinicianIdentityProviderV1, 0, len(profile.IdentityProviders))
+	identityProviders := make([]clinics.IdentityproviderV1, 0, len(profile.IdentityProviders))
 	for _, idp := range profile.IdentityProviders {
-		identityProviders = append(identityProviders, clinics.ClinicianIdentityProviderV1{
+		identityProviders = append(identityProviders, clinics.IdentityproviderV1{
 			Alias: idp.Alias,
 			Name:  idp.Name,
 		})

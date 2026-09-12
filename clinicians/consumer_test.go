@@ -110,7 +110,7 @@ var _ = Describe("ClinicianCDCConsumer", func() {
 			Expect(captured.MfaEnabled).ToNot(BeNil())
 			Expect(*captured.MfaEnabled).To(BeTrue())
 			Expect(captured.IdentityProviders).ToNot(BeNil())
-			Expect(*captured.IdentityProviders).To(Equal([]clinics.ClinicianIdentityProviderV1{{Alias: "google", Name: "Google"}}))
+			Expect(*captured.IdentityProviders).To(Equal([]clinics.IdentityproviderV1{{Alias: "google", Name: "Google"}}))
 			Expect(captured.LastLoginTime).ToNot(BeNil())
 			Expect(string(*captured.LastLoginTime)).To(Equal("2026-06-11T10:00:00Z"))
 			Expect(captured.MfaEnabledTime).To(BeNil())
