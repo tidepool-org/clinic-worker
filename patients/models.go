@@ -6,7 +6,6 @@ import (
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 
 	"github.com/tidepool-org/clinic-worker/cdc"
-	"github.com/tidepool-org/clinic-worker/patientsummary"
 	api "github.com/tidepool-org/clinic/client"
 	clinics "github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/go-common/clients"
@@ -68,15 +67,25 @@ func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interf
 	}
 }
 
+type Dates struct {
+	FirstData         cdc.Date  `json:"firstData,omitempty"`
+	LastData          cdc.Date  `json:"lastData,omitempty"`
+	LastUpdatedDate   cdc.Date  `json:"lastUpdatedDate,omitempty"`
+	LastUpdatedReason []string  `json:"lastUpdatedReason,omitempty"`
+	LastUploadDate    cdc.Date  `json:"lastUploadDate,omitempty"`
+	OutdatedReason    []string  `json:"outdatedReason,omitempty"`
+	OutdatedSince     *cdc.Date `json:"outdatedSince,omitempty"`
+}
+
 type BGMStats struct {
 	Config  summaries.SummaryConfigV1             `json:"config" bson:"config"`
-	Dates   patientsummary.Dates                  `json:"dates" bson:"dates"`
+	Dates   Dates                                 `json:"dates" bson:"dates"`
 	Periods map[string]*summaries.GlucosePeriodV5 `json:"periods" bson:"periods"`
 }
 
 type CGMStats struct {
 	Config  summaries.SummaryConfigV1             `json:"config" bson:"config"`
-	Dates   patientsummary.Dates                  `json:"dates" bson:"dates"`
+	Dates   Dates                                 `json:"dates" bson:"dates"`
 	Periods map[string]*summaries.GlucosePeriodV5 `json:"periods" bson:"periods"`
 }
 

@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/tidepool-org/clinic-worker/patientsummary"
 	clinics "github.com/tidepool-org/clinic/client"
 	summaries "github.com/tidepool-org/go-common/clients/summary"
 	"github.com/tidepool-org/go-common/errors"
@@ -136,7 +135,7 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 				m := daysRe.FindStringSubmatch(k)
 				if len(m) >= 2 {
 					i, _ := strconv.Atoi(m[1])
-					patientUpdate.CgmStats.Periods[k] = patientsummary.ExportCGMPeriod(cgmPeriods[k], i)
+					patientUpdate.CgmStats.Periods[k] = ExportCGMPeriod(cgmPeriods[k], i)
 				}
 			}
 		}
@@ -200,7 +199,7 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 			for k := range bgmPeriods {
 				m := daysRe.FindStringSubmatch(k)
 				if len(m) >= 2 {
-					patientUpdate.BgmStats.Periods[k] = patientsummary.ExportBGMPeriod(bgmPeriods[k])
+					patientUpdate.BgmStats.Periods[k] = ExportBGMPeriod(bgmPeriods[k])
 				}
 			}
 
