@@ -635,6 +635,110 @@ var _ = Describe("NewOrderProcessor", func() {
 		})
 	})
 
+	Describe("GetReportDetail", func() {
+		var patient clinics.PatientV1
+		var clinic clinics.ClinicV1
+		var reportingPeriod *report.PeriodBounds
+		BeforeEach(func() {
+			response := &clinics.EhrMatchResponseV1{}
+			matchFixture, err := test.LoadFixture("test/fixtures/subscriptionmatchresponse_custodial.json")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(json.Unmarshal(matchFixture, response)).To(Succeed())
+			clinic = response.Clinic
+			Expect(*response.Patients).ToNot(BeEmpty())
+			patient = (*response.Patients)[0]
+			reportingPeriod = report.GetReportingPeriodBounds(patient, 14*24*time.Hour)
+			Expect(reportingPeriod).ToNot(BeNil())
+		})
+
+		Describe("non-empty params", func() {
+			It("adds params according to fixture", func() {
+				expected := report.ReportDetail{
+					Reports:   []string{"all"},
+					BgUnits:   "mmol/L",
+					StartDate: "2023-04-11T00:57:11Z",
+					EndDate:   "2023-04-25T00:57:11Z",
+				}
+				detail := redox.GetReportDetail([]string{"all"}, patient, clinic, reportingPeriod)
+				Expect(detail).To(Equal(expected))
+			})
+
+			It("adds timezone param if not empty", func() {
+				timezone := clinics.ClinicTimezoneV1("America/New_York")
+				clinic.Timezone = &timezone
+				expected := report.ReportDetail{
+					Reports:      []string{"all"},
+					BgUnits:      "mmol/L",
+					StartDate:    "2023-04-11T00:57:11Z",
+					EndDate:      "2023-04-25T00:57:11Z",
+					TimezoneName: "America/New_York",
+				}
+				detail := redox.GetReportDetail([]string{"all"}, patient, clinic, reportingPeriod)
+				Expect(detail).To(Equal(expected))
+			})
+
+			Describe("glycemic ranges", func() {
+				It("type preset", func() {
+					patient.GlycemicRanges = &clinics.GlycemicRangesV1{
+						Custom: clinics.GlycemicRangesCustomV1{
+							Name:       "",
+							Thresholds: []clinics.GlycemicRangesThresholdV1{},
+						},
+						Preset: clinics.ADAStandard,
+						Type:   clinics.Preset,
+					}
+					expected := report.ReportDetail{
+						Reports:              []string{"all"},
+						BgUnits:              "mmol/L",
+						StartDate:            "2023-04-11T00:57:11Z",
+						EndDate:              "2023-04-25T00:57:11Z",
+						GlycemicRangesType:   "preset",
+						GlycemicRangesPreset: "adaStandard",
+					}
+					detail := redox.GetReportDetail([]string{"all"}, patient, clinic, reportingPeriod)
+					Expect(detail).To(Equal(expected))
+				})
+
+				It("type custom", func() {
+					patient.GlycemicRanges = &clinics.GlycemicRangesV1{
+						Custom: clinics.GlycemicRangesCustomV1{
+							Name: "My Custom Ranges",
+							Thresholds: []clinics.GlycemicRangesThresholdV1{
+								{
+									Inclusive: false,
+									Name:      "Threshold One",
+									UpperBound: clinics.GlycemicRangesThresholdUpperBoundV1{
+										Units: "mmol/L",
+										Value: 6.38,
+									},
+								},
+								{
+									Inclusive: true,
+									Name:      "Threshold Two",
+									UpperBound: clinics.GlycemicRangesThresholdUpperBoundV1{
+										Units: "mmol/L",
+										Value: 7.700000,
+									},
+								},
+							},
+						},
+						Type: clinics.Custom,
+					}
+					expected := report.ReportDetail{
+						Reports:                  []string{"all"},
+						BgUnits:                  "mmol/L",
+						StartDate:                "2023-04-11T00:57:11Z",
+						EndDate:                  "2023-04-25T00:57:11Z",
+						GlycemicRangesType:       "custom",
+						GlycemicRangesThresholds: "name,My Custom Ranges,upperBound.value,6.380000,upperBound.units,mmol/L,inclusive,false,name,My Custom Ranges,upperBound.value,7.700000,upperBound.units,mmol/L,inclusive,true",
+					}
+					detail := redox.GetReportDetail([]string{"all"}, patient, clinic, reportingPeriod)
+					Expect(detail).To(Equal(expected))
+				})
+			})
+		})
+	})
+
 	Describe("GetEmailAddressFromOrder", func() {
 		var order models.NewOrder
 

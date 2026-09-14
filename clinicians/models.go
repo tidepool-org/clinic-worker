@@ -15,6 +15,24 @@ func (p PatientCDCEvent) ShouldApplyUpdates() bool {
 		p.FullDocument.ClinicId != nil && p.FullDocument.UserId != ""
 }
 
+// ShouldBackfillSecurityProfile reports whether the event marks a clinician record gaining a
+// user — the moment to backfill the clinician's security profile from the user's current
+// keycloak state. That is an insert carrying a userId (admin or service-account creation), or
+// an update that sets userId (invite acceptance updates the invite record in place).
+func (p PatientCDCEvent) ShouldBackfillSecurityProfile() bool {
+	if p.FullDocument == nil || p.FullDocument.UserId == "" {
+		return false
+	}
+	switch p.OperationType {
+	case cdc.OperationTypeInsert:
+		return true
+	case cdc.OperationTypeUpdate:
+		return p.UpdateDescription.UpdatedFields.UserId != ""
+	default:
+		return false
+	}
+}
+
 type Clinician struct {
 	Id           *cdc.ObjectId `json:"_id" bson:"id"`
 	ClinicId     *cdc.ObjectId `json:"clinicId" bson:"clinicId"`
