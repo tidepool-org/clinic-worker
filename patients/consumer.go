@@ -235,8 +235,8 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 }
 
 /*
-Here we populate summaries for all supported types, this is different from the patientsummary
-functions, as with new patients, we don't know which summaries a user has, and should pull all.
+Here we populate summaries for all supported types, as with new patients we don't know which
+summaries a user has, and should pull all.
 */
 func (p *PatientCDCConsumer) populateSummary(userId string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)

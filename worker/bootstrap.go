@@ -13,7 +13,6 @@ import (
 	"github.com/tidepool-org/clinic-worker/migration"
 	"github.com/tidepool-org/clinic-worker/patientdeletions"
 	"github.com/tidepool-org/clinic-worker/patients"
-	"github.com/tidepool-org/clinic-worker/patientsummary"
 	"github.com/tidepool-org/clinic-worker/users"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
@@ -40,7 +39,6 @@ var Modules = []fx.Option{
 	dependencies,
 	datasources.Module,
 	patients.Module,
-	patientsummary.Module,
 	clinics.Module,
 	clinicians.Module,
 	merge.Module,
