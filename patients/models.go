@@ -120,6 +120,11 @@ func (p PatientCDCEvent) CreateDataSourceBody(source clients.DataSource) clinics
 		State:        api.DataSourceV1State(*source.State),
 	}
 
+	if source.CreatedTime != nil {
+		createdTimeVal := clinics.DatetimeV1(source.CreatedTime.Format(time.RFC3339))
+		dataSource.CreatedTime = &createdTimeVal
+	}
+
 	if source.ModifiedTime != nil {
 		modifiedTimeVal := clinics.DatetimeV1(source.ModifiedTime.Format(time.RFC3339))
 		dataSource.ModifiedTime = &modifiedTimeVal
