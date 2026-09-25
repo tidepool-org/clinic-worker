@@ -69,5 +69,10 @@ func (p CDCEvent) CreateUpdateBody(source clients.DataSource) clinics.DataSource
 		patientUpdate.LatestDataTime = &latest
 	}
 
+	if source.ConnectedTime != nil {
+		connected := clinics.DatetimeV1(source.ConnectedTime.Format(time.RFC3339Nano))
+		patientUpdate.ConnectedTime = &connected
+	}
+
 	return patientUpdate
 }
