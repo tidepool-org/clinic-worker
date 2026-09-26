@@ -56,7 +56,7 @@ func CreateConsumer(p Params) events.ConsumerFactory {
 		if err != nil {
 			return nil, err
 		}
-		return cdc.NewRetryingConsumer(delegate), nil
+		return cdc.NewRetryingConsumer(p.Logger, delegate), nil
 	}
 }
 

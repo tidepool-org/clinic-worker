@@ -31,9 +31,10 @@ const (
 )
 
 var retryOptions = cdc.RetryOptions{
-	Attempts:  3,
-	Delay:     15 * time.Second,
-	DelayType: retry.FixedDelay,
+	Attempts:        3,
+	Delay:           15 * time.Second,
+	DelayType:       retry.FixedDelay,
+	CommitOnFailure: true,
 }
 
 type ModuleConfig struct {
