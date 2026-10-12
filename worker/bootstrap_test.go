@@ -61,8 +61,8 @@ const (
 //		})
 //
 //		It("instantiates workers", func() {
-//			// clinic, clinicians, migration, patients, patientsummary, users, datasources, redox, redox-scheduled
-//			expectedCount := 9
+//			// clinic, clinicians, migration, patients, users, datasources, redox, redox-scheduled
+//			expectedCount := 8
 //			Expect(components.Consumers).To(HaveLen(expectedCount))
 //		})
 //	})
