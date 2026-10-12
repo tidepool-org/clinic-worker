@@ -92,8 +92,8 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 		}
 
 		var lastUploadDate *time.Time
-		if !cgmSummary.Dates.LastUpdatedDate.IsZero() {
-			lastUploadDate = &cgmSummary.Dates.LastUpdatedDate
+		if !cgmSummary.Dates.LastUploadDate.IsZero() {
+			lastUploadDate = &cgmSummary.Dates.LastUploadDate
 		}
 
 		if cgmSummary.Dates.OutdatedReason == nil {
@@ -158,8 +158,8 @@ func CreateSummaryUpdateBody(cgmSummary *summaries.SummaryV5, bgmSummary *summar
 		}
 
 		var lastUploadDate *time.Time
-		if !bgmSummary.Dates.LastUpdatedDate.IsZero() {
-			lastUploadDate = &bgmSummary.Dates.LastUpdatedDate
+		if !bgmSummary.Dates.LastUploadDate.IsZero() {
+			lastUploadDate = &bgmSummary.Dates.LastUploadDate
 		}
 
 		if bgmSummary.Dates.OutdatedReason == nil {
