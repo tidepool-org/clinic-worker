@@ -180,6 +180,11 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		return p.sendUploadReminder(*event.FullDocument.UserId)
 	}
 
+	if event.IsStaleDataFollowUpEvent() {
+		p.logger.Infow("processing stale data follow-up", "offset", event.Offset)
+		return p.sendStaleDataFollowUp(ctx, event.FullDocument)
+	}
+
 	var connectionRequests ConnectionRequests
 	emailUpdated := event.UpdateDescription.UpdatedFields.Email != nil || slices.Contains(event.UpdateDescription.RemovedFields, "email")
 
@@ -303,6 +308,69 @@ func (p *PatientCDCConsumer) sendUploadReminder(userId string) error {
 	template := events.SendEmailTemplateEvent{
 		Recipient: email,
 		Template:  "patient_upload_reminder",
+	}
+
+	return p.mailer.SendEmailTemplate(ctx, template)
+}
+
+var staleDataFollowUpDeviceNames = map[string]string{
+	"dexcom": "Dexcom",
+	"abbott": "FreeStyle Libre",
+	"twiist": "twiist",
+}
+
+func (p *PatientCDCConsumer) sendStaleDataFollowUp(ctx context.Context,
+	patient Patient) error {
+
+	userId := *patient.UserId
+	clinicId := patient.ClinicId.Value
+
+	var source string
+	if patient.ConnectionIssueSource != nil {
+		source = *patient.ConnectionIssueSource
+	}
+	deviceName, ok := staleDataFollowUpDeviceNames[source]
+	if !ok {
+		// The clinic service only records a follow-up for device sources, so this
+		// indicates the source changed before the event was processed.
+		p.logger.Warnw("Abort sending stale data follow-up - unknown device",
+			"userId", userId,
+			"clinicId", clinicId,
+			"connectionIssueSource", source,
+		)
+		return nil
+	}
+
+	email, err := p.getUserEmail(userId)
+	if err != nil {
+		return err
+	}
+	if email == "" {
+		p.logger.Infow("Abort sending stale data follow-up - empty email",
+			"userId", userId,
+			"clinicId", clinicId,
+		)
+		return nil
+	}
+
+	clinicName, err := p.getClinicName(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+
+	p.logger.Infow("Sending stale data follow-up",
+		"userId", userId,
+		"email", email,
+		"clinicId", clinicId,
+		"connectionIssueSource", source,
+	)
+	template := events.SendEmailTemplateEvent{
+		Recipient: email,
+		Template:  "patient_stale_data_follow_up",
+		Variables: map[string]string{
+			"ClinicName": clinicName,
+			"DeviceName": deviceName,
+		},
 	}
 
 	return p.mailer.SendEmailTemplate(ctx, template)
