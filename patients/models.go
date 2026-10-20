@@ -31,6 +31,20 @@ func (p PatientCDCEvent) IsUploadReminderEvent() bool {
 	return lastUploadReminderTime != nil && lastUploadReminderTime.Value > 0
 }
 
+// IsStaleDataFollowUpEvent reports whether a clinician has requested that a stale data
+// follow-up email be sent to the patient.
+func (p PatientCDCEvent) IsStaleDataFollowUpEvent() bool {
+	if p.OperationType != cdc.OperationTypeUpdate {
+		return false
+	}
+	if p.FullDocument.UserId == nil {
+		return false
+	}
+
+	followUpTime := p.UpdateDescription.UpdatedFields.LastStaleDataFollowUpTime
+	return followUpTime != nil && followUpTime.Value > 0
+}
+
 func (p PatientCDCEvent) IsProfileUpdateEvent() bool {
 	if p.OperationType != cdc.OperationTypeInsert && p.OperationType != cdc.OperationTypeUpdate && p.OperationType != cdc.OperationTypeReplace {
 		return false
@@ -99,6 +113,8 @@ type Patient struct {
 	IsMigrated                 bool                       `json:"isMigrated" bson:"isMigrated"`
 	InvitedBy                  *string                    `json:"invitedBy" bson:"invitedBy"`
 	LastUploadReminderTime     *cdc.Date                  `json:"lastUploadReminderTime" bson:"lastUploadReminderTime"`
+	LastStaleDataFollowUpTime  *cdc.Date                  `json:"lastStaleDataFollowUpTime" bson:"lastStaleDataFollowUpTime"`
+	ConnectionIssueSource      *string                    `json:"connectionIssueSource" bson:"connectionIssueSource"`
 	Summary                    *CDCSummary                `json:"summary" bson:"summary"`
 	ProviderConnectionRequests ProviderConnectionRequests `json:"providerConnectionRequests" bson:"providerConnectionRequests"`
 	DiagnosisType              *string                    `json:"diagnosisType" bson:"diagnosisType"`
