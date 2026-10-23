@@ -114,8 +114,9 @@ type ReportDetail struct {
 	// GlycemicRangeThresholds and GlycemicRangesPreset should be set.
 	GlycemicRangesPreset string `json:"glycemicRangePreset,omitempty"`
 	// GlycemicRangesThresholds is a comma delimited string of key value pairs in
-	// alternating fashion of the fields of a [patients.GlycemicRangeThreshold].
-	// E.g., `name,foo,upperBound.value,7.000000`
+	// alternating fashion of the custom glycemic ranges' name, units, and named
+	// thresholds, omitting unset optional thresholds.
+	// E.g., `name,foo,units,mg/dL,low,70.000000,high,180.000000`
 	GlycemicRangesThresholds string `json:"glycemicRangeThresholds,omitempty"`
 }
 

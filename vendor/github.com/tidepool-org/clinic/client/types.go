@@ -693,18 +693,18 @@ const (
 	Preset GlycemicRangesV1Type = "preset"
 )
 
+// Defines values for GlycemicRangesCustomV1Units.
+const (
+	GlycemicRangesCustomV1UnitsMgdL  GlycemicRangesCustomV1Units = "mg/dL"
+	GlycemicRangesCustomV1UnitsMmolL GlycemicRangesCustomV1Units = "mmol/L"
+)
+
 // Defines values for GlycemicRangesPresetV1.
 const (
 	ADAHighRisk       GlycemicRangesPresetV1 = "adaHighRisk"
 	ADAPregnancyType1 GlycemicRangesPresetV1 = "adaPregnancyType1"
 	ADAPregnancyType2 GlycemicRangesPresetV1 = "adaPregnancyType2"
 	ADAStandard       GlycemicRangesPresetV1 = "adaStandard"
-)
-
-// Defines values for GlycemicRangesThresholdUpperBoundV1Units.
-const (
-	GlycemicRangesThresholdUpperBoundV1UnitsMgdL  GlycemicRangesThresholdUpperBoundV1Units = "mg/dL"
-	GlycemicRangesThresholdUpperBoundV1UnitsMmolL GlycemicRangesThresholdUpperBoundV1Units = "mmol/L"
 )
 
 // Defines values for MigrationStatusV1.
@@ -751,7 +751,6 @@ const (
 	TimeCGMUsePercent         TideReportParamsCategories = "timeCGMUsePercent"
 	TimeInAnyHighPercent      TideReportParamsCategories = "timeInAnyHighPercent"
 	TimeInAnyLowPercent       TideReportParamsCategories = "timeInAnyLowPercent"
-	TimeInExtremeHighPercent  TideReportParamsCategories = "timeInExtremeHighPercent"
 	TimeInTargetPercent       TideReportParamsCategories = "timeInTargetPercent"
 	TimeInVeryHighPercent     TideReportParamsCategories = "timeInVeryHighPercent"
 	TimeInVeryLowPercent      TideReportParamsCategories = "timeInVeryLowPercent"
@@ -814,8 +813,6 @@ type BgmPeriodV1 struct {
 	HasTimeInAnyHighRecords     bool     `json:"hasTimeInAnyHighRecords"`
 	HasTimeInAnyLowPercent      bool     `json:"hasTimeInAnyLowPercent"`
 	HasTimeInAnyLowRecords      bool     `json:"hasTimeInAnyLowRecords"`
-	HasTimeInExtremeHighPercent bool     `json:"hasTimeInExtremeHighPercent"`
-	HasTimeInExtremeHighRecords bool     `json:"hasTimeInExtremeHighRecords"`
 	HasTimeInHighPercent        bool     `json:"hasTimeInHighPercent"`
 	HasTimeInHighRecords        bool     `json:"hasTimeInHighRecords"`
 	HasTimeInLowPercent         bool     `json:"hasTimeInLowPercent"`
@@ -857,18 +854,6 @@ type BgmPeriodV1 struct {
 
 	// TimeInAnyLowRecordsDelta Difference between the timeInAnyLowRecords in this period and version in the opposite offset
 	TimeInAnyLowRecordsDelta *int `json:"timeInAnyLowRecordsDelta,omitempty"`
-
-	// TimeInExtremeHighPercent Percentage of time spent in extreme high glucose range
-	TimeInExtremeHighPercent *float64 `json:"timeInExtremeHighPercent,omitempty"`
-
-	// TimeInExtremeHighPercentDelta Difference between the timeInExtremeHighPercent in this period and version in the opposite offset
-	TimeInExtremeHighPercentDelta *float64 `json:"timeInExtremeHighPercentDelta,omitempty"`
-
-	// TimeInExtremeHighRecords Counter of records in extreme high glucose range
-	TimeInExtremeHighRecords *int `json:"timeInExtremeHighRecords,omitempty"`
-
-	// TimeInExtremeHighRecordsDelta Difference between the timeInExtremeHighRecords in this period and version in the opposite offset
-	TimeInExtremeHighRecordsDelta *int `json:"timeInExtremeHighRecordsDelta,omitempty"`
 
 	// TimeInHighPercent Percentage of time spent in high glucose range
 	TimeInHighPercent *float64 `json:"timeInHighPercent,omitempty"`
@@ -946,6 +931,9 @@ type BgmStatsV1 struct {
 	Config SummaryConfigV1 `json:"config,omitempty"`
 
 	// Dates dates tracked for summary calculation
+	//
+	// Summaries are no longer marked outdated: they are recalculated by upload postprocess work, so the fields
+	// marked deprecated are no longer set. A summary stored before the change keeps them until it is recalculated.
 	Dates SummaryDatesV1 `json:"dates,omitempty"`
 
 	// Id Summary Unique Identifier
@@ -990,9 +978,6 @@ type CgmPeriodV1 struct {
 	HasTimeInAnyLowMinutes          bool     `json:"hasTimeInAnyLowMinutes"`
 	HasTimeInAnyLowPercent          bool     `json:"hasTimeInAnyLowPercent"`
 	HasTimeInAnyLowRecords          bool     `json:"hasTimeInAnyLowRecords"`
-	HasTimeInExtremeHighMinutes     bool     `json:"hasTimeInExtremeHighMinutes"`
-	HasTimeInExtremeHighPercent     bool     `json:"hasTimeInExtremeHighPercent"`
-	HasTimeInExtremeHighRecords     bool     `json:"hasTimeInExtremeHighRecords"`
 	HasTimeInHighMinutes            bool     `json:"hasTimeInHighMinutes"`
 	HasTimeInHighPercent            bool     `json:"hasTimeInHighPercent"`
 	HasTimeInHighRecords            bool     `json:"hasTimeInHighRecords"`
@@ -1071,24 +1056,6 @@ type CgmPeriodV1 struct {
 
 	// TimeInAnyLowRecordsDelta Difference between the timeInAnyLowRecords in this period and version in the opposite offset
 	TimeInAnyLowRecordsDelta *int `json:"timeInAnyLowRecordsDelta,omitempty"`
-
-	// TimeInExtremeHighMinutes Counter of minutes spent in extreme high glucose range
-	TimeInExtremeHighMinutes *int `json:"timeInExtremeHighMinutes,omitempty"`
-
-	// TimeInExtremeHighMinutesDelta Difference between the timeInExtremeHighMinutes in this period and version in the opposite offset
-	TimeInExtremeHighMinutesDelta *int `json:"timeInExtremeHighMinutesDelta,omitempty"`
-
-	// TimeInExtremeHighPercent Percentage of time spent in extreme high glucose range
-	TimeInExtremeHighPercent *float64 `json:"timeInExtremeHighPercent,omitempty"`
-
-	// TimeInExtremeHighPercentDelta Difference between the timeInExtremeHighPercent in this period and version in the opposite offset
-	TimeInExtremeHighPercentDelta *float64 `json:"timeInExtremeHighPercentDelta,omitempty"`
-
-	// TimeInExtremeHighRecords Counter of records in extreme high glucose range
-	TimeInExtremeHighRecords *int `json:"timeInExtremeHighRecords,omitempty"`
-
-	// TimeInExtremeHighRecordsDelta Difference between the timeInExtremeHighRecords in this period and version in the opposite offset
-	TimeInExtremeHighRecordsDelta *int `json:"timeInExtremeHighRecordsDelta,omitempty"`
 
 	// TimeInHighMinutes Counter of minutes spent in high glucose range
 	TimeInHighMinutes *int `json:"timeInHighMinutes,omitempty"`
@@ -1196,6 +1163,9 @@ type CgmStatsV1 struct {
 	Config SummaryConfigV1 `json:"config,omitempty"`
 
 	// Dates dates tracked for summary calculation
+	//
+	// Summaries are no longer marked outdated: they are recalculated by upload postprocess work, so the fields
+	// marked deprecated are no longer set. A summary stored before the change keeps them until it is recalculated.
 	Dates SummaryDatesV1 `json:"dates,omitempty"`
 
 	// Id Summary Unique Identifier
@@ -1511,38 +1481,54 @@ type GenerateMergeReportV1 struct {
 
 // GlycemicRangesV1 defines model for glycemicRanges.v1.
 type GlycemicRangesV1 struct {
+	// Custom User-defined glycemic ranges. Used when the glycemic ranges type is custom.
 	Custom GlycemicRangesCustomV1 `json:"custom,omitempty,omitzero"`
+
+	// Key Identifies the range set, for example to match a summary to the ranges it was computed with. Derived from the preset, or from the custom units and thresholds, so two definitions that classify readings identically have the same key, and changing a threshold changes it; changing only a custom range's name does not. Presets are `preset:<preset>` (e.g. `preset:adaHighRisk`), and custom ranges are `custom:<units>:<veryLow>,<low>,<high>,<veryHigh>` with unset thresholds left empty (e.g. `custom:mmol/L:,3.9,10,`).
+	Key string `json:"key,omitempty"`
+
+	// Preset Predefined glycemic ranges based on ADA guidelines. Used when the glycemic ranges type is preset.
 	Preset GlycemicRangesPresetV1 `json:"preset,omitempty,omitzero"`
-	Type   GlycemicRangesV1Type   `json:"type"`
+
+	// Type Which kind of glycemic ranges is in use: preset selects one of the predefined ranges named by preset; custom uses the ranges defined in custom.
+	Type GlycemicRangesV1Type `json:"type"`
 }
 
-// GlycemicRangesV1Type defines model for GlycemicRangesV1.Type.
+// GlycemicRangesV1Type Which kind of glycemic ranges is in use: preset selects one of the predefined ranges named by preset; custom uses the ranges defined in custom.
 type GlycemicRangesV1Type string
 
-// GlycemicRangesCustomV1 defines model for glycemicRangesCustom.v1.
+// GlycemicRangesCustomV1 User-defined glycemic ranges. Used when the glycemic ranges type is custom.
 type GlycemicRangesCustomV1 struct {
-	Name       string                      `json:"name"`
-	Thresholds []GlycemicRangesThresholdV1 `json:"thresholds"`
+	// Name Display name of the custom glycemic ranges. Up to 32 characters: letters, digits, spaces, and the punctuation . , - ( ) / ' — the first character must be a letter or digit.
+	Name string `json:"name"`
+
+	// Thresholds Named thresholds dividing glucose readings into ranges, expressed in the parent's units. Values must not be negative. veryLow and veryHigh are optional. A reading exactly at a threshold belongs to the range nearer the target range: at veryLow it is low, at low or high it is in range, and at veryHigh it is high. Values must be whole numbers in mg/dL, or have at most one decimal place in mmol/L, and must be in ascending order (veryLow < low < high < veryHigh, for those that are set); otherwise the request is rejected as a bad request.
+	Thresholds GlycemicRangesThresholdsV1 `json:"thresholds"`
+
+	// Units Blood glucose units in which all threshold values are expressed.
+	Units GlycemicRangesCustomV1Units `json:"units"`
 }
 
-// GlycemicRangesPresetV1 defines model for glycemicRangesPreset.v1.
+// GlycemicRangesCustomV1Units Blood glucose units in which all threshold values are expressed.
+type GlycemicRangesCustomV1Units string
+
+// GlycemicRangesPresetV1 Predefined glycemic ranges based on ADA guidelines. Used when the glycemic ranges type is preset.
 type GlycemicRangesPresetV1 string
 
-// GlycemicRangesThresholdV1 defines model for glycemicRangesThreshold.v1.
-type GlycemicRangesThresholdV1 struct {
-	Inclusive  bool                                `json:"inclusive,omitempty"`
-	Name       string                              `json:"name"`
-	UpperBound GlycemicRangesThresholdUpperBoundV1 `json:"upperBound"`
-}
+// GlycemicRangesThresholdsV1 Named thresholds dividing glucose readings into ranges, expressed in the parent's units. Values must not be negative. veryLow and veryHigh are optional. A reading exactly at a threshold belongs to the range nearer the target range: at veryLow it is low, at low or high it is in range, and at veryHigh it is high. Values must be whole numbers in mg/dL, or have at most one decimal place in mmol/L, and must be in ascending order (veryLow < low < high < veryHigh, for those that are set); otherwise the request is rejected as a bad request.
+type GlycemicRangesThresholdsV1 struct {
+	// High Readings above this value are high (or very high, if above veryHigh).
+	High float64 `json:"high"`
 
-// GlycemicRangesThresholdUpperBoundV1 defines model for glycemicRangesThresholdUpperBound.v1.
-type GlycemicRangesThresholdUpperBoundV1 struct {
-	Units GlycemicRangesThresholdUpperBoundV1Units `json:"units"`
-	Value float32                                  `json:"value"`
-}
+	// Low Readings below this value are low (or very low, if below veryLow).
+	Low float64 `json:"low"`
 
-// GlycemicRangesThresholdUpperBoundV1Units defines model for GlycemicRangesThresholdUpperBoundV1.Units.
-type GlycemicRangesThresholdUpperBoundV1Units string
+	// VeryHigh Readings above this value are very high.
+	VeryHigh *float64 `json:"veryHigh,omitempty"`
+
+	// VeryLow Readings below this value are very low.
+	VeryLow *float64 `json:"veryLow,omitempty"`
+}
 
 // IdentityproviderV1 An external identity provider linked to the user account.
 type IdentityproviderV1 struct {
@@ -1874,13 +1860,19 @@ type SummaryConfigV1 struct {
 }
 
 // SummaryDatesV1 dates tracked for summary calculation
+//
+// Summaries are no longer marked outdated: they are recalculated by upload postprocess work, so the fields
+// marked deprecated are no longer set. A summary stored before the change keeps them until it is recalculated.
 type SummaryDatesV1 struct {
 	// FirstData Date of the first included value
 	FirstData         *time.Time `json:"firstData,omitempty"`
 	HasFirstData      bool       `json:"hasFirstData"`
 	HasLastData       bool       `json:"hasLastData"`
 	HasLastUploadDate bool       `json:"hasLastUploadDate"`
-	HasOutdatedSince  bool       `json:"hasOutdatedSince"`
+
+	// HasOutdatedSince No longer set; reported false.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	HasOutdatedSince bool `json:"hasOutdatedSince"`
 
 	// LastData Date of the last calculated value
 	LastData *time.Time `json:"lastData,omitempty"`
@@ -1888,19 +1880,23 @@ type SummaryDatesV1 struct {
 	// LastUpdatedDate Date of the last calculation
 	LastUpdatedDate *time.Time `json:"lastUpdatedDate,omitempty"`
 
-	// LastUpdatedReason List of reasons the summary was updated for
+	// LastUpdatedReason No longer set; reported empty. Formerly the list of reasons the summary was updated for.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	LastUpdatedReason *[]string `json:"lastUpdatedReason,omitempty"`
 
 	// LastUploadDate Created date of the last calculated value
 	LastUploadDate *time.Time `json:"lastUploadDate,omitempty"`
 
-	// OutdatedReason List of reasons the summary was marked outdated for
+	// OutdatedReason No longer set; reported empty. Formerly the list of reasons the summary was marked outdated for.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	OutdatedReason *[]string `json:"outdatedReason,omitempty"`
 
-	// OutdatedSince Date of the first user upload after lastData, removed when calculated
+	// OutdatedSince No longer set. Formerly the date of the first user upload after lastData, removed when calculated.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	OutdatedSince *time.Time `json:"outdatedSince,omitempty"`
 
-	// OutdatedSinceLimit Upper limit of the OutdatedSince value to prevent infinite queue duration
+	// OutdatedSinceLimit No longer set. Formerly the upper limit of the OutdatedSince value to prevent infinite queue duration.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	OutdatedSinceLimit *time.Time `json:"outdatedSinceLimit,omitempty"`
 }
 
@@ -1925,9 +1921,6 @@ type TargetdevicesV1 = []string
 type TideConfigV1 struct {
 	// ClinicId Clinic identifier.
 	ClinicId *ClinicIdV1 `json:"clinicId,omitempty"`
-
-	// ExtremeHighGlucoseThreshold Minimum inclusive threshold in mmol/L for categorizing if a glucose value is extremely high. Not defined by the AACE.
-	ExtremeHighGlucoseThreshold *float64 `json:"extremeHighGlucoseThreshold,omitempty"`
 
 	// Filters Visual representation of filtered categories selected
 	Filters TideFiltersV1 `json:"filters"`
@@ -1956,7 +1949,6 @@ type TideFiltersV1 struct {
 	DropInTimeInTargetPercent *string `json:"dropInTimeInTargetPercent,omitempty"`
 	TimeCGMUsePercent         *string `json:"timeCGMUsePercent,omitempty"`
 	TimeInAnyLowPercent       *string `json:"timeInAnyLowPercent,omitempty"`
-	TimeInExtremeHighPercent  *string `json:"timeInExtremeHighPercent,omitempty"`
 	TimeInHighPercent         *string `json:"timeInHighPercent,omitempty"`
 	TimeInTargetPercent       *string `json:"timeInTargetPercent,omitempty"`
 	TimeInVeryHighPercent     *string `json:"timeInVeryHighPercent,omitempty"`
@@ -2004,9 +1996,6 @@ type TideResultPatientV1 struct {
 
 	// TimeInAnyLowPercent Percentage of time spent in any low glucose range
 	TimeInAnyLowPercent *float64 `json:"timeInAnyLowPercent,omitempty"`
-
-	// TimeInExtremeHighPercent Percentage of time spent in extreme high glucose range
-	TimeInExtremeHighPercent *float64 `json:"timeInExtremeHighPercent,omitempty"`
 
 	// TimeInHighPercent Percentage of time spent in high glucose range
 	TimeInHighPercent *float64 `json:"timeInHighPercent,omitempty"`
@@ -2150,6 +2139,12 @@ type ListCliniciansParams struct {
 	Role   *Role   `form:"role,omitempty" json:"role,omitempty"`
 }
 
+// ExportPatientListParams defines parameters for ExportPatientList.
+type ExportPatientListParams struct {
+	// Period Time Period to display
+	Period string `form:"period" json:"period"`
+}
+
 // ListPatientsParams defines parameters for ListPatients.
 type ListPatientsParams struct {
 	// Search Full text search query
@@ -2202,9 +2197,6 @@ type ListPatientsParams struct {
 	// CgmTimeInVeryHighPercent Percentage of time [0.0-1.0]  above 250 mg/dL
 	CgmTimeInVeryHighPercent *FloatFilter `form:"cgm.timeInVeryHighPercent,omitempty" json:"cgm.timeInVeryHighPercent,omitempty"`
 
-	// CgmTimeInExtremeHighPercent Percentage of time [0.0-1.0]  above 350 mg/dL
-	CgmTimeInExtremeHighPercent *FloatFilter `form:"cgm.timeInExtremeHighPercent,omitempty" json:"cgm.timeInExtremeHighPercent,omitempty"`
-
 	// CgmTimeInAnyHighPercent Percentage of time [0.0-1.0]  above 180 mg/dL
 	CgmTimeInAnyHighPercent *FloatFilter `form:"cgm.timeInAnyHighPercent,omitempty" json:"cgm.timeInAnyHighPercent,omitempty"`
 
@@ -2228,9 +2220,6 @@ type ListPatientsParams struct {
 
 	// CgmTimeInVeryHighMinutes Minutes above 250 mg/dL
 	CgmTimeInVeryHighMinutes *IntFilter `form:"cgm.timeInVeryHighMinutes,omitempty" json:"cgm.timeInVeryHighMinutes,omitempty"`
-
-	// CgmTimeInExtremeHighMinutes Minutes above 350 mg/dL
-	CgmTimeInExtremeHighMinutes *IntFilter `form:"cgm.timeInExtremeHighMinutes,omitempty" json:"cgm.timeInExtremeHighMinutes,omitempty"`
 
 	// CgmTimeInAnyHighMinutes Minutes above 180 mg/dL
 	CgmTimeInAnyHighMinutes *IntFilter `form:"cgm.timeInAnyHighMinutes,omitempty" json:"cgm.timeInAnyHighMinutes,omitempty"`
@@ -2304,9 +2293,6 @@ type ListPatientsParams struct {
 	// BgmTimeInVeryHighPercent Percentage of time [0.0-1.0]  above 250 mg/dL
 	BgmTimeInVeryHighPercent *FloatFilter `form:"bgm.timeInVeryHighPercent,omitempty" json:"bgm.timeInVeryHighPercent,omitempty"`
 
-	// BgmTimeInExtremeHighPercent Percentage of time [0.0-1.0]  above 350 mg/dL
-	BgmTimeInExtremeHighPercent *FloatFilter `form:"bgm.timeInExtremeHighPercent,omitempty" json:"bgm.timeInExtremeHighPercent,omitempty"`
-
 	// BgmTimeInAnyHighPercent Percentage of time [0.0-1.0]  above 180 mg/dL
 	BgmTimeInAnyHighPercent *FloatFilter `form:"bgm.timeInAnyHighPercent,omitempty" json:"bgm.timeInAnyHighPercent,omitempty"`
 
@@ -2370,9 +2356,6 @@ type ListPatientsParams struct {
 	// CgmTimeInVeryHighPercentDelta Delta of time above 250 mg/dL
 	CgmTimeInVeryHighPercentDelta *FloatFilter `form:"cgm.timeInVeryHighPercentDelta,omitempty" json:"cgm.timeInVeryHighPercentDelta,omitempty"`
 
-	// CgmTimeInExtremeHighPercentDelta Delta of time above 350 mg/dL
-	CgmTimeInExtremeHighPercentDelta *FloatFilter `form:"cgm.timeInExtremeHighPercentDelta,omitempty" json:"cgm.timeInExtremeHighPercentDelta,omitempty"`
-
 	// CgmTimeInAnyHighPercentDelta Delta of time above 180 mg/dL
 	CgmTimeInAnyHighPercentDelta *FloatFilter `form:"cgm.timeInAnyHighPercentDelta,omitempty" json:"cgm.timeInAnyHighPercentDelta,omitempty"`
 
@@ -2396,9 +2379,6 @@ type ListPatientsParams struct {
 
 	// CgmTimeInVeryHighMinutesDelta Delta of minutes above 250 mg/dL
 	CgmTimeInVeryHighMinutesDelta *IntFilter `form:"cgm.timeInVeryHighMinutesDelta,omitempty" json:"cgm.timeInVeryHighMinutesDelta,omitempty"`
-
-	// CgmTimeInExtremeHighMinutesDelta Delta of minutes above 350 mg/dL
-	CgmTimeInExtremeHighMinutesDelta *IntFilter `form:"cgm.timeInExtremeHighMinutesDelta,omitempty" json:"cgm.timeInExtremeHighMinutesDelta,omitempty"`
 
 	// CgmTimeInAnyHighMinutesDelta Delta of minutes above 180 mg/dL
 	CgmTimeInAnyHighMinutesDelta *IntFilter `form:"cgm.timeInAnyHighMinutesDelta,omitempty" json:"cgm.timeInAnyHighMinutesDelta,omitempty"`
@@ -2477,9 +2457,6 @@ type ListPatientsParams struct {
 
 	// BgmTimeInVeryHighPercentDelta Delta of time above 250 mg/dL
 	BgmTimeInVeryHighPercentDelta *FloatFilter `form:"bgm.timeInVeryHighPercentDelta,omitempty" json:"bgm.timeInVeryHighPercentDelta,omitempty"`
-
-	// BgmTimeInExtremeHighPercentDelta Delta of time above 350 mg/dL
-	BgmTimeInExtremeHighPercentDelta *FloatFilter `form:"bgm.timeInExtremeHighPercentDelta,omitempty" json:"bgm.timeInExtremeHighPercentDelta,omitempty"`
 
 	// BgmTimeInAnyHighPercentDelta Delta of time above 180 mg/dL
 	BgmTimeInAnyHighPercentDelta *FloatFilter `form:"bgm.timeInAnyHighPercentDelta,omitempty" json:"bgm.timeInAnyHighPercentDelta,omitempty"`
