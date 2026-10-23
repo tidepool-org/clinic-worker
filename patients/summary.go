@@ -7,74 +7,68 @@ import (
 
 func ExportCGMPeriod(period summaries.GlucosePeriodV5, i int) clinics.CgmPeriodV1 {
 	destPeriod := clinics.CgmPeriodV1{
-		AverageDailyRecords:           &period.AverageDailyRecords,
-		AverageDailyRecordsDelta:      &period.Delta.AverageDailyRecords,
-		DaysWithData:                  period.DaysWithData,
-		DaysWithDataDelta:             period.Delta.DaysWithData,
-		HasAverageDailyRecords:        period.AverageDailyRecords != 0,
-		HasTimeCGMUseMinutes:          period.Total.Minutes != 0,
-		HasTimeCGMUseRecords:          period.Total.Records != 0,
-		HasTimeInAnyHighMinutes:       period.InAnyHigh.Minutes != 0,
-		HasTimeInAnyHighRecords:       period.InAnyHigh.Records != 0,
-		HasTimeInAnyLowMinutes:        period.InAnyLow.Minutes != 0,
-		HasTimeInAnyLowRecords:        period.InAnyLow.Records != 0,
-		HasTimeInExtremeHighMinutes:   period.InExtremeHigh.Minutes != 0,
-		HasTimeInExtremeHighRecords:   period.InExtremeHigh.Records != 0,
-		HasTimeInHighMinutes:          period.InHigh.Minutes != 0,
-		HasTimeInHighRecords:          period.InHigh.Records != 0,
-		HasTimeInLowMinutes:           period.InLow.Minutes != 0,
-		HasTimeInLowRecords:           period.InLow.Records != 0,
-		HasTimeInTargetMinutes:        period.InTarget.Minutes != 0,
-		HasTimeInTargetRecords:        period.InTarget.Records != 0,
-		HasTimeInVeryHighMinutes:      period.InVeryHigh.Minutes != 0,
-		HasTimeInVeryHighRecords:      period.InVeryHigh.Records != 0,
-		HasTimeInVeryLowMinutes:       period.InVeryLow.Minutes != 0,
-		HasTimeInVeryLowRecords:       period.InVeryLow.Records != 0,
-		HasTotalRecords:               period.Total.Records != 0,
-		HoursWithData:                 period.HoursWithData,
-		HoursWithDataDelta:            period.Delta.HoursWithData,
-		TimeCGMUseMinutes:             &period.Total.Minutes,
-		TimeCGMUseMinutesDelta:        &period.Delta.Total.Minutes,
-		TimeCGMUseRecords:             &period.Total.Records,
-		TimeCGMUseRecordsDelta:        &period.Delta.Total.Records,
-		TimeInAnyHighMinutes:          &period.InAnyHigh.Minutes,
-		TimeInAnyHighMinutesDelta:     &period.Delta.InAnyHigh.Minutes,
-		TimeInAnyHighRecords:          &period.InAnyHigh.Records,
-		TimeInAnyHighRecordsDelta:     &period.Delta.InAnyHigh.Records,
-		TimeInAnyLowMinutes:           &period.InAnyLow.Minutes,
-		TimeInAnyLowMinutesDelta:      &period.Delta.InAnyLow.Minutes,
-		TimeInAnyLowRecords:           &period.InAnyLow.Records,
-		TimeInAnyLowRecordsDelta:      &period.Delta.InAnyLow.Records,
-		TimeInExtremeHighMinutes:      &period.InExtremeHigh.Minutes,
-		TimeInExtremeHighMinutesDelta: &period.Delta.InExtremeHigh.Minutes,
-		TimeInExtremeHighRecords:      &period.InExtremeHigh.Records,
-		TimeInExtremeHighRecordsDelta: &period.Delta.InExtremeHigh.Records,
-		TimeInHighMinutes:             &period.InHigh.Minutes,
-		TimeInHighMinutesDelta:        &period.Delta.InHigh.Minutes,
-		TimeInHighRecords:             &period.InHigh.Records,
-		TimeInHighRecordsDelta:        &period.Delta.InHigh.Records,
-		TimeInLowMinutes:              &period.InLow.Minutes,
-		TimeInLowMinutesDelta:         &period.Delta.InLow.Minutes,
-		TimeInLowRecords:              &period.InLow.Records,
-		TimeInLowRecordsDelta:         &period.Delta.InLow.Records,
-		TimeInTargetMinutes:           &period.InTarget.Minutes,
-		TimeInTargetMinutesDelta:      &period.Delta.InTarget.Minutes,
-		TimeInTargetRecords:           &period.InTarget.Records,
-		TimeInTargetRecordsDelta:      &period.Delta.InTarget.Records,
-		TimeInVeryHighMinutes:         &period.InVeryHigh.Minutes,
-		TimeInVeryHighMinutesDelta:    &period.Delta.InVeryHigh.Minutes,
-		TimeInVeryHighRecords:         &period.InVeryHigh.Records,
-		TimeInVeryHighRecordsDelta:    &period.Delta.InVeryHigh.Records,
-		TimeInVeryLowMinutes:          &period.InVeryLow.Minutes,
-		TimeInVeryLowMinutesDelta:     &period.Delta.InVeryLow.Minutes,
-		TimeInVeryLowRecords:          &period.InVeryLow.Records,
-		TimeInVeryLowRecordsDelta:     &period.Delta.InVeryLow.Records,
-		TotalRecords:                  &period.Total.Records,
-		TotalRecordsDelta:             &period.Delta.Total.Records,
-		Min:                           period.Min,
-		MinDelta:                      period.Delta.Min,
-		Max:                           period.Max,
-		MaxDelta:                      period.Delta.Max,
+		AverageDailyRecords:        &period.AverageDailyRecords,
+		AverageDailyRecordsDelta:   &period.Delta.AverageDailyRecords,
+		DaysWithData:               period.DaysWithData,
+		DaysWithDataDelta:          period.Delta.DaysWithData,
+		HasAverageDailyRecords:     period.AverageDailyRecords != 0,
+		HasTimeCGMUseMinutes:       period.Total.Minutes != 0,
+		HasTimeCGMUseRecords:       period.Total.Records != 0,
+		HasTimeInAnyHighMinutes:    period.InAnyHigh.Minutes != 0,
+		HasTimeInAnyHighRecords:    period.InAnyHigh.Records != 0,
+		HasTimeInAnyLowMinutes:     period.InAnyLow.Minutes != 0,
+		HasTimeInAnyLowRecords:     period.InAnyLow.Records != 0,
+		HasTimeInHighMinutes:       period.InHigh.Minutes != 0,
+		HasTimeInHighRecords:       period.InHigh.Records != 0,
+		HasTimeInLowMinutes:        period.InLow.Minutes != 0,
+		HasTimeInLowRecords:        period.InLow.Records != 0,
+		HasTimeInTargetMinutes:     period.InTarget.Minutes != 0,
+		HasTimeInTargetRecords:     period.InTarget.Records != 0,
+		HasTimeInVeryHighMinutes:   period.InVeryHigh.Minutes != 0,
+		HasTimeInVeryHighRecords:   period.InVeryHigh.Records != 0,
+		HasTimeInVeryLowMinutes:    period.InVeryLow.Minutes != 0,
+		HasTimeInVeryLowRecords:    period.InVeryLow.Records != 0,
+		HasTotalRecords:            period.Total.Records != 0,
+		HoursWithData:              period.HoursWithData,
+		HoursWithDataDelta:         period.Delta.HoursWithData,
+		TimeCGMUseMinutes:          &period.Total.Minutes,
+		TimeCGMUseMinutesDelta:     &period.Delta.Total.Minutes,
+		TimeCGMUseRecords:          &period.Total.Records,
+		TimeCGMUseRecordsDelta:     &period.Delta.Total.Records,
+		TimeInAnyHighMinutes:       &period.InAnyHigh.Minutes,
+		TimeInAnyHighMinutesDelta:  &period.Delta.InAnyHigh.Minutes,
+		TimeInAnyHighRecords:       &period.InAnyHigh.Records,
+		TimeInAnyHighRecordsDelta:  &period.Delta.InAnyHigh.Records,
+		TimeInAnyLowMinutes:        &period.InAnyLow.Minutes,
+		TimeInAnyLowMinutesDelta:   &period.Delta.InAnyLow.Minutes,
+		TimeInAnyLowRecords:        &period.InAnyLow.Records,
+		TimeInAnyLowRecordsDelta:   &period.Delta.InAnyLow.Records,
+		TimeInHighMinutes:          &period.InHigh.Minutes,
+		TimeInHighMinutesDelta:     &period.Delta.InHigh.Minutes,
+		TimeInHighRecords:          &period.InHigh.Records,
+		TimeInHighRecordsDelta:     &period.Delta.InHigh.Records,
+		TimeInLowMinutes:           &period.InLow.Minutes,
+		TimeInLowMinutesDelta:      &period.Delta.InLow.Minutes,
+		TimeInLowRecords:           &period.InLow.Records,
+		TimeInLowRecordsDelta:      &period.Delta.InLow.Records,
+		TimeInTargetMinutes:        &period.InTarget.Minutes,
+		TimeInTargetMinutesDelta:   &period.Delta.InTarget.Minutes,
+		TimeInTargetRecords:        &period.InTarget.Records,
+		TimeInTargetRecordsDelta:   &period.Delta.InTarget.Records,
+		TimeInVeryHighMinutes:      &period.InVeryHigh.Minutes,
+		TimeInVeryHighMinutesDelta: &period.Delta.InVeryHigh.Minutes,
+		TimeInVeryHighRecords:      &period.InVeryHigh.Records,
+		TimeInVeryHighRecordsDelta: &period.Delta.InVeryHigh.Records,
+		TimeInVeryLowMinutes:       &period.InVeryLow.Minutes,
+		TimeInVeryLowMinutesDelta:  &period.Delta.InVeryLow.Minutes,
+		TimeInVeryLowRecords:       &period.InVeryLow.Records,
+		TimeInVeryLowRecordsDelta:  &period.Delta.InVeryLow.Records,
+		TotalRecords:               &period.Total.Records,
+		TotalRecordsDelta:          &period.Delta.Total.Records,
+		Min:                        period.Min,
+		MinDelta:                   period.Delta.Min,
+		Max:                        period.Max,
+		MaxDelta:                   period.Delta.Max,
 	}
 
 	// reconstruct some previous period values for comparison later
@@ -124,9 +118,6 @@ func ExportCGMPeriod(period summaries.GlucosePeriodV5, i int) clinics.CgmPeriodV
 			destPeriod.HasTimeInVeryHighPercent = true
 			destPeriod.TimeInVeryHighPercent = &period.InVeryHigh.Percent
 
-			destPeriod.HasTimeInExtremeHighPercent = true
-			destPeriod.TimeInExtremeHighPercent = &period.InExtremeHigh.Percent
-
 			destPeriod.HasTimeInAnyHighPercent = true
 			destPeriod.TimeInAnyHighPercent = &period.InAnyHigh.Percent
 
@@ -138,7 +129,6 @@ func ExportCGMPeriod(period summaries.GlucosePeriodV5, i int) clinics.CgmPeriodV
 				destPeriod.TimeInAnyLowPercentDelta = &period.Delta.InAnyLow.Percent
 				destPeriod.TimeInHighPercentDelta = &period.Delta.InHigh.Percent
 				destPeriod.TimeInVeryHighPercentDelta = &period.Delta.InVeryHigh.Percent
-				destPeriod.TimeInExtremeHighPercentDelta = &period.Delta.InExtremeHigh.Percent
 				destPeriod.TimeInAnyHighPercentDelta = &period.Delta.InAnyHigh.Percent
 			}
 		}
@@ -161,42 +151,39 @@ func ExportCGMPeriod(period summaries.GlucosePeriodV5, i int) clinics.CgmPeriodV
 
 func ExportBGMPeriod(period summaries.GlucosePeriodV5) clinics.BgmPeriodV1 {
 	destPeriod := clinics.BgmPeriodV1{
-		AverageDailyRecords:           &period.AverageDailyRecords,
-		AverageDailyRecordsDelta:      &period.Delta.AverageDailyRecords,
-		HasAverageDailyRecords:        period.AverageDailyRecords != 0,
-		HasTimeInAnyHighRecords:       period.InAnyHigh.Records != 0,
-		HasTimeInAnyLowRecords:        period.InAnyLow.Records != 0,
-		HasTimeInExtremeHighRecords:   period.InExtremeHigh.Records != 0,
-		HasTimeInHighRecords:          period.InHigh.Records != 0,
-		HasTimeInLowRecords:           period.InLow.Records != 0,
-		HasTimeInTargetRecords:        period.InTarget.Records != 0,
-		HasTimeInVeryHighRecords:      period.InVeryHigh.Records != 0,
-		HasTimeInVeryLowRecords:       period.InVeryLow.Records != 0,
-		HasTotalRecords:               period.Total.Records != 0,
-		TimeInAnyHighRecords:          &period.InAnyHigh.Records,
-		TimeInAnyHighRecordsDelta:     &period.Delta.InAnyHigh.Records,
-		TimeInAnyLowRecords:           &period.InAnyLow.Records,
-		TimeInAnyLowRecordsDelta:      &period.Delta.InAnyLow.Records,
-		TimeInExtremeHighRecords:      &period.InExtremeHigh.Records,
-		TimeInExtremeHighRecordsDelta: &period.Delta.InExtremeHigh.Records,
-		TimeInHighRecords:             &period.InHigh.Records,
-		TimeInHighRecordsDelta:        &period.Delta.InHigh.Records,
-		TimeInLowRecords:              &period.InLow.Records,
-		TimeInLowRecordsDelta:         &period.Delta.InLow.Records,
-		TimeInTargetRecords:           &period.InTarget.Records,
-		TimeInTargetRecordsDelta:      &period.Delta.InTarget.Records,
-		TimeInVeryHighRecords:         &period.InVeryHigh.Records,
-		TimeInVeryHighRecordsDelta:    &period.Delta.InVeryHigh.Records,
-		TimeInVeryLowRecords:          &period.InVeryLow.Records,
-		TimeInVeryLowRecordsDelta:     &period.Delta.InVeryLow.Records,
-		TotalRecords:                  &period.Total.Records,
-		DaysWithData:                  period.DaysWithData,
-		DaysWithDataDelta:             period.Delta.DaysWithData,
-		TotalRecordsDelta:             &period.Delta.Total.Records,
-		Min:                           period.Min,
-		MinDelta:                      period.Delta.Min,
-		Max:                           period.Max,
-		MaxDelta:                      period.Delta.Max,
+		AverageDailyRecords:        &period.AverageDailyRecords,
+		AverageDailyRecordsDelta:   &period.Delta.AverageDailyRecords,
+		HasAverageDailyRecords:     period.AverageDailyRecords != 0,
+		HasTimeInAnyHighRecords:    period.InAnyHigh.Records != 0,
+		HasTimeInAnyLowRecords:     period.InAnyLow.Records != 0,
+		HasTimeInHighRecords:       period.InHigh.Records != 0,
+		HasTimeInLowRecords:        period.InLow.Records != 0,
+		HasTimeInTargetRecords:     period.InTarget.Records != 0,
+		HasTimeInVeryHighRecords:   period.InVeryHigh.Records != 0,
+		HasTimeInVeryLowRecords:    period.InVeryLow.Records != 0,
+		HasTotalRecords:            period.Total.Records != 0,
+		TimeInAnyHighRecords:       &period.InAnyHigh.Records,
+		TimeInAnyHighRecordsDelta:  &period.Delta.InAnyHigh.Records,
+		TimeInAnyLowRecords:        &period.InAnyLow.Records,
+		TimeInAnyLowRecordsDelta:   &period.Delta.InAnyLow.Records,
+		TimeInHighRecords:          &period.InHigh.Records,
+		TimeInHighRecordsDelta:     &period.Delta.InHigh.Records,
+		TimeInLowRecords:           &period.InLow.Records,
+		TimeInLowRecordsDelta:      &period.Delta.InLow.Records,
+		TimeInTargetRecords:        &period.InTarget.Records,
+		TimeInTargetRecordsDelta:   &period.Delta.InTarget.Records,
+		TimeInVeryHighRecords:      &period.InVeryHigh.Records,
+		TimeInVeryHighRecordsDelta: &period.Delta.InVeryHigh.Records,
+		TimeInVeryLowRecords:       &period.InVeryLow.Records,
+		TimeInVeryLowRecordsDelta:  &period.Delta.InVeryLow.Records,
+		TotalRecords:               &period.Total.Records,
+		DaysWithData:               period.DaysWithData,
+		DaysWithDataDelta:          period.Delta.DaysWithData,
+		TotalRecordsDelta:          &period.Delta.Total.Records,
+		Min:                        period.Min,
+		MinDelta:                   period.Delta.Min,
+		Max:                        period.Max,
+		MaxDelta:                   period.Delta.Max,
 	}
 
 	// reconstruct previous period total records for comparison later
@@ -222,9 +209,6 @@ func ExportBGMPeriod(period summaries.GlucosePeriodV5) clinics.BgmPeriodV1 {
 		destPeriod.HasTimeInVeryHighPercent = true
 		destPeriod.TimeInVeryHighPercent = &period.InVeryHigh.Percent
 
-		destPeriod.HasTimeInExtremeHighPercent = true
-		destPeriod.TimeInExtremeHighPercent = &period.InExtremeHigh.Percent
-
 		destPeriod.HasTimeInAnyHighPercent = true
 		destPeriod.TimeInAnyHighPercent = &period.InAnyHigh.Percent
 
@@ -238,7 +222,6 @@ func ExportBGMPeriod(period summaries.GlucosePeriodV5) clinics.BgmPeriodV1 {
 			destPeriod.TimeInAnyLowPercentDelta = &period.Delta.InAnyLow.Percent
 			destPeriod.TimeInHighPercentDelta = &period.Delta.InHigh.Percent
 			destPeriod.TimeInVeryHighPercentDelta = &period.Delta.InVeryHigh.Percent
-			destPeriod.TimeInExtremeHighPercentDelta = &period.Delta.InExtremeHigh.Percent
 			destPeriod.TimeInAnyHighPercentDelta = &period.Delta.InAnyHigh.Percent
 			destPeriod.AverageGlucoseMmolDelta = &period.Delta.AverageGlucoseMmol
 		}
