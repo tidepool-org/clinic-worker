@@ -1490,6 +1490,9 @@ type EhrSettingsV1Provider string
 
 // EhrTagsSettingsV1 This configuration only applies to integrations using Redox Data Model
 type EhrTagsSettingsV1 struct {
+	// Append If true, tags will be appended to a patient's existing tags as opposed to replacing all existing tags of a patient.
+	Append bool `json:"append,omitempty"`
+
 	// Codes Codes of the clinical info items used to select the tags to associate with the patient. If defined, all tags of a patient will be replaced every time an enrollment order for the patient is processed.
 	Codes *[]string `json:"codes,omitempty"`
 
@@ -2148,6 +2151,12 @@ type ListCliniciansParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Email  *Email  `form:"email,omitempty" json:"email,omitempty"`
 	Role   *Role   `form:"role,omitempty" json:"role,omitempty"`
+}
+
+// ExportPatientListParams defines parameters for ExportPatientList.
+type ExportPatientListParams struct {
+	// Period Time Period to display
+	Period string `form:"period" json:"period"`
 }
 
 // ListPatientsParams defines parameters for ListPatients.
