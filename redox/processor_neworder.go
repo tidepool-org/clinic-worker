@@ -959,6 +959,28 @@ func ProcedureCodesMatch(code string, configuration *string) bool {
 	return code == *configuration
 }
 
+// formatGlycemicRangeThresholds encodes custom glycemic ranges as comma-separated key,
+// value pairs, with the name CSV-escaped. The export service parses this format, and the
+// clinic service's Xealth reports send it too, so keep all three in sync.
+func formatGlycemicRangeThresholds(custom clinics.GlycemicRangesCustomV1) string {
+	name := &bytes.Buffer{}
+	w := csv.NewWriter(name)
+	w.Write([]string{custom.Name})
+	w.Flush()
+	fields := []string{"name", strings.TrimSpace(name.String()), "units", string(custom.Units)}
+	if custom.Thresholds.VeryLow != nil {
+		fields = append(fields, "veryLow", fmt.Sprintf("%f", *custom.Thresholds.VeryLow))
+	}
+	fields = append(fields,
+		"low", fmt.Sprintf("%f", custom.Thresholds.Low),
+		"high", fmt.Sprintf("%f", custom.Thresholds.High),
+	)
+	if custom.Thresholds.VeryHigh != nil {
+		fields = append(fields, "veryHigh", fmt.Sprintf("%f", *custom.Thresholds.VeryHigh))
+	}
+	return strings.Join(fields, ",")
+}
+
 func GetReportDetail(reports []string, patient clinics.PatientV1, clinic clinics.ClinicV1, reportingPeriod *report.PeriodBounds) report.ReportDetail {
 	detail := report.ReportDetail{
 		Reports: slices.Clone(reports),
@@ -970,16 +992,8 @@ func GetReportDetail(reports []string, patient clinics.PatientV1, clinic clinics
 		switch patient.GlycemicRanges.Type {
 		case clinics.Custom:
 			detail.GlycemicRangesType = patient.GlycemicRanges.Type
-			quotedRangesName := &bytes.Buffer{}
-			w := csv.NewWriter(quotedRangesName)
-			w.Write([]string{patient.GlycemicRanges.Custom.Name})
-			w.Flush()
-			quotedName := strings.TrimSpace(quotedRangesName.String())
-			var thresholds []string
-			for _, threshold := range patient.GlycemicRanges.Custom.Thresholds {
-				thresholds = append(thresholds, fmt.Sprintf("name,%s,upperBound.value,%f,upperBound.units,%s,inclusive,%t", quotedName, threshold.UpperBound.Value, threshold.UpperBound.Units, threshold.Inclusive))
-			}
-			detail.GlycemicRangesThresholds = strings.Join(thresholds, ",")
+			detail.GlycemicRangesThresholds =
+				formatGlycemicRangeThresholds(patient.GlycemicRanges.Custom)
 		case clinics.Preset:
 			detail.GlycemicRangesType = patient.GlycemicRanges.Type
 			detail.GlycemicRangesPreset = string(patient.GlycemicRanges.Preset)
