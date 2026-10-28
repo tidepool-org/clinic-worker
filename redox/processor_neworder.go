@@ -267,7 +267,7 @@ func (o *newOrderProcessor) handleCreateAccount(ctx context.Context, create Crea
 		}
 	}
 
-	createPatient.Tags, err = o.createTagsForPatient(ctx, order, *match)
+	createPatient.Tags, err = o.createTagsForPatient(ctx, order, *match, nil)
 	if err != nil {
 		o.logger.Errorw("unexpected error when creating tags for patient", "order", order.Meta, "error", err)
 		return false, err
@@ -319,10 +319,10 @@ func (o *newOrderProcessor) handleCreateAccountAndEnableSummaryReports(ctx conte
 	return o.handleEnableSummaryReports(ctx, enable)
 }
 
-func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order models.NewOrder, match clinics.EhrMatchResponseV1) (*clinics.PatientTagIdsV1, error) {
+func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order models.NewOrder, match clinics.EhrMatchResponseV1, existingPatientTagIds *clinics.PatientTagIdsV1) (*clinics.PatientTagIdsV1, error) {
 	tagNames := o.getTagNamesFromOrder(order, match)
 	if tagNames == nil {
-		return nil, nil
+		return existingPatientTagIds, nil
 	}
 
 	existingTags := o.getExistingTags(match.Clinic)
@@ -362,6 +362,9 @@ func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order mode
 
 	existingTags = o.getExistingTags(*resp.JSON200)
 	patientTagIds := clinics.PatientTagIdsV1{}
+	if existingPatientTagIds != nil && len(*existingPatientTagIds) > 0 {
+		patientTagIds = slices.Clone(*existingPatientTagIds)
+	}
 	for _, tagName := range tagNames {
 		patientTag, ok := existingTags[tagName]
 		if !ok {
@@ -376,8 +379,12 @@ func (o *newOrderProcessor) createTagsForPatient(ctx context.Context, order mode
 
 func (o *newOrderProcessor) updatePatient(ctx context.Context, order models.NewOrder, match clinics.EhrMatchResponseV1) error {
 	patient := (*match.Patients)[0]
+	var existingPatientTagIds *clinics.PatientTagIdsV1
+	if match.Settings.Tags.Append && patient.Tags != nil && len(*patient.Tags) > 0 {
+		existingPatientTagIds = patient.Tags
+	}
 
-	tags, err := o.createTagsForPatient(ctx, order, match)
+	tags, err := o.createTagsForPatient(ctx, order, match, existingPatientTagIds)
 	if err != nil {
 		return err
 	}

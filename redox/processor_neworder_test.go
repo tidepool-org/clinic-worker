@@ -135,6 +135,60 @@ var _ = Describe("NewOrderProcessor", func() {
 					Expect(processor.ProcessOrder(context.Background(), envelope, order)).To(Succeed())
 				})
 
+				It(`preserves existing patient tags if "append" ehr tag setting is true`, func() {
+					codes := []string{"TIDEPOOL_TAGS"}
+					separator := ","
+					settings := clinics.EhrTagsSettingsV1{
+						Codes:     &codes,
+						Separator: &separator,
+						Append:    true,
+					}
+					matchResponse.JSON200.Settings.Tags = settings
+					t1dId := "1"
+					t1dName := "T1D"
+					adultId := "2"
+					adultName := "ADULT"
+					someTagId := "3"
+					someTagName := "SOMETAG"
+					matchResponse.JSON200.Clinic.PatientTags = &[]clinics.PatientTagV1{
+						{Id: &t1dId, Name: t1dName, NumPatients: 1},
+						{Id: &adultId, Name: adultName, NumPatients: 1},
+						{Id: &someTagId, Name: someTagName, NumPatients: 1},
+					}
+					(*matchResponse.JSON200.Patients)[0].Tags = &clinics.PatientTagIdsV1{someTagId}
+					clinicClient.EXPECT().
+						GetClinicWithResponse(gomock.Any(), *matchResponse.JSON200.Clinic.Id).
+						Return(&clinics.GetClinicResponse{
+							Body: nil,
+							HTTPResponse: &http.Response{
+								StatusCode: http.StatusOK,
+							},
+							JSON200: &matchResponse.JSON200.Clinic,
+						}, nil)
+
+					clinicClient.EXPECT().UpdatePatientWithResponse(gomock.Any(),
+						gomock.Eq(*matchResponse.JSON200.Clinic.Id),
+						gomock.Eq(*((*matchResponse.JSON200.Patients)[0]).Id),
+						testRedox.MatchArg(func(body clinics.UpdatePatientJSONRequestBody) bool {
+							if body.Tags == nil {
+								return false
+							}
+							if len(*body.Tags) != 3 {
+								return false
+							}
+							return testRedox.PatientHasTags(body.Tags, []string{"1", "2", "3"})
+						}),
+					).Return(&clinics.UpdatePatientResponse{
+						Body: nil,
+						HTTPResponse: &http.Response{
+							StatusCode: http.StatusOK,
+						},
+						JSON200: &(*matchResponse.JSON200.Patients)[0],
+					}, nil)
+
+					Expect(processor.ProcessOrder(context.Background(), envelope, order)).To(Succeed())
+				})
+
 				It("creates missing tags", func() {
 					t1dId := "1"
 					t1dName := "T1D"
@@ -258,13 +312,13 @@ var _ = Describe("NewOrderProcessor", func() {
 					var flowsheet models.NewFlowsheet
 
 					for _, payload := range redoxClient.Sent {
-						switch payload.(type) {
+						switch payload := payload.(type) {
 						case models.NewResults:
-							results = payload.(models.NewResults)
+							results = payload
 						case redox.Notes:
-							notes = payload.(redox.Notes)
+							notes = payload
 						case models.NewFlowsheet:
-							flowsheet = payload.(models.NewFlowsheet)
+							flowsheet = payload
 						}
 					}
 
@@ -303,9 +357,9 @@ var _ = Describe("NewOrderProcessor", func() {
 					var notes redox.Notes
 
 					for _, payload := range redoxClient.Sent {
-						switch payload.(type) {
+						switch payload := payload.(type) {
 						case redox.Notes:
-							notes = payload.(redox.Notes)
+							notes = payload
 						}
 					}
 
@@ -430,13 +484,13 @@ var _ = Describe("NewOrderProcessor", func() {
 					var flowsheet models.NewFlowsheet
 
 					for _, payload := range redoxClient.Sent {
-						switch payload.(type) {
+						switch payload := payload.(type) {
 						case models.NewResults:
-							results = payload.(models.NewResults)
+							results = payload
 						case redox.Notes:
-							notes = payload.(redox.Notes)
+							notes = payload
 						case models.NewFlowsheet:
-							flowsheet = payload.(models.NewFlowsheet)
+							flowsheet = payload
 						}
 					}
 
@@ -531,13 +585,13 @@ var _ = Describe("NewOrderProcessor", func() {
 					var flowsheet models.NewFlowsheet
 
 					for _, payload := range redoxClient.Sent {
-						switch payload.(type) {
+						switch payload := payload.(type) {
 						case models.NewResults:
-							results = payload.(models.NewResults)
+							results = payload
 						case redox.Notes:
-							notes = payload.(redox.Notes)
+							notes = payload
 						case models.NewFlowsheet:
-							flowsheet = payload.(models.NewFlowsheet)
+							flowsheet = payload
 						}
 					}
 
