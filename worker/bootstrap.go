@@ -1,15 +1,15 @@
 package worker
 
 import (
+	"net/http"
+
 	"github.com/tidepool-org/clinic-worker/merge"
 	"github.com/tidepool-org/clinic-worker/redox"
-	"net/http"
 
 	"github.com/tidepool-org/clinic-worker/cdc"
 	"github.com/tidepool-org/clinic-worker/clinicians"
 	"github.com/tidepool-org/clinic-worker/clinics"
 	"github.com/tidepool-org/clinic-worker/datasources"
-	"github.com/tidepool-org/clinic-worker/marketo"
 	"github.com/tidepool-org/clinic-worker/migration"
 	"github.com/tidepool-org/clinic-worker/patientdeletions"
 	"github.com/tidepool-org/clinic-worker/patients"
@@ -47,7 +47,6 @@ var Modules = []fx.Option{
 	redox.Module,
 	users.Module,
 	useractivity.Module,
-	marketo.Module,
 	patientdeletions.Module,
 }
 

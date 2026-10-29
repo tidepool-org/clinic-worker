@@ -33,10 +33,6 @@ func (f *fakeShoreline) GetUser(userID, token string) (*shoreline.UserData, erro
 	return f.user, f.err
 }
 
-type fakeMarketo struct{}
-
-func (f fakeMarketo) RefreshUserDetails(userId string) error { return nil }
-
 type fakeMailer struct{}
 
 func (f fakeMailer) SendEmailTemplate(context.Context, events.SendEmailTemplateEvent) error {
@@ -66,11 +62,10 @@ var _ = Describe("ClinicianCDCConsumer", func() {
 
 		var err error
 		consumer, err = clinicians.NewClinicianCDCConsumer(clinicians.Params{
-			Clinics:       clinicsService,
-			Logger:        zap.NewNop().Sugar(),
-			Mailer:        fakeMailer{},
-			MarketoClient: fakeMarketo{},
-			Shoreline:     shorelineClient,
+			Clinics:   clinicsService,
+			Logger:    zap.NewNop().Sugar(),
+			Mailer:    fakeMailer{},
+			Shoreline: shorelineClient,
 		})
 		Expect(err).ToNot(HaveOccurred())
 	})
