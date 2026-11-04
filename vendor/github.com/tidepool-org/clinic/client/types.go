@@ -13,6 +13,13 @@ const (
 	SessionTokenScopes = "sessionToken.Scopes"
 )
 
+// Defines values for BulkPatientOutputRowV1Emailed.
+const (
+	N             BulkPatientOutputRowV1Emailed = "N"
+	NInvalidEmail BulkPatientOutputRowV1Emailed = "N (invalid email)"
+	Y             BulkPatientOutputRowV1Emailed = "Y"
+)
+
 // Defines values for ClinicV1ClinicSize.
 const (
 	N0249   ClinicV1ClinicSize = "0-249"
@@ -955,6 +962,32 @@ type BgmStatsV1 struct {
 	Periods BgmPeriodsV1 `json:"periods,omitempty"`
 }
 
+// BulkPatientOutputRowV1 defines model for bulkPatientOutputRow.v1.
+type BulkPatientOutputRowV1 struct {
+	// BirthDate The patient's date of birth.
+	BirthDate     *openapi_types.Date `json:"birthDate,omitempty"`
+	DiagnosisType *DiagnosisTypeV1    `json:"diagnosisType,omitempty"`
+
+	// Email The patient's optional email.
+	Email *openapi_types.Email `json:"email,omitempty"`
+
+	// Emailed A description of whether the patient was emailed.
+	Emailed *BulkPatientOutputRowV1Emailed `json:"emailed,omitempty"`
+
+	// FullName The name of the patient.
+	FullName       *string                `json:"fullName,omitempty"`
+	GlycemicTarget GlycemicRangesPresetV1 `json:"glycemicTarget,omitempty,omitzero"`
+
+	// Mrn The medical record number of the patient
+	Mrn *string `json:"mrn,omitempty"`
+
+	// Reason If an error was encountered, the non-empty error reason string .
+	Reason *string `json:"reason,omitempty"`
+}
+
+// BulkPatientOutputRowV1Emailed A description of whether the patient was emailed.
+type BulkPatientOutputRowV1Emailed string
+
 // CgmPeriodV1 Summary of a specific CGM time period (currently: 1d, 7d, 14d, 30d)
 type CgmPeriodV1 struct {
 	// AverageDailyRecords Average daily readings
@@ -1362,6 +1395,9 @@ type CreatePatientV1 struct {
 
 // DataSourceV1 defines model for dataSource.v1.
 type DataSourceV1 struct {
+	// CreatedTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	CreatedTime *DatetimeV1 `json:"createdTime,omitempty"`
+
 	// DataSourceId String representation of a resource id
 	DataSourceId *string `json:"dataSourceId,omitempty"`
 
@@ -2140,6 +2176,11 @@ type ListClinicsParams struct {
 	EhrEnabled *EhrEnabled `form:"ehrEnabled,omitempty" json:"ehrEnabled,omitempty"`
 }
 
+// BulkCreatePatientsParams defines parameters for BulkCreatePatients.
+type BulkCreatePatientsParams struct {
+	DryRun *bool `form:"dryRun,omitempty" json:"dryRun,omitempty"`
+}
+
 // ListCliniciansParams defines parameters for ListClinicians.
 type ListCliniciansParams struct {
 	// Search Full text search query
@@ -2148,6 +2189,12 @@ type ListCliniciansParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Email  *Email  `form:"email,omitempty" json:"email,omitempty"`
 	Role   *Role   `form:"role,omitempty" json:"role,omitempty"`
+}
+
+// ExportPatientListParams defines parameters for ExportPatientList.
+type ExportPatientListParams struct {
+	// Period Time Period to display
+	Period string `form:"period" json:"period"`
 }
 
 // ListPatientsParams defines parameters for ListPatients.
