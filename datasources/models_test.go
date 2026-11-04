@@ -50,6 +50,19 @@ var _ = Describe("CDCEvent", func() {
 			Expect(body.CreatedTime).To(BeNil())
 		})
 
+		It("sets the connected time of the data source", func() {
+			connectedTime := time.Date(2025, 1, 1, 0, 30, 0, 123456789, time.UTC)
+			source.ConnectedTime = &connectedTime
+			body := event.CreateUpdateBody(source)
+			Expect(body.ConnectedTime).ToNot(BeNil())
+			Expect(string(*body.ConnectedTime)).To(Equal("2025-01-01T00:30:00.123456789Z"))
+		})
+
+		It("omits the connected time when the data source doesn't have one", func() {
+			body := event.CreateUpdateBody(source)
+			Expect(body.ConnectedTime).To(BeNil())
+		})
+
 		It("sets the remaining data source attributes", func() {
 			body := event.CreateUpdateBody(source)
 			Expect(body.DataSourceId).ToNot(BeNil())
