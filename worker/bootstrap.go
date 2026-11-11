@@ -14,6 +14,7 @@ import (
 	"github.com/tidepool-org/clinic-worker/patientdeletions"
 	"github.com/tidepool-org/clinic-worker/patients"
 	"github.com/tidepool-org/clinic-worker/useractivity"
+	"github.com/tidepool-org/clinic-worker/userprofiles"
 	"github.com/tidepool-org/clinic-worker/users"
 	"github.com/tidepool-org/go-common/events"
 	"go.uber.org/fx"
@@ -47,6 +48,7 @@ var Modules = []fx.Option{
 	redox.Module,
 	users.Module,
 	useractivity.Module,
+	userprofiles.Module,
 	marketo.Module,
 	patientdeletions.Module,
 }
