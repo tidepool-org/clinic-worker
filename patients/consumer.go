@@ -167,12 +167,8 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 		}
 	}
 
-	if event.PatientNeedsSummary() {
-		p.logger.Infow("processing summary initialization", "event", event)
-		err := p.populateSummary(*event.FullDocument.UserId)
-		if err != nil {
-			return err
-		}
+	if err := p.syncSummariesIfNeeded(ctx, event); err != nil {
+		return err
 	}
 
 	if event.IsUploadReminderEvent() {
@@ -234,51 +230,35 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 	return nil
 }
 
-/*
-Here we populate summaries for all supported types, as with new patients we don't know which
-summaries a user has, and should pull all.
-*/
-func (p *PatientCDCConsumer) populateSummary(userId string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-	defer cancel()
-	cgmSummaryResponse, err := p.summaries.GetSummaryWithResponse(ctx, "cgm", userId)
-	if err != nil {
-		return err
-	}
+// syncSummariesIfNeeded requests a sync of the user's summaries when the event leaves a
+// patient record without the summary it needs. The data service computes the summary of
+// each patient record for the glycemic ranges of the record, so it is asked for one when
+// a record has none yet, and again when the ranges of a record change.
+func (p *PatientCDCConsumer) syncSummariesIfNeeded(ctx context.Context,
+	event PatientCDCEvent) error {
 
-	bgmSummaryResponse, err := p.summaries.GetSummaryWithResponse(ctx, "bgm", userId)
-	if err != nil {
-		return err
-	}
-
-	if !(cgmSummaryResponse.StatusCode() == http.StatusOK || cgmSummaryResponse.StatusCode() == http.StatusNotFound) {
-		return fmt.Errorf("unexpected status code when retrieving patient summary %v", cgmSummaryResponse.StatusCode())
-	}
-
-	if !(bgmSummaryResponse.StatusCode() == http.StatusOK || bgmSummaryResponse.StatusCode() == http.StatusNotFound) {
-		return fmt.Errorf("unexpected status code when retrieving patient summary %v", bgmSummaryResponse.StatusCode())
-	}
-
-	// user has no summary, do nothing
-	if cgmSummaryResponse.JSON200 == nil && bgmSummaryResponse.JSON200 == nil {
-		p.logger.Warnf("No existing BGM or CGM summary to copy for userId %s", userId)
+	needsSummary := event.PatientNeedsSummary()
+	rangesChanged := event.GlycemicRangesChanged()
+	if !needsSummary && !rangesChanged {
 		return nil
 	}
+	p.logger.Infow("requesting summary sync", "event", event,
+		"needsSummary", needsSummary, "glycemicRangesChanged", rangesChanged)
+	return p.syncSummaries(ctx, *event.FullDocument.UserId)
+}
 
-	updateBody, err := CreateSummaryUpdateBody(cgmSummaryResponse.JSON200, bgmSummaryResponse.JSON200)
+// syncSummaries asks the data service to send the summaries of the user to the clinic
+// service: to each patient record of the user, the summary computed for its glycemic
+// ranges. The data service sends nothing for a user without data.
+func (p *PatientCDCConsumer) syncSummaries(ctx context.Context, userId string) error {
+	response, err := p.summaries.SyncSummariesWithResponse(ctx, userId)
 	if err != nil {
 		return err
 	}
-
-	response, err := p.clinics.UpdatePatientSummaryWithResponse(ctx, userId, updateBody)
-	if err != nil {
-		return err
+	if response.StatusCode() != http.StatusAccepted {
+		return fmt.Errorf("unexpected status code when requesting summary sync %v",
+			response.StatusCode())
 	}
-
-	if !(response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusNoContent) {
-		return fmt.Errorf("unexpected status code when updating patient summary %v", response.StatusCode())
-	}
-
 	return nil
 }
 

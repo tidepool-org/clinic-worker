@@ -1,9 +1,10 @@
 package patients
 
 import (
+	"encoding/json"
+	"slices"
+	"strings"
 	"time"
-
-	summaries "github.com/tidepool-org/go-common/clients/summary"
 
 	"github.com/tidepool-org/clinic-worker/cdc"
 	api "github.com/tidepool-org/clinic/client"
@@ -45,6 +46,8 @@ func (p PatientCDCEvent) IsPatientCreateFromExistingUserEvent() bool {
 	return p.OperationType == cdc.OperationTypeInsert && !p.FullDocument.IsCustodial()
 }
 
+// PatientNeedsSummary reports whether the event creates a patient record without a
+// summary, which the data service is then asked to send.
 func (p PatientCDCEvent) PatientNeedsSummary() bool {
 	if p.OperationType != cdc.OperationTypeInsert {
 		return false
@@ -58,6 +61,34 @@ func (p PatientCDCEvent) PatientNeedsSummary() bool {
 	return p.FullDocument.Summary == nil
 }
 
+const glycemicRangesField = "glycemicRanges"
+
+// GlycemicRangesChanged reports whether the event changes the glycemic ranges of a
+// patient record, whose summary is then out of date: it was computed for the ranges the
+// record had before. A change to the ranges is described either as the whole field, or
+// as the paths of the parts of it that changed or were removed. A replacement doesn't
+// describe what changed, so it is reported as a change.
+func (p PatientCDCEvent) GlycemicRangesChanged() bool {
+	if p.FullDocument.UserId == nil {
+		return false
+	}
+	switch p.OperationType {
+	case cdc.OperationTypeReplace:
+		return true
+	case cdc.OperationTypeUpdate:
+		description := p.UpdateDescription
+		return slices.ContainsFunc(description.UpdatedFieldNames, isGlycemicRangesField) ||
+			slices.ContainsFunc(description.RemovedFields, isGlycemicRangesField)
+	}
+	return false
+}
+
+// isGlycemicRangesField reports whether name is the glycemic ranges field of a patient
+// record, or the path of a part of it.
+func isGlycemicRangesField(name string) bool {
+	return name == glycemicRangesField || strings.HasPrefix(name, glycemicRangesField+".")
+}
+
 func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interface{}) {
 	switch p.OperationType {
 	case cdc.OperationTypeInsert, cdc.OperationTypeReplace:
@@ -67,32 +98,9 @@ func (p PatientCDCEvent) ApplyUpdatesToExistingProfile(profile map[string]interf
 	}
 }
 
-type Dates struct {
-	FirstData         cdc.Date  `json:"firstData,omitempty"`
-	LastData          cdc.Date  `json:"lastData,omitempty"`
-	LastUpdatedDate   cdc.Date  `json:"lastUpdatedDate,omitempty"`
-	LastUpdatedReason []string  `json:"lastUpdatedReason,omitempty"`
-	LastUploadDate    cdc.Date  `json:"lastUploadDate,omitempty"`
-	OutdatedReason    []string  `json:"outdatedReason,omitempty"`
-	OutdatedSince     *cdc.Date `json:"outdatedSince,omitempty"`
-}
-
-type BGMStats struct {
-	Config  summaries.SummaryConfigV1             `json:"config" bson:"config"`
-	Dates   Dates                                 `json:"dates" bson:"dates"`
-	Periods map[string]*summaries.GlucosePeriodV5 `json:"periods" bson:"periods"`
-}
-
-type CGMStats struct {
-	Config  summaries.SummaryConfigV1             `json:"config" bson:"config"`
-	Dates   Dates                                 `json:"dates" bson:"dates"`
-	Periods map[string]*summaries.GlucosePeriodV5 `json:"periods" bson:"periods"`
-}
-
-type CDCSummary struct {
-	CGM *CGMStats `json:"cgmStats" bson:"cgmStats"`
-	BGM *BGMStats `json:"bgmStats" bson:"bgmStats"`
-}
+// PatientSummary only records that a patient record has a summary: the data service
+// sends summaries to the clinic service, so nothing here reads their content.
+type PatientSummary struct{}
 
 type Patient struct {
 	Id                             *cdc.ObjectId              `json:"_id" bson:"_id"`
@@ -109,7 +117,7 @@ type Patient struct {
 	InvitedBy                      *string                    `json:"invitedBy" bson:"invitedBy"`
 	LastRequestedDexcomConnectTime *cdc.Date                  `json:"lastRequestedDexcomConnectTime" bson:"lastRequestedDexcomConnectTime"`
 	LastUploadReminderTime         *cdc.Date                  `json:"lastUploadReminderTime" bson:"lastUploadReminderTime"`
-	Summary                        *CDCSummary                `json:"summary" bson:"summary"`
+	Summary                        *PatientSummary            `json:"summary" bson:"summary"`
 	ProviderConnectionRequests     ProviderConnectionRequests `json:"providerConnectionRequests" bson:"providerConnectionRequests"`
 	DiagnosisType                  *string                    `json:"diagnosisType" bson:"diagnosisType"`
 }
@@ -157,6 +165,32 @@ type Permission map[string]interface{}
 type UpdateDescription struct {
 	UpdatedFields UpdatedFields `json:"updatedFields"`
 	RemovedFields []string      `json:"removedFields"`
+
+	// UpdatedFieldNames holds the name of every updated field, including the paths of
+	// nested fields updated in part, which UpdatedFields can't all represent.
+	UpdatedFieldNames []string `json:"-"`
+}
+
+// UnmarshalJSON decodes the update description, and records the names of the updated
+// fields.
+func (u *UpdateDescription) UnmarshalJSON(data []byte) error {
+	type plain UpdateDescription
+	if err := json.Unmarshal(data, (*plain)(u)); err != nil {
+		return err
+	}
+
+	var names struct {
+		UpdatedFields map[string]json.RawMessage `json:"updatedFields"`
+	}
+	if err := json.Unmarshal(data, &names); err != nil {
+		return err
+	}
+	u.UpdatedFieldNames = make([]string, 0, len(names.UpdatedFields))
+	for name := range names.UpdatedFields {
+		u.UpdatedFieldNames = append(u.UpdatedFieldNames, name)
+	}
+	slices.Sort(u.UpdatedFieldNames)
+	return nil
 }
 
 func (u UpdateDescription) applyUpdatesToExistingProfile(profile map[string]interface{}) {
