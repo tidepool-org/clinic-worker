@@ -84,29 +84,50 @@ type Observation struct {
 
 // PopulateSummaryStatistics populates a flowsheet with patient summary statistics. If summary statistics are not available,
 // the flowsheet items will be populated with 'NOT AVAILABLE'.
+//
+// The flowsheet also gets an observation of each threshold between the glycemic ranges the
+// statistics were computed with.
 func PopulateSummaryStatistics(patient clinics.PatientV1, settings FlowsheetSettings, flowsheet *models.NewFlowsheet) []*Observation {
 	if patient.Summary == nil {
 		return nil
 	}
 
 	var observations []*Observation
+	var rangesKeys, reportingTimes []string
 	cgmStats := patient.Summary.CgmStats
 	if cgmStats != nil && cgmStats.Dates.LastUpdatedDate != nil && cgmStats.Dates.LastData != nil {
 		if !cgmStats.Dates.LastUpdatedDate.IsZero() && !cgmStats.Dates.LastData.IsZero() {
-			observations = append(observations, PopulateCGMObservations(cgmStats, settings, flowsheet)...)
+			observations = append(observations, PopulateCGMObservations(cgmStats, patient.GlycemicRanges, settings, flowsheet)...)
+			rangesKeys = append(rangesKeys, cgmStats.Config.GlycemicRangesKey)
+			reportingTimes = append(reportingTimes, formatTime(cgmStats.Dates.LastUpdatedDate))
 		}
 	}
 
 	bgmStats := patient.Summary.BgmStats
 	if bgmStats != nil && bgmStats.Dates.LastUpdatedDate != nil && bgmStats.Dates.LastData != nil {
 		if !bgmStats.Dates.LastUpdatedDate.IsZero() && !bgmStats.Dates.LastData.IsZero() {
-			observations = append(observations, PopulateBGMObservations(bgmStats, settings, flowsheet)...)
+			observations = append(observations, PopulateBGMObservations(bgmStats, patient.GlycemicRanges, settings, flowsheet)...)
+			rangesKeys = append(rangesKeys, bgmStats.Config.GlycemicRangesKey)
+			reportingTimes = append(reportingTimes, formatTime(bgmStats.Dates.LastUpdatedDate))
 		}
 	}
-	return observations
+
+	thresholds := glycemicRangesThresholdObservations(rangesKeys, reportingTimes,
+		patient.GlycemicRanges, settings.PreferredBGUnits)
+	for _, observation := range thresholds {
+		AppendObservation(flowsheet, observation)
+	}
+	return append(observations, thresholds...)
 }
 
-func CalculateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettings) []*Observation {
+// CalculateCGMObservations returns the flowsheet observations for a patient's CGM
+// summary. The observations about time in a glycemic range describe the ranges the summary
+// was computed with; ranges, the patient's glycemic ranges, supply the name of those. An
+// observation about a very low or very high range that those ranges don't define has the
+// value "NaN".
+func CalculateCGMObservations(stats *clinics.CgmStatsV1, ranges *clinics.GlycemicRangesV1,
+	settings FlowsheetSettings) []*Observation {
+
 	now := time.Now()
 
 	var period *clinics.CgmPeriodV1
@@ -175,15 +196,35 @@ func CalculateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSetti
 		timeInVeryHigh = period.TimeInVeryHighPercent
 	}
 
+	glycemicRangesKey := ""
+	if stats != nil {
+		glycemicRangesKey = stats.Config.GlycemicRangesKey
+	}
+	describer := newGlycemicRangesDescriber(glycemicRangesKey, ranges)
 	observations := []*Observation{
 		{"REPORTING_PERIOD_START_CGM", formatTime(periodStart), "DateTime", nil, reportingTime, "CGM Reporting Period Start"},
 		{"REPORTING_PERIOD_END_CGM", formatTime(periodEnd), "DateTime", nil, reportingTime, "CGM Reporting Period End"},
 		{"REPORTING_PERIOD_START_CGM_DATA", formatTime(firstData), "DateTime", nil, reportingTime, "CGM Reporting Period Start Date of actual Data"},
-		{"TIME_ABOVE_RANGE_VERY_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInVeryHigh)), "Numeric", &unitsPercentage, reportingTime, "CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)"},
-		{"TIME_ABOVE_RANGE_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInHigh)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)"},
-		{"TIME_IN_RANGE_CGM", formatFloat(unitIntervalToPercent(timeInTarget)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)"},
-		{"TIME_BELOW_RANGE_LOW_CGM", formatFloat(unitIntervalToPercent(timeInLow)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time 54–69 mg/dL (3.0–3.8 mmol/L)"},
-		{"TIME_BELOW_RANGE_VERY_LOW_CGM", formatFloat(unitIntervalToPercent(timeInVeryLow)), "Numeric", &unitsPercentage, reportingTime, "CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)"},
+		{"TIME_ABOVE_RANGE_VERY_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInVeryHigh)), "Numeric", &unitsPercentage, reportingTime,
+			describer.describe(rangeVeryHigh,
+				"CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time >250 mg/dL (>13.9 mmol/L)",
+				"CGM Level 2 Hyperglycemia: Time above range (TAR-VH): % of readings and time", "")},
+		{"TIME_ABOVE_RANGE_HIGH_CGM", formatFloat(unitIntervalToPercent(timeInHigh)), "Numeric", &unitsPercentage, reportingTime,
+			describer.describe(rangeHigh,
+				"CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time 181–250 mg/dL (10.1–13.9 mmol/L)",
+				"CGM Time in Level 1 Hyperglycemia: Time above range (TAR-H): % of readings and time", "")},
+		{"TIME_IN_RANGE_CGM", formatFloat(unitIntervalToPercent(timeInTarget)), "Numeric", &unitsPercentage, reportingTime,
+			describer.describe(rangeTarget,
+				"CGM Time in Range: Time in range (TIR): % of readings and time 70–180 mg/dL (3.9–10.0 mmol/L)",
+				"CGM Time in Range: Time in range (TIR): % of readings and time", "")},
+		{"TIME_BELOW_RANGE_LOW_CGM", formatFloat(unitIntervalToPercent(timeInLow)), "Numeric", &unitsPercentage, reportingTime,
+			describer.describe(rangeLow,
+				"CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time 54–69 mg/dL (3.0–3.8 mmol/L)",
+				"CGM Time in Level 1 Hypoglycemia: Time below range (TBR-L): % of readings and time", "")},
+		{"TIME_BELOW_RANGE_VERY_LOW_CGM", formatFloat(unitIntervalToPercent(timeInVeryLow)), "Numeric", &unitsPercentage, reportingTime,
+			describer.describe(rangeVeryLow,
+				"CGM Time in Level 2 Hypoglycemia: <Time below range (TBR-VL): % of readings and time <54 mg/dL (<3.0 mmol/L)",
+				"CGM Time in Level 2 Hypoglycemia: Time below range (TBR-VL): % of readings and time", "")},
 		{"GLUCOSE_MANAGEMENT_INDICATOR", formatFloat(gmi), "Numeric", nil, reportingTime, "CGM Glucose Management Indicator during reporting period"},
 		{"AVERAGE_CGM", formatFloat(averageGlucose), "Numeric", &destGlucoseUnits, reportingTime, "CGM Average Glucose during reporting period"},
 		{"STANDARD_DEVIATION_CGM", formatFloat(cgmStdDev), "Numeric", &destGlucoseUnits, reportingTime, "The standard deviation of CGM measurements during the reporting period"},
@@ -220,20 +261,35 @@ func CalculateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSetti
 		observationsMap["TIME_ABOVE_RANGE_VERY_HIGH_CGM"].Value = formatFloatConditionalPrecision(unitIntervalToPercent(timeInVeryHigh))
 	}
 
+	// After the icode formatting, which would otherwise restore the values
+	describer.markUndefinedRanges(observations, map[string]glycemicRange{
+		"TIME_BELOW_RANGE_VERY_LOW_CGM":  rangeVeryLow,
+		"TIME_ABOVE_RANGE_VERY_HIGH_CGM": rangeVeryHigh,
+	})
+
 	return slices.DeleteFunc(observations, func(o *Observation) bool {
 		return o.Value == missingValue
 	})
 }
 
-func PopulateCGMObservations(stats *clinics.CgmStatsV1, settings FlowsheetSettings, f *models.NewFlowsheet) []*Observation {
-	observations := CalculateCGMObservations(stats, settings)
+func PopulateCGMObservations(stats *clinics.CgmStatsV1, ranges *clinics.GlycemicRangesV1,
+	settings FlowsheetSettings, f *models.NewFlowsheet) []*Observation {
+
+	observations := CalculateCGMObservations(stats, ranges, settings)
 	for _, observation := range observations {
 		AppendObservation(f, observation)
 	}
 	return observations
 }
 
-func CalculateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettings) []*Observation {
+// CalculateBGMObservations returns the flowsheet observations for a patient's BGM
+// summary. The observations about readings in a glycemic range describe the ranges the
+// summary was computed with; ranges, the patient's glycemic ranges, supply the name of
+// those. An observation about a very low or very high range that those ranges don't
+// define has the value "NaN".
+func CalculateBGMObservations(stats *clinics.BgmStatsV1, ranges *clinics.GlycemicRangesV1,
+	settings FlowsheetSettings) []*Observation {
+
 	now := time.Now()
 
 	var period *clinics.BgmPeriodV1
@@ -316,17 +372,43 @@ func CalculateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSetti
 		timeInVeryHighPercent = period.TimeInVeryHighPercent
 	}
 
+	glycemicRangesKey := ""
+	if stats != nil {
+		glycemicRangesKey = stats.Config.GlycemicRangesKey
+	}
+	describer := newGlycemicRangesDescriber(glycemicRangesKey, ranges)
 	observations := []*Observation{
 		{"REPORTING_PERIOD_START_SMBG", formatTime(periodStart), "DateTime", nil, reportingTime, "SMBG Reporting Period Start"},
 		{"REPORTING_PERIOD_END_SMBG", formatTime(periodEnd), "DateTime", nil, reportingTime, "SMBG Reporting Period End"},
 		{"REPORTING_PERIOD_START_SMBG_DATA", formatTime(firstData), "DateTime", nil, reportingTime, "SMBG Reporting Period Start Date of actual Data"},
-		{"TIME_ABOVE_RANGE_VERY_HIGH_SMBG", formatFloat(unitIntervalToPercent(timeInVeryHighPercent)), "Numeric", &unitsPercentage, reportingTime, "% of readings > 250 mg/dL (>13.9 mmol/L)"},
-		{"TIME_ABOVE_RANGE_HIGH_SMBG", formatFloat(unitIntervalToPercent(timeInHighPercent)), "Numeric", &unitsPercentage, reportingTime, "% of readings between 181–250 mg/dL (10.1–13.9 mmol/L)"},
-		{"TIME_IN_RANGE_SMBG", formatFloat(unitIntervalToPercent(timeInTargetPercent)), "Numeric", &unitsPercentage, reportingTime, "% of readings between 70–180 mg/dL (3.9–10.0 mmol/L)"},
-		{"TIME_BELOW_RANGE_LOW_SMBG", formatFloat(unitIntervalToPercent(timeInLowPercent)), "Numeric", &unitsPercentage, reportingTime, "% of readings between 54–69 mg/dL (3.0–3.8 mmol/L)"},
-		{"TIME_BELOW_RANGE_VERY_LOW_SMBG", formatFloat(unitIntervalToPercent(timeInVeryLowPercent)), "Numeric", &unitsPercentage, reportingTime, "% of readings < 54 mg/dL (<3.0 mmol/L)"},
-		{"READINGS_ABOVE_RANGE_VERY_HIGH_SMBG", formatInt(timeInVeryHighRecords), "Numeric", nil, reportingTime, "SMBG Level 2 Hyperglycemia: Number of readings above range (TAR-VH) time >250 mg/dL (>13.9 mmol/L) during reporting period"},
-		{"READINGS_BELOW_RANGE_VERY_LOW_SMBG", formatInt(timeInVeryLowRecords), "Numeric", nil, reportingTime, "SMBG Level 2 Hypoglycemia Events: Number of readings <54 mg/dL (<3.0 mmol/L) during reporting period"},
+		{"TIME_ABOVE_RANGE_VERY_HIGH_SMBG", formatFloat(unitIntervalToPercent(timeInVeryHighPercent)), "Numeric", &unitsPercentage, reportingTime,
+			describer.describe(rangeVeryHigh,
+				"% of readings > 250 mg/dL (>13.9 mmol/L)",
+				"% of readings", "")},
+		{"TIME_ABOVE_RANGE_HIGH_SMBG", formatFloat(unitIntervalToPercent(timeInHighPercent)), "Numeric", &unitsPercentage, reportingTime,
+			describer.describe(rangeHigh,
+				"% of readings between 181–250 mg/dL (10.1–13.9 mmol/L)",
+				"% of readings", "")},
+		{"TIME_IN_RANGE_SMBG", formatFloat(unitIntervalToPercent(timeInTargetPercent)), "Numeric", &unitsPercentage, reportingTime,
+			describer.describe(rangeTarget,
+				"% of readings between 70–180 mg/dL (3.9–10.0 mmol/L)",
+				"% of readings", "")},
+		{"TIME_BELOW_RANGE_LOW_SMBG", formatFloat(unitIntervalToPercent(timeInLowPercent)), "Numeric", &unitsPercentage, reportingTime,
+			describer.describe(rangeLow,
+				"% of readings between 54–69 mg/dL (3.0–3.8 mmol/L)",
+				"% of readings", "")},
+		{"TIME_BELOW_RANGE_VERY_LOW_SMBG", formatFloat(unitIntervalToPercent(timeInVeryLowPercent)), "Numeric", &unitsPercentage, reportingTime,
+			describer.describe(rangeVeryLow,
+				"% of readings < 54 mg/dL (<3.0 mmol/L)",
+				"% of readings", "")},
+		{"READINGS_ABOVE_RANGE_VERY_HIGH_SMBG", formatInt(timeInVeryHighRecords), "Numeric", nil, reportingTime,
+			describer.describe(rangeVeryHigh,
+				"SMBG Level 2 Hyperglycemia: Number of readings above range (TAR-VH) time >250 mg/dL (>13.9 mmol/L) during reporting period",
+				"SMBG Level 2 Hyperglycemia: Number of readings above range (TAR-VH)", " during reporting period")},
+		{"READINGS_BELOW_RANGE_VERY_LOW_SMBG", formatInt(timeInVeryLowRecords), "Numeric", nil, reportingTime,
+			describer.describe(rangeVeryLow,
+				"SMBG Level 2 Hypoglycemia Events: Number of readings <54 mg/dL (<3.0 mmol/L) during reporting period",
+				"SMBG Level 2 Hypoglycemia Events: Number of readings", " during reporting period")},
 		{"MAX_SMBG", formatFloat(maxGlucose), "Numeric", &destGlucoseUnits, reportingTime, "Maximum blood glucose reading over the time period"},
 		{"MIN_SMBG", formatFloat(minGlucose), "Numeric", &destGlucoseUnits, reportingTime, "Minimum blood glucose reading over the time period"},
 		{"AVERAGE_SMBG", formatFloat(averageGlucose), "Numeric", &destGlucoseUnits, reportingTime, "SMBG Average Glucose during reporting period"},
@@ -366,13 +448,23 @@ func CalculateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSetti
 		observationsMap["TIME_ABOVE_RANGE_VERY_HIGH_SMBG"].Value = formatFloatConditionalPrecision(unitIntervalToPercent(timeInVeryHighPercent))
 	}
 
+	// After the icode formatting, which would otherwise restore the values
+	describer.markUndefinedRanges(observations, map[string]glycemicRange{
+		"TIME_BELOW_RANGE_VERY_LOW_SMBG":      rangeVeryLow,
+		"TIME_ABOVE_RANGE_VERY_HIGH_SMBG":     rangeVeryHigh,
+		"READINGS_BELOW_RANGE_VERY_LOW_SMBG":  rangeVeryLow,
+		"READINGS_ABOVE_RANGE_VERY_HIGH_SMBG": rangeVeryHigh,
+	})
+
 	return slices.DeleteFunc(observations, func(o *Observation) bool {
 		return o.Value == missingValue
 	})
 }
 
-func PopulateBGMObservations(stats *clinics.BgmStatsV1, settings FlowsheetSettings, f *models.NewFlowsheet) []*Observation {
-	observations := CalculateBGMObservations(stats, settings)
+func PopulateBGMObservations(stats *clinics.BgmStatsV1, ranges *clinics.GlycemicRangesV1,
+	settings FlowsheetSettings, f *models.NewFlowsheet) []*Observation {
+
+	observations := CalculateBGMObservations(stats, ranges, settings)
 	for _, observation := range observations {
 		AppendObservation(f, observation)
 	}

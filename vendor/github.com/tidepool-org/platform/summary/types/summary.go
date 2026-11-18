@@ -11,25 +11,38 @@ import (
 	"github.com/tidepool-org/platform/data"
 	"github.com/tidepool-org/platform/data/types/blood/glucose/continuous"
 	"github.com/tidepool-org/platform/data/types/blood/glucose/selfmonitored"
-	"github.com/tidepool-org/platform/pointer"
 )
 
 const (
 	SummaryTypeCGM        = "cgm"
 	SummaryTypeBGM        = "bgm"
 	SummaryTypeContinuous = "con"
-	SchemaVersion         = 6
 
-	lowBloodGlucose         = 3.9
-	veryLowBloodGlucose     = 3.0
-	highBloodGlucose        = 10.0
-	veryHighBloodGlucose    = 13.9
-	extremeHighBloodGlucose = 19.4
-	HoursAgoToKeep          = 60 * 24
+	// A summary whose schema version doesn't match is recalculated from scratch only the
+	// next time it's updated. If incrementing it requires every summary to be migrated
+	// promptly, then also change the recalculation id in the
+	// data/work/summary/recalculate package. That recalculates only the CGM and BGM
+	// summaries. Version 7 added the readings to the glucose buckets.
+	SchemaVersion = 7
 
-	OutdatedReasonUploadCompleted = "UPLOAD_COMPLETED"
-	OutdatedReasonDataAdded       = "DATA_ADDED"
-	OutdatedReasonSchemaMigration = "SCHEMA_MIGRATION"
+	// These values are defined in BACK-4158. They represent the ADA standard glucose
+	// ranges, as StandardCutPoints. If they, or how readings are classified against them,
+	// are modified, then change the recalculation id in the data/work/summary/recalculate
+	// package, so that every patient's summary is recalculated based on the modified
+	// thresholds. The cut points of other glucose ranges are derived in ranges.go, and the
+	// tests check that these classify readings as those derived for the ADA standard
+	// preset do.
+	//
+	// Readings are compared after normalization to mmol/L, so each cut point sits in the
+	// gap between the nearest whole mg/dL and one-decimal mmol/L values, classifying both
+	// as the ADA standard intends. Readings with finer precision may not classify as
+	// expected.
+	veryLowBloodGlucose  = 2.97
+	lowBloodGlucose      = 3.87
+	highBloodGlucose     = 10.02
+	veryHighBloodGlucose = 13.91
+
+	HoursAgoToKeep = 60 * 24
 )
 
 var DeviceDataTypesSet = mapset.NewSet[string](continuous.Type, selfmonitored.Type)
@@ -41,16 +54,11 @@ var DeviceDataToSummaryTypes = map[string][]string{
 
 var AllSummaryTypes = []string{SummaryTypeCGM, SummaryTypeBGM, SummaryTypeContinuous}
 
-type OutdatedSummariesResponse struct {
-	UserIds []string  `json:"userIds"`
-	Start   time.Time `json:"start"`
-	End     time.Time `json:"end"`
-}
-
 type Config struct {
 	SchemaVersion int `json:"schemaVersion" bson:"schemaVersion"`
 
-	// these are just constants right now.
+	GlycemicRangesKey string `json:"glycemicRangesKey,omitempty" bson:"glycemicRangesKey,omitempty"`
+
 	HighGlucoseThreshold     float64 `json:"highGlucoseThreshold" bson:"highGlucoseThreshold"`
 	VeryHighGlucoseThreshold float64 `json:"veryHighGlucoseThreshold" bson:"veryHighGlucoseThreshold"`
 	LowGlucoseThreshold      float64 `json:"lowGlucoseThreshold" bson:"lowGlucoseThreshold"`
@@ -58,15 +66,11 @@ type Config struct {
 }
 
 type Dates struct {
-	LastUpdatedDate   time.Time `json:"lastUpdatedDate" bson:"lastUpdatedDate"`
-	LastUpdatedReason []string  `json:"lastUpdatedReason,omitempty" bson:"lastUpdatedReason,omitempty"`
-	LastUploadDate    time.Time `json:"lastUploadDate,omitempty" bson:"lastUploadDate,omitempty"`
+	LastUpdatedDate time.Time `json:"lastUpdatedDate" bson:"lastUpdatedDate"`
+	LastUploadDate  time.Time `json:"lastUploadDate,omitempty" bson:"lastUploadDate,omitempty"`
 
 	FirstData time.Time `json:"firstData,omitempty" bson:"firstData,omitempty"`
 	LastData  time.Time `json:"lastData,omitempty" bson:"lastData,omitempty"`
-
-	OutdatedSince  *time.Time `json:"outdatedSince,omitempty" bson:"outdatedSince,omitempty"`
-	OutdatedReason []string   `json:"outdatedReason,omitempty" bson:"outdatedReason,omitempty"`
 }
 
 type CalcState struct {
@@ -86,14 +90,10 @@ type CalcState struct {
 
 func (d *Dates) Update(status *data.UserDataStatus, firstBucketDate time.Time) {
 	d.LastUpdatedDate = status.NextLastUpdated
-	d.LastUpdatedReason = d.OutdatedReason
 	d.LastUploadDate = status.LastUpload
 
 	d.FirstData = firstBucketDate
 	d.LastData = status.LastData
-
-	d.OutdatedSince = nil
-	d.OutdatedReason = nil
 }
 
 type Periods interface {
@@ -108,6 +108,19 @@ type PeriodsPt[P Periods, PB BucketDataPt[B], B BucketData] interface {
 	Update(context.Context, *mongo.Cursor) error
 }
 
+// RangeSetPeriods are periods that depend on the glycemic ranges their readings are
+// classified by, so that they can be calculated for any range set.
+type RangeSetPeriods interface {
+	// UpdateForRangeSet calculates the periods from the buckets, with their readings
+	// classified by the cut points.
+	UpdateForRangeSet(context.Context, *mongo.Cursor, CutPoints) error
+}
+
+var (
+	_ RangeSetPeriods = &CGMPeriods{}
+	_ RangeSetPeriods = &BGMPeriods{}
+)
+
 type BaseSummary struct {
 	ID     primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Type   string             `json:"type" bson:"type"`
@@ -117,41 +130,33 @@ type BaseSummary struct {
 }
 
 type Summary[PP PeriodsPt[P, PB, B], PB BucketDataPt[B], P Periods, B BucketData] struct {
-	BaseSummary `json:",inline" bson:",inline"`
+	BaseSummary `bson:",inline"`
 
 	Periods PP `json:"periods" bson:"periods"`
 }
 
+type CGMSummary = Summary[*CGMPeriods, *GlucoseBucket, CGMPeriods, GlucoseBucket]
+type BGMSummary = Summary[*BGMPeriods, *GlucoseBucket, BGMPeriods, GlucoseBucket]
+type ContinuousSummary = Summary[*ContinuousPeriods, *ContinuousBucket, ContinuousPeriods, ContinuousBucket]
+
+// NewConfig returns the config of a summary of the ADA standard ranges, as the stored
+// summaries are.
 func NewConfig() Config {
+	return NewConfigFor(StandardRangeSetKey, StandardCutPoints())
+}
+
+// NewConfigFor returns the config of a summary of the range set with the key and cut
+// points. A threshold the range set doesn't set has an infinite cut point, which JSON
+// can't encode.
+func NewConfigFor(key string, cutPoints CutPoints) Config {
 	return Config{
 		SchemaVersion:            SchemaVersion,
-		HighGlucoseThreshold:     highBloodGlucose,
-		VeryHighGlucoseThreshold: veryHighBloodGlucose,
-		LowGlucoseThreshold:      lowBloodGlucose,
-		VeryLowGlucoseThreshold:  veryLowBloodGlucose,
+		GlycemicRangesKey:        key,
+		HighGlucoseThreshold:     cutPoints.High,
+		VeryHighGlucoseThreshold: cutPoints.VeryHigh,
+		LowGlucoseThreshold:      cutPoints.Low,
+		VeryLowGlucoseThreshold:  cutPoints.VeryLow,
 	}
-}
-
-func (s *Summary[PP, PB, P, B]) SetOutdated(reason string) {
-	set := mapset.NewSet[string](reason)
-	if len(s.Dates.OutdatedReason) > 0 {
-		set.Append(s.Dates.OutdatedReason...)
-	}
-
-	if reason == OutdatedReasonSchemaMigration {
-		*s = *Create[PP, PB](s.UserID)
-	}
-
-	s.Dates.OutdatedReason = set.ToSlice()
-
-	if s.Dates.OutdatedSince == nil {
-		s.Dates.OutdatedSince = pointer.FromAny(time.Now().Truncate(time.Millisecond).UTC())
-	}
-}
-
-func (s *Summary[PP, PB, P, B]) SetNotOutdated() {
-	s.Dates.OutdatedReason = nil
-	s.Dates.OutdatedSince = nil
 }
 
 func NewDates() Dates {
@@ -180,10 +185,4 @@ func GetType[PP PeriodsPt[P, PB, B], PB BucketDataPt[B], P Periods, B BucketData
 func GetDeviceDataType[PS PeriodsPt[P, PB, B], PB BucketDataPt[B], P Periods, B BucketData]() []string {
 	s := new(Summary[PS, PB, P, B])
 	return s.Periods.GetDeviceDataTypes()
-}
-
-func (d *Dates) Reset() {
-	*d = Dates{
-		OutdatedReason: d.OutdatedReason,
-	}
 }

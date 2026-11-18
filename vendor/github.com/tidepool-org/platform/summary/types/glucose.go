@@ -129,7 +129,12 @@ func (r *Range) Add(new *Range) {
 }
 
 func (r *Range) Update(record Glucose) {
-	r.Minutes += record.Duration()
+	r.count(record.Duration())
+}
+
+// count counts a reading of the duration in the range.
+func (r *Range) count(duration int) {
+	r.Minutes += duration
 	r.Records++
 }
 
@@ -204,15 +209,14 @@ func (r *Range) CalculateDelta(currentRange, offsetRange *Range) {
 }
 
 type GlucoseRanges struct {
-	Total       Range `json:"total" bson:"total"`
-	VeryLow     Range `json:"inVeryLow" bson:"inVeryLow"`
-	Low         Range `json:"inLow" bson:"inLow"`
-	Target      Range `json:"inTarget" bson:"inTarget"`
-	High        Range `json:"inHigh" bson:"inHigh"`
-	VeryHigh    Range `json:"inVeryHigh" bson:"inVeryHigh"`
-	ExtremeHigh Range `json:"inExtremeHigh" bson:"inExtremeHigh"`
-	AnyLow      Range `json:"inAnyLow" bson:"inAnyLow"`
-	AnyHigh     Range `json:"inAnyHigh" bson:"inAnyHigh"`
+	Total    Range `json:"total" bson:"total"`
+	VeryLow  Range `json:"inVeryLow" bson:"inVeryLow"`
+	Low      Range `json:"inLow" bson:"inLow"`
+	Target   Range `json:"inTarget" bson:"inTarget"`
+	High     Range `json:"inHigh" bson:"inHigh"`
+	VeryHigh Range `json:"inVeryHigh" bson:"inVeryHigh"`
+	AnyLow   Range `json:"inAnyLow" bson:"inAnyLow"`
+	AnyHigh  Range `json:"inAnyHigh" bson:"inAnyHigh"`
 }
 
 func (rs *GlucoseRanges) Add(new *GlucoseRanges) {
@@ -222,7 +226,6 @@ func (rs *GlucoseRanges) Add(new *GlucoseRanges) {
 	rs.Target.Add(&new.Target)
 	rs.High.Add(&new.High)
 	rs.VeryHigh.Add(&new.VeryHigh)
-	rs.ExtremeHigh.Add(&new.ExtremeHigh)
 	rs.AnyLow.Add(&new.AnyLow)
 	rs.AnyHigh.Add(&new.AnyHigh)
 }
@@ -234,7 +237,6 @@ func (rs *GlucoseRanges) finalizeMinutes(days int) {
 	rs.Target.Percent = float64(rs.Target.Minutes) / float64(rs.Total.Minutes)
 	rs.High.Percent = float64(rs.High.Minutes) / float64(rs.Total.Minutes)
 	rs.VeryHigh.Percent = float64(rs.VeryHigh.Minutes) / float64(rs.Total.Minutes)
-	rs.ExtremeHigh.Percent = float64(rs.ExtremeHigh.Minutes) / float64(rs.Total.Minutes)
 	rs.AnyLow.Percent = float64(rs.AnyLow.Minutes) / float64(rs.Total.Minutes)
 	rs.AnyHigh.Percent = float64(rs.AnyHigh.Minutes) / float64(rs.Total.Minutes)
 }
@@ -247,7 +249,6 @@ func (rs *GlucoseRanges) finalizeRecords() {
 	rs.Target.Percent = float64(rs.Target.Records) / float64(rs.Total.Records)
 	rs.High.Percent = float64(rs.High.Records) / float64(rs.Total.Records)
 	rs.VeryHigh.Percent = float64(rs.VeryHigh.Records) / float64(rs.Total.Records)
-	rs.ExtremeHigh.Percent = float64(rs.ExtremeHigh.Records) / float64(rs.Total.Records)
 	rs.AnyLow.Percent = float64(rs.AnyLow.Records) / float64(rs.Total.Records)
 	rs.AnyHigh.Percent = float64(rs.AnyHigh.Records) / float64(rs.Total.Records)
 }
@@ -263,30 +264,29 @@ func (rs *GlucoseRanges) Finalize(days int) {
 }
 
 func (rs *GlucoseRanges) Update(record Glucose) {
-	normalizedValue := record.NormalizedValue()
-
-	if normalizedValue < veryLowBloodGlucose {
-		rs.VeryLow.Update(record)
-		rs.AnyLow.Update(record)
-	} else if normalizedValue > veryHighBloodGlucose {
-		rs.VeryHigh.Update(record)
-		rs.AnyHigh.Update(record)
-
-		// VeryHigh is inclusive of extreme high, this is intentional
-		if normalizedValue >= extremeHighBloodGlucose {
-			rs.ExtremeHigh.Update(record)
-		}
-	} else if normalizedValue < lowBloodGlucose {
-		rs.Low.Update(record)
-		rs.AnyLow.Update(record)
-	} else if normalizedValue > highBloodGlucose {
-		rs.AnyHigh.Update(record)
-		rs.High.Update(record)
-	} else {
-		rs.Target.Update(record)
-	}
-
+	rs.count(StandardCutPoints().Classify(record.NormalizedValue()), record.Duration())
 	rs.Total.UpdateTotal(record)
+}
+
+// count counts a reading of the classification and duration in its range, and in the
+// any low or any high range that includes it. Total isn't counted.
+func (rs *GlucoseRanges) count(classification Classification, duration int) {
+	switch classification {
+	case ClassificationVeryLow:
+		rs.VeryLow.count(duration)
+		rs.AnyLow.count(duration)
+	case ClassificationLow:
+		rs.Low.count(duration)
+		rs.AnyLow.count(duration)
+	case ClassificationInRange:
+		rs.Target.count(duration)
+	case ClassificationHigh:
+		rs.High.count(duration)
+		rs.AnyHigh.count(duration)
+	case ClassificationVeryHigh:
+		rs.VeryHigh.count(duration)
+		rs.AnyHigh.count(duration)
+	}
 }
 
 func (rs *GlucoseRanges) CalculateDelta(current, previous *GlucoseRanges) {
@@ -296,7 +296,6 @@ func (rs *GlucoseRanges) CalculateDelta(current, previous *GlucoseRanges) {
 	rs.Target.CalculateDelta(&current.Target, &previous.Target)
 	rs.High.CalculateDelta(&current.High, &previous.High)
 	rs.VeryHigh.CalculateDelta(&current.VeryHigh, &previous.VeryHigh)
-	rs.ExtremeHigh.CalculateDelta(&current.ExtremeHigh, &previous.ExtremeHigh)
 	rs.AnyLow.CalculateDelta(&current.AnyLow, &previous.AnyLow)
 	rs.AnyHigh.CalculateDelta(&current.AnyHigh, &previous.AnyHigh)
 }
@@ -334,11 +333,26 @@ func (m *MinMax) CalculateDelta(current *MinMax, previous *MinMax) {
 	m.Max = current.Max - previous.Max
 }
 
+// GlucoseReading is a reading counted in a bucket, kept so that the bucket can be
+// re-aggregated with other glucose ranges. The time isn't needed for that, but helps
+// debugging. Value is normalized to mmol/L.
+type GlucoseReading struct {
+	Time  time.Time `json:"time" bson:"time"`
+	Value float64   `json:"value" bson:"value"`
+	// Duration is the minutes the reading represents, which is 0 for BGM readings.
+	Duration int `json:"duration,omitempty" bson:"duration,omitempty"`
+}
+
 type GlucoseBucket struct {
-	GlucoseRanges `json:",inline" bson:",inline"`
-	MinMax        `json:",inline" bson:",inline"`
+	GlucoseRanges `bson:",inline"`
+	MinMax        `bson:",inline"`
 
 	LastRecordDuration int `json:"lastRecordDuration" bson:"lastRecordDuration"`
+
+	// Readings are the readings counted in the ranges, in the order they were counted.
+	// There is one per record counted in Total, with their durations summing to its
+	// minutes. Buckets calculated before schema version 7 have none.
+	Readings []GlucoseReading `json:"readings" bson:"readings"`
 }
 
 func (b *GlucoseBucket) ShouldSkipDatum(d Glucose, lastData *time.Time) bool {
@@ -375,13 +389,40 @@ func (b *GlucoseBucket) Update(d data.Datum, lastData *time.Time) (bool, error) 
 	b.MinMax.Update(g)
 	b.GlucoseRanges.Update(g)
 	b.LastRecordDuration = g.Duration()
+	b.Readings = append(b.Readings, GlucoseReading{
+		Time:     *g.Time(),
+		Value:    g.NormalizedValue(),
+		Duration: g.Duration(),
+	})
 
 	return true, nil
 }
 
+// RangesFor returns the bucket's ranges with its readings classified by the cut points,
+// rather than by the standard ones they were counted with. Total is the same as the
+// bucket's, as it doesn't depend on the cut points. It reports an error for a bucket whose
+// readings don't match its total, such as one calculated before its readings were stored.
+func (b *GlucoseBucket) RangesFor(cutPoints CutPoints) (GlucoseRanges, error) {
+	if len(b.Readings) != b.Total.Records {
+		return GlucoseRanges{}, fmt.Errorf("bucket has %d readings for %d records",
+			len(b.Readings), b.Total.Records)
+	}
+	ranges := GlucoseRanges{Total: b.Total}
+	minutes := 0
+	for _, reading := range b.Readings {
+		ranges.count(cutPoints.Classify(reading.Value), reading.Duration)
+		minutes += reading.Duration
+	}
+	if minutes != b.Total.Minutes {
+		return GlucoseRanges{}, fmt.Errorf("bucket has readings of %d minutes for %d",
+			minutes, b.Total.Minutes)
+	}
+	return ranges, nil
+}
+
 type GlucosePeriod struct {
-	GlucoseRanges `json:",inline" bson:",inline"`
-	MinMax        `json:",inline" bson:",inline"`
+	GlucoseRanges `bson:",inline"`
+	MinMax        `bson:",inline"`
 
 	HoursWithData int `json:"hoursWithData,omitempty" bson:"hoursWithData,omitempty"`
 	DaysWithData  int `json:"daysWithData,omitempty" bson:"daysWithData,omitempty"`
@@ -502,6 +543,22 @@ func (st *GlucosePeriods) Init() {
 }
 
 func (st *GlucosePeriods) Update(ctx context.Context, bucketsCursor *mongo.Cursor) error {
+	return st.update(ctx, bucketsCursor, nil)
+}
+
+// UpdateForRangeSet calculates the periods as [GlucosePeriods.Update] does, but with the
+// buckets' readings classified by the cut points rather than by the standard ones.
+func (st *GlucosePeriods) UpdateForRangeSet(ctx context.Context,
+	bucketsCursor *mongo.Cursor, cutPoints CutPoints) error {
+
+	return st.update(ctx, bucketsCursor, &cutPoints)
+}
+
+// update calculates the periods from the buckets, with their readings classified by the
+// cut points if any are given.
+func (st *GlucosePeriods) update(ctx context.Context, bucketsCursor *mongo.Cursor,
+	cutPoints *CutPoints) error {
+
 	// count backwards (newest first) through hourly stats, stopping at 1d, 7d, 14d, 30d
 	period := GlucosePeriod{}
 	offsetPeriod := GlucosePeriod{}
@@ -520,6 +577,13 @@ func (st *GlucosePeriods) Update(ctx context.Context, bucketsCursor *mongo.Curso
 		if err := bucketsCursor.Decode(bucket); err != nil {
 			return err
 		}
+		if cutPoints != nil {
+			ranges, err := bucket.Data.RangesFor(*cutPoints)
+			if err != nil {
+				return fmt.Errorf("bucket of %s: %w", bucket.Time, err)
+			}
+			bucket.Data.GlucoseRanges = ranges
+		}
 
 		if !previousBucketTime.IsZero() && bucket.Time.Compare(previousBucketTime) >= 0 {
 			return fmt.Errorf("bucket with date %s is equal or later than the last added bucket with date %s, "+
@@ -536,12 +600,15 @@ func (st *GlucosePeriods) Update(ctx context.Context, bucketsCursor *mongo.Curso
 			panic("bucket exists with 0 records")
 		}
 
-		if len(stopPoints) > nextStopPoint && bucket.Time.Compare(stopPoints[nextStopPoint]) <= 0 {
+		// Close off every period boundary this bucket has crossed. A single bucket can be
+		// past multiple boundaries at once when there is a large gap between buckets, so
+		// this must be a loop, not a single check.
+		for len(stopPoints) > nextStopPoint && bucket.Time.Compare(stopPoints[nextStopPoint]) <= 0 {
 			st.CalculatePeriod(periodLengths[nextStopPoint], period)
 			nextStopPoint++
 		}
 
-		if len(offsetStopPoints) > nextOffsetStopPoint && bucket.Time.Compare(offsetStopPoints[nextOffsetStopPoint]) <= 0 {
+		for len(offsetStopPoints) > nextOffsetStopPoint && bucket.Time.Compare(offsetStopPoints[nextOffsetStopPoint]) <= 0 {
 			CalculateOffsetPeriod(offsetPeriods, periodLengths[nextOffsetStopPoint], offsetPeriod)
 			offsetPeriod = GlucosePeriod{}
 			nextOffsetStopPoint++
@@ -560,6 +627,16 @@ func (st *GlucosePeriods) Update(ctx context.Context, bucketsCursor *mongo.Curso
 				return err
 			}
 		}
+	}
+	if err := bucketsCursor.Err(); err != nil {
+		return err
+	}
+
+	// the cursor was empty, all buckets may have been invalidated since the last update,
+	// any previously calculated periods are no longer backed by data
+	if stopPoints == nil {
+		st.Init()
+		return nil
 	}
 
 	// fill in periods we never reached

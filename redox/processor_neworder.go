@@ -571,6 +571,12 @@ func (o *newOrderProcessor) createSummaryStatisticsFlowsheet(params SummaryAndRe
 	SetOrderIdInFlowsheet(params.Order, &flowsheet)
 	SetProviderInFlowsheet(params.Order, &flowsheet)
 	observations := PopulateSummaryStatistics(patient, settings, &flowsheet)
+	if keys := undeterminedGlycemicRangesKeys(patient); len(keys) > 0 {
+		o.logger.Warnw("unable to determine the glycemic ranges of the patient's summary, "+
+			"the flowsheet doesn't state their thresholds",
+			"order", params.Order.Meta, "clinicId", params.Match.Clinic.Id,
+			"patientId", patient.Id, "glycemicRangesKeys", keys)
+	}
 
 	return flowsheet, observations, nil
 }

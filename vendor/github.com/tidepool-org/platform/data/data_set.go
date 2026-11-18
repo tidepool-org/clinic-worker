@@ -42,9 +42,10 @@ const (
 	DataSetStateClosed = "closed"
 	DataSetStateOpen   = "open"
 
-	DeviceTagBGM         = "bgm"
-	DeviceTagCGM         = "cgm"
-	DeviceTagInsulinPump = "insulin-pump"
+	DeviceTagActivityMonitor = "activity-monitor"
+	DeviceTagBGM             = "bgm"
+	DeviceTagCGM             = "cgm"
+	DeviceTagInsulinPump     = "insulin-pump"
 
 	TimeProcessingAcrossTheBoardTimeZone = "across-the-board-timezone" // TODO: Rename to across-the-board-time-zone or alternative
 	TimeProcessingNone                   = "none"
@@ -73,6 +74,7 @@ func DataSetStates() []string {
 
 func DeviceTags() []string {
 	return []string{
+		DeviceTagActivityMonitor,
 		DeviceTagBGM,
 		DeviceTagCGM,
 		DeviceTagInsulinPump,
@@ -184,11 +186,7 @@ func NewDataSetCreate() *DataSetCreate {
 }
 
 func (d *DataSetCreate) Parse(parser structure.ObjectParser) {
-	if clientParser := parser.WithReferenceObjectParser("client"); clientParser.Exists() {
-		d.Client = NewDataSetClient()
-		d.Client.Parse(clientParser)
-		clientParser.NotParsed()
-	}
+	d.Client = ParseDataSetClient(parser.WithReferenceObjectParser("client"))
 	d.DataSetType = parser.String("dataSetType")
 	d.Deduplicator = ParseDeduplicatorDescriptor(parser.WithReferenceObjectParser("deduplicator"))
 	d.DeviceID = parser.String("deviceId")

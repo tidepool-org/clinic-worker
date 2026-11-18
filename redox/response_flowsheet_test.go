@@ -137,6 +137,10 @@ var _ = Describe("Flowsheet", func() {
 					MatchObservation(Observation{"TOTAL_READING_COUNT_SMBG", "69", "Numeric", nil, "The total number of SMBG readings taken during the SMBG Reporting Period"}),
 					MatchObservation(Observation{"CHECK_RATE_READINGS_DAY_SMBG", "4.9286", "Numeric", nil, "Average Numeric of SMBG readings per day during reporting period"}),
 					MatchObservation(Observation{"DAYS_WITH_DATA_SMBG", "3", "Numeric", &expectedDayUnits, "The total number of days with at least 1 SMBG reading over the reporting period"}),
+					MatchObservation(Observation{"GLUCOSE_THRESHOLD_VERY_HIGH", "13.9", "Numeric", &expectedBgUnits, "Hyperglycemia level 2: glucose above this threshold is very high; glycemic ranges: Standard (Type 1 and 2)"}),
+					MatchObservation(Observation{"GLUCOSE_THRESHOLD_HIGH", "10.0", "Numeric", &expectedBgUnits, "Hyperglycemia level 1: glucose above this threshold is high; glycemic ranges: Standard (Type 1 and 2)"}),
+					MatchObservation(Observation{"GLUCOSE_THRESHOLD_LOW", "3.9", "Numeric", &expectedBgUnits, "Hypoglycemia level 1: glucose below this threshold is low; glycemic ranges: Standard (Type 1 and 2)"}),
+					MatchObservation(Observation{"GLUCOSE_THRESHOLD_VERY_LOW", "3.0", "Numeric", &expectedBgUnits, "Hypoglycemia level 2: glucose below this threshold is very low; glycemic ranges: Standard (Type 1 and 2)"}),
 				))
 			})
 
@@ -187,6 +191,10 @@ var _ = Describe("Flowsheet", func() {
 					MatchObservation(Observation{"TOTAL_READING_COUNT_SMBG", "69", "Numeric", nil, "The total number of SMBG readings taken during the SMBG Reporting Period"}),
 					MatchObservation(Observation{"CHECK_RATE_READINGS_DAY_SMBG", "4.9286", "Numeric", nil, "Average Numeric of SMBG readings per day during reporting period"}),
 					MatchObservation(Observation{"DAYS_WITH_DATA_SMBG", "3", "Numeric", &expectedDayUnits, "The total number of days with at least 1 SMBG reading over the reporting period"}),
+					MatchObservation(Observation{"GLUCOSE_THRESHOLD_VERY_HIGH", "13.9", "Numeric", &expectedBgUnits, "Hyperglycemia level 2: glucose above this threshold is very high; glycemic ranges: Standard (Type 1 and 2)"}),
+					MatchObservation(Observation{"GLUCOSE_THRESHOLD_HIGH", "10.0", "Numeric", &expectedBgUnits, "Hyperglycemia level 1: glucose above this threshold is high; glycemic ranges: Standard (Type 1 and 2)"}),
+					MatchObservation(Observation{"GLUCOSE_THRESHOLD_LOW", "3.9", "Numeric", &expectedBgUnits, "Hypoglycemia level 1: glucose below this threshold is low; glycemic ranges: Standard (Type 1 and 2)"}),
+					MatchObservation(Observation{"GLUCOSE_THRESHOLD_VERY_LOW", "3.0", "Numeric", &expectedBgUnits, "Hypoglycemia level 2: glucose below this threshold is very low; glycemic ranges: Standard (Type 1 and 2)"}),
 				))
 			})
 

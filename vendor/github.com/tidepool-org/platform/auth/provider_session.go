@@ -8,11 +8,11 @@ import (
 
 	"github.com/tidepool-org/platform/errors"
 	"github.com/tidepool-org/platform/id"
-	"github.com/tidepool-org/platform/log"
 	"github.com/tidepool-org/platform/page"
 	"github.com/tidepool-org/platform/request"
 	"github.com/tidepool-org/platform/structure"
 	structureValidator "github.com/tidepool-org/platform/structure/validator"
+	"github.com/tidepool-org/platform/times"
 	"github.com/tidepool-org/platform/user"
 )
 
@@ -26,21 +26,23 @@ func ProviderTypes() []string {
 	}
 }
 
-type ProviderSessionAccessor interface {
-	CreateUserProviderSession(ctx context.Context, userID string, create *ProviderSessionCreate) (*ProviderSession, error)
-	DeleteUserProviderSessions(ctx context.Context, userID string) error
-
+type ProviderSessionClient interface {
 	ListProviderSessions(ctx context.Context, filter *ProviderSessionFilter, pagination *page.Pagination) (ProviderSessions, error)
+	DeleteProviderSessions(ctx context.Context, filter *ProviderSessionFilter) error
+
+	CreateProviderSession(ctx context.Context, create *ProviderSessionCreate) (*ProviderSession, error)
 	GetProviderSession(ctx context.Context, id string) (*ProviderSession, error)
 	UpdateProviderSession(ctx context.Context, id string, update *ProviderSessionUpdate) (*ProviderSession, error)
 	DeleteProviderSession(ctx context.Context, id string) error
+
+	RefreshProviderSession(ctx context.Context, id string, refresh *ProviderSessionRefresh) (*ProviderSession, error)
 }
 
 type ProviderSessionFilter struct {
-	UserID     *string `json:"userId,omitempty"`
-	Type       *string `json:"type,omitempty"`
-	Name       *string `json:"name,omitempty"`
-	ExternalID *string `json:"externalId,omitempty"`
+	UserID     *string `json:"userId,omitempty" bson:"userId,omitempty"`
+	Type       *string `json:"type,omitempty" bson:"type,omitempty"`
+	Name       *string `json:"name,omitempty" bson:"name,omitempty"`
+	ExternalID *string `json:"externalId,omitempty" bson:"externalId,omitempty"`
 }
 
 func NewProviderSessionFilter() *ProviderSessionFilter {
@@ -59,6 +61,9 @@ func (p *ProviderSessionFilter) Validate(validator structure.Validator) {
 	validator.String("type", p.Type).OneOf(ProviderTypes()...)
 	validator.String("name", p.Name).Using(ProviderNameValidator)
 	validator.String("externalId", p.ExternalID).Using(ProviderExternalIDValidator)
+	if p.UserID == nil && p.ExternalID == nil {
+		validator.ReportError(structureValidator.ErrorValuesNotExistForAny("externalId", "userId"))
+	}
 }
 
 func (p *ProviderSessionFilter) MutateRequest(req *http.Request) error {
@@ -79,6 +84,7 @@ func (p *ProviderSessionFilter) MutateRequest(req *http.Request) error {
 }
 
 type ProviderSessionCreate struct {
+	UserID     string      `json:"userId" bson:"userId"`
 	Type       string      `json:"type" bson:"type"`
 	Name       string      `json:"name" bson:"name"`
 	OAuthToken *OAuthToken `json:"oauthToken,omitempty" bson:"oauthToken,omitempty"`
@@ -90,21 +96,21 @@ func NewProviderSessionCreate() *ProviderSessionCreate {
 }
 
 func (p *ProviderSessionCreate) Parse(parser structure.ObjectParser) {
+	if ptr := parser.String("userId"); ptr != nil {
+		p.UserID = *ptr
+	}
 	if ptr := parser.String("type"); ptr != nil {
 		p.Type = *ptr
 	}
 	if ptr := parser.String("name"); ptr != nil {
 		p.Name = *ptr
 	}
-	if oauthTokenParser := parser.WithReferenceObjectParser("oauthToken"); oauthTokenParser.Exists() {
-		p.OAuthToken = NewOAuthToken()
-		p.OAuthToken.Parse(oauthTokenParser)
-		oauthTokenParser.NotParsed()
-	}
+	p.OAuthToken = ParseOAuthToken(parser.WithReferenceObjectParser("oauthToken"))
 	p.ExternalID = parser.String("externalId")
 }
 
 func (p *ProviderSessionCreate) Validate(validator structure.Validator) {
+	validator.String("userId", &p.UserID).Using(user.IDValidator)
 	validator.String("type", &p.Type).OneOf(ProviderTypes()...)
 	validator.String("name", &p.Name).Using(ProviderNameValidator)
 	switch p.Type {
@@ -128,11 +134,7 @@ func NewProviderSessionUpdate() *ProviderSessionUpdate {
 }
 
 func (p *ProviderSessionUpdate) Parse(parser structure.ObjectParser) {
-	if oauthTokenParser := parser.WithReferenceObjectParser("oauthToken"); oauthTokenParser.Exists() {
-		p.OAuthToken = NewOAuthToken()
-		p.OAuthToken.Parse(oauthTokenParser)
-		oauthTokenParser.NotParsed()
-	}
+	p.OAuthToken = ParseOAuthToken(parser.WithReferenceObjectParser("oauthToken"))
 	p.ExternalID = parser.String("externalId")
 }
 
@@ -145,6 +147,20 @@ func (p *ProviderSessionUpdate) Validate(validator structure.Validator) {
 
 func (p *ProviderSessionUpdate) IsEmpty() bool {
 	return p.OAuthToken == nil && p.ExternalID == nil
+}
+
+type ProviderSessionRefresh struct {
+	TimeRange *times.TimeRange `json:"timeRange,omitempty" bson:"timeRange,omitempty"`
+}
+
+func (p *ProviderSessionRefresh) Parse(parser structure.ObjectParser) {
+	p.TimeRange = times.ParseTimeRange(parser.WithReferenceObjectParser("timeRange"))
+}
+
+func (p *ProviderSessionRefresh) Validate(validator structure.Validator) {
+	if p.TimeRange != nil {
+		p.TimeRange.Validate(validator.WithReference("timeRange"))
+	}
 }
 
 func NewProviderSessionID() string {
@@ -223,27 +239,6 @@ type ProviderSession struct {
 	ModifiedTime *time.Time  `json:"modifiedTime,omitempty" bson:"modifiedTime,omitempty"`
 }
 
-func NewProviderSession(ctx context.Context, userID string, create *ProviderSessionCreate) (*ProviderSession, error) {
-	if userID == "" {
-		return nil, errors.New("user id is missing")
-	}
-	if create == nil {
-		return nil, errors.New("create is missing")
-	} else if err := structureValidator.New(log.LoggerFromContext(ctx)).Validate(create); err != nil {
-		return nil, errors.Wrap(err, "create is invalid")
-	}
-
-	return &ProviderSession{
-		ID:          NewProviderSessionID(),
-		UserID:      userID,
-		Type:        create.Type,
-		Name:        create.Name,
-		OAuthToken:  create.OAuthToken,
-		ExternalID:  create.ExternalID,
-		CreatedTime: time.Now(),
-	}, nil
-}
-
 func (p *ProviderSession) Parse(parser structure.ObjectParser) {
 	if ptr := parser.String("id"); ptr != nil {
 		p.ID = *ptr
@@ -257,11 +252,7 @@ func (p *ProviderSession) Parse(parser structure.ObjectParser) {
 	if ptr := parser.String("name"); ptr != nil {
 		p.Name = *ptr
 	}
-	if oauthTokenParser := parser.WithReferenceObjectParser("oauthToken"); oauthTokenParser.Exists() {
-		p.OAuthToken = NewOAuthToken()
-		p.OAuthToken.Parse(oauthTokenParser)
-		oauthTokenParser.NotParsed()
-	}
+	p.OAuthToken = ParseOAuthToken(parser.WithReferenceObjectParser("oauthToken"))
 	p.ExternalID = parser.String("externalId")
 	if ptr := parser.Time("createdTime", time.RFC3339Nano); ptr != nil {
 		p.CreatedTime = *ptr
@@ -271,7 +262,7 @@ func (p *ProviderSession) Parse(parser structure.ObjectParser) {
 
 func (p *ProviderSession) Validate(validator structure.Validator) {
 	validator.String("id", &p.ID).Using(ProviderSessionIDValidator)
-	validator.String("userId", &p.UserID).Using(UserIDValidator)
+	validator.String("userId", &p.UserID).Using(user.IDValidator)
 	validator.String("type", &p.Type).OneOf(ProviderTypes()...)
 	validator.String("name", &p.Name).Using(ProviderNameValidator)
 	switch p.Type {
@@ -294,6 +285,22 @@ func (p *ProviderSession) Sanitize(details request.AuthDetails) error {
 	return errors.New("unable to sanitize")
 }
 
+func (p *ProviderSession) Redacted() *ProviderSession {
+	redacted := &ProviderSession{
+		ID:           p.ID,
+		UserID:       p.UserID,
+		Type:         p.Type,
+		Name:         p.Name,
+		ExternalID:   p.ExternalID,
+		CreatedTime:  p.CreatedTime,
+		ModifiedTime: p.ModifiedTime,
+	}
+	if p.OAuthToken != nil {
+		redacted.OAuthToken = p.OAuthToken.Redacted()
+	}
+	return redacted
+}
+
 type ProviderSessions []*ProviderSession
 
 func (p ProviderSessions) Sanitize(details request.AuthDetails) error {
@@ -303,4 +310,12 @@ func (p ProviderSessions) Sanitize(details request.AuthDetails) error {
 		}
 	}
 	return nil
+}
+
+func (p ProviderSessions) Redacted() ProviderSessions {
+	redacted := make(ProviderSessions, len(p))
+	for index, providerSession := range p {
+		redacted[index] = providerSession.Redacted()
+	}
+	return redacted
 }

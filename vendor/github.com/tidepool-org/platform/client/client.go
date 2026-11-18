@@ -4,16 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/tidepool-org/platform/errors"
 	"github.com/tidepool-org/platform/log"
+	"github.com/tidepool-org/platform/pointer"
 	"github.com/tidepool-org/platform/request"
 	"github.com/tidepool-org/platform/structure"
 )
@@ -32,8 +33,7 @@ type ErrorResponseParser interface {
 }
 
 type Client struct {
-	address             string
-	userAgent           string
+	config              Config
 	errorResponseParser ErrorResponseParser
 }
 
@@ -49,18 +49,21 @@ func NewWithErrorParser(cfg *Config, errorResponseParser ErrorResponseParser) (*
 	}
 
 	return &Client{
-		address:             cfg.Address,
-		userAgent:           cfg.UserAgent,
+		config:              *cfg,
 		errorResponseParser: errorResponseParser,
 	}, nil
 }
 
+func (c *Client) ClientTimeout() time.Duration {
+	return c.config.ClientTimeout
+}
+
+func (c *Client) ResponseTimeout() time.Duration {
+	return c.config.ResponseTimeout
+}
+
 func (c *Client) ConstructURL(paths ...string) string {
-	segments := []string{}
-	for _, path := range paths {
-		segments = append(segments, url.PathEscape(strings.Trim(path, "/")))
-	}
-	return fmt.Sprintf("%s/%s", strings.TrimRight(c.address, "/"), strings.Join(segments, "/"))
+	return ConstructURL(c.config.Address, paths...)
 }
 
 func (c *Client) AppendURLQuery(urlString string, query map[string]string) string {
@@ -82,18 +85,45 @@ func (c *Client) AppendURLQuery(urlString string, query map[string]string) strin
 	return urlString
 }
 
-func (c *Client) RequestStreamWithHTTPClient(ctx context.Context, method string, url string, mutators []request.RequestMutator, requestBody interface{}, inspectors []request.ResponseInspector, httpClient *http.Client) (io.ReadCloser, error) {
-	if httpClient == nil {
-		return nil, errors.New("http client is missing")
+func (c *Client) RequestStreamWithHTTPClient(ctx context.Context, method string, url string, mutators []request.RequestMutator, requestBody any, inspectors []request.ResponseInspector, httpClient *http.Client) (io.ReadCloser, error) {
+	if ctx == nil {
+		return nil, errors.New("context is missing")
 	}
+
+	// Ensure the HTTP client. If no timeout, then use timeout from config.
+	httpClient = pointer.From(pointer.Default(httpClient, *http.DefaultClient))
+	if httpClient.Timeout == 0 {
+		if clientTimeout := c.ClientTimeout(); clientTimeout > 0 {
+			httpClient.Timeout = clientTimeout
+		}
+	}
+
+	// The request must carry a cancelable context for the response timeout to reach the transport. A deadline on that
+	// context cannot be used, though, as it would also abort any read of the returned response body, so instead cancel
+	// via a timer that is stopped once the response headers arrive. The cause preserves the deadline exceeded error.
+	ctx, cancel := context.WithCancelCause(ctx)
 
 	req, err := c.createRequest(ctx, method, url, mutators, requestBody)
 	if err != nil {
+		cancel(nil)
 		return nil, err
 	}
 
+	// Use timer to tracker timeout for response headers. If the timeout is reached, then cancel the context with a
+	// cause of deadline exceeded.
+	var timer *time.Timer
+	if responseTimeout := c.ResponseTimeout(); responseTimeout > 0 {
+		timer = time.AfterFunc(responseTimeout, func() { cancel(context.DeadlineExceeded) })
+	}
+
 	res, err := httpClient.Do(req)
+
+	if timer != nil {
+		timer.Stop()
+	}
+
 	if err != nil {
+		cancel(nil)
 		return nil, errors.Wrapf(err, "unable to perform request to %s %s", method, url)
 	}
 
@@ -101,10 +131,19 @@ func (c *Client) RequestStreamWithHTTPClient(ctx context.Context, method string,
 		inspector.InspectResponse(res)
 	}
 
-	return c.handleResponse(ctx, res, req)
+	body, err := c.handleResponse(ctx, res, req)
+	if body == nil {
+		cancel(nil)
+		return nil, err
+	}
+
+	return &ReadCloserWithCancelCause{
+		ReadCloser:      body,
+		CancelCauseFunc: cancel,
+	}, err
 }
 
-func (c *Client) RequestDataWithHTTPClient(ctx context.Context, method string, url string, mutators []request.RequestMutator, requestBody interface{}, responseBody interface{}, inspectors []request.ResponseInspector, httpClient *http.Client) error {
+func (c *Client) RequestDataWithHTTPClient(ctx context.Context, method string, url string, mutators []request.RequestMutator, requestBody any, responseBody any, inspectors []request.ResponseInspector, httpClient *http.Client) error {
 	body, err := c.RequestStreamWithHTTPClient(ctx, method, url, mutators, requestBody, inspectors, httpClient)
 	if err != nil {
 		return err
@@ -112,16 +151,16 @@ func (c *Client) RequestDataWithHTTPClient(ctx context.Context, method string, u
 		return nil
 	}
 
-	defer drainAndClose(body)
+	defer request.DrainAndClose(body)
 
 	if responseBody == nil {
 		return nil
 	}
 
-	return request.DecodeObject(ctx, structure.NewPointerSource(), body, responseBody)
+	return request.DecodeStream(ctx, structure.NewPointerSource(), body, responseBody, request.IgnoreNotParsed())
 }
 
-func (c *Client) createRequest(ctx context.Context, method string, url string, mutators []request.RequestMutator, requestBody interface{}) (*http.Request, error) {
+func (c *Client) createRequest(ctx context.Context, method string, url string, mutators []request.RequestMutator, requestBody any) (*http.Request, error) {
 	if ctx == nil {
 		return nil, errors.New("context is missing")
 	}
@@ -132,8 +171,8 @@ func (c *Client) createRequest(ctx context.Context, method string, url string, m
 		return nil, errors.New("url is missing")
 	}
 
-	if c.userAgent != "" {
-		mutators = append(mutators, request.NewHeaderMutator("User-Agent", c.userAgent))
+	if c.config.UserAgent != "" {
+		mutators = append(mutators, request.NewHeaderMutator("User-Agent", c.config.UserAgent))
 	}
 
 	var body io.Reader
@@ -152,12 +191,10 @@ func (c *Client) createRequest(ctx context.Context, method string, url string, m
 		}
 	}
 
-	req, err := http.NewRequest(method, url, body)
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to create request to %s %s", method, url)
 	}
-
-	req = req.WithContext(ctx)
 
 	for _, mutator := range mutators {
 		if err = mutator.MutateRequest(req); err != nil {
@@ -178,14 +215,14 @@ func (c *Client) handleResponse(ctx context.Context, res *http.Response, req *ht
 	if request.IsStatusCodeSuccess(res.StatusCode) {
 		switch res.StatusCode {
 		case http.StatusNoContent, http.StatusResetContent:
-			drainAndClose(res.Body)
+			defer request.DrainAndClose(res.Body)
 			return nil, nil
 		default:
 			return res.Body, nil
 		}
 	}
 
-	defer drainAndClose(res.Body)
+	defer request.DrainAndClose(res.Body)
 
 	bites, err := io.ReadAll(io.LimitReader(res.Body, ResponseBodyLimit))
 	if err != nil {
@@ -242,16 +279,21 @@ func errorFromStatusCode(res *http.Response, req *http.Request) error {
 	}
 }
 
-func responseBodyFromBytes(bites []byte) interface{} {
+func responseBodyFromBytes(bites []byte) any {
 	if utf8.Valid(bites) {
 		return string(bites)
 	}
 	return bites
 }
 
-func drainAndClose(reader io.ReadCloser) {
-	io.Copy(io.Discard, reader)
-	reader.Close()
+type ReadCloserWithCancelCause struct {
+	io.ReadCloser
+	context.CancelCauseFunc
+}
+
+func (r *ReadCloserWithCancelCause) Close() error {
+	defer r.CancelCauseFunc(nil)
+	return r.ReadCloser.Close()
 }
 
 func NewSerializableErrorResponseParser() *SerializableErrorResponseParser {
@@ -266,4 +308,16 @@ func (s *SerializableErrorResponseParser) ParseErrorResponse(ctx context.Context
 		return nil
 	}
 	return serializable.Error
+}
+
+func ConstructURL(url string, paths ...string) string {
+	return strings.TrimRight(url, "/") + ConstructPath(paths...)
+}
+
+func ConstructPath(paths ...string) string {
+	segments := []string{}
+	for _, path := range paths {
+		segments = append(segments, url.PathEscape(strings.Trim(path, "/")))
+	}
+	return "/" + strings.Join(segments, "/")
 }
