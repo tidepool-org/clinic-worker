@@ -14,14 +14,29 @@ import (
 
 const recentDataCutoff = 14 * 24 * time.Hour
 
+// A ScheduledSummaryAndReport is an order the clinic service rescheduled for a patient
+// with an active subscription, so that the summary and report are sent again.
+//
+// GlycemicRangesChangedTime is when the patient's summary was last replaced by one
+// computed for other glycemic ranges, as the clinic service recorded it when it
+// rescheduled the order. It is nil when the summary has always been for the same ranges,
+// and in orders rescheduled before the clinic service recorded it.
 type ScheduledSummaryAndReport struct {
-	Id                primitive.ObjectID     `json:"_id" bson:"_id"`
-	UserId            string                 `json:"userId"`
-	ClinicId          primitive.ObjectID     `json:"clinicId"`
-	LastMatchedOrder  models.MessageEnvelope `json:"lastMatchedOrder"`
-	PrecedingDocument *PrecedingDocument     `json:"precedingDocument"`
-	CreatedTime       time.Time              `json:"createdTime"`
-	DecodedOrder      models.NewOrder        `json:"-"`
+	Id                        primitive.ObjectID     `json:"_id" bson:"_id"`
+	UserId                    string                 `json:"userId"`
+	ClinicId                  primitive.ObjectID     `json:"clinicId"`
+	LastMatchedOrder          models.MessageEnvelope `json:"lastMatchedOrder"`
+	PrecedingDocument         *PrecedingDocument     `json:"precedingDocument"`
+	CreatedTime               time.Time              `json:"createdTime"`
+	GlycemicRangesChangedTime *time.Time             `json:"glycemicRangesChangedTime" bson:"glycemicRangesChangedTime"`
+	DecodedOrder              models.NewOrder        `json:"-"`
+}
+
+// glycemicRangesChangedSince reports whether the patient's summary was replaced by one
+// computed for other glycemic ranges after cutoffTime.
+func (s ScheduledSummaryAndReport) glycemicRangesChangedSince(cutoffTime time.Time) bool {
+	return s.GlycemicRangesChangedTime != nil &&
+		s.GlycemicRangesChangedTime.After(cutoffTime)
 }
 
 type PrecedingDocument struct {
@@ -84,7 +99,20 @@ func (r *scheduledSummaryAndReportProcessor) ProcessOrder(ctx context.Context, s
 		// Check that there is new data uploaded after the previous scheduled message if one exists
 		cutoffTime = scheduled.PrecedingDocument.CreatedTime
 	}
-	if !patientHasUploadedDataRecently(*patient, cutoffTime) {
+	// A change of the patient's glycemic ranges changes the values to send though the
+	// patient uploaded nothing, so the summary changing ranges counts as much as an upload
+	rangesChanged := scheduled.glycemicRangesChangedSince(cutoffTime)
+	if rangesChanged {
+		r.logger.Infow(
+			"the patient's summary changed glycemic ranges since the cutoff date",
+			"clinicId", clinicId,
+			"userId", scheduled.UserId,
+			"cutoffDate", cutoffTime.Format(time.RFC3339),
+			"glycemicRangesChangedTime",
+			scheduled.GlycemicRangesChangedTime.Format(time.RFC3339),
+		)
+	}
+	if !rangesChanged && !patientHasUploadedDataRecently(*patient, cutoffTime) {
 		r.logger.Infow(
 			"ignoring scheduled summary and report request because the user doesn't have recent data",
 			"clinicId", clinicId,

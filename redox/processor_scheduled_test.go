@@ -260,6 +260,64 @@ var _ = Describe("ScheduledSummaryAndReportProcessor", func() {
 			Expect(redoxClient.Sent).To(HaveLen(0))
 		})
 
+		Context("when the patient's summary changed glycemic ranges", func() {
+			var precedingTime, uploadTime time.Time
+
+			BeforeEach(func() {
+				precedingTime = time.Now().Add(-10 * 24 * time.Hour)
+				scheduled.PrecedingDocument = &redox.PrecedingDocument{
+					Id:          primitive.NewObjectID(),
+					CreatedTime: precedingTime,
+				}
+				// No upload since the last scheduled document
+				uploadTime = precedingTime.Add(-time.Hour)
+				patient.Summary.CgmStats.Dates.LastUploadDate = &uploadTime
+				patient.Summary.BgmStats.Dates.LastUploadDate = &uploadTime
+			})
+
+			It("sends documents if it changed after the last scheduled document", func() {
+				changed := precedingTime.Add(time.Hour)
+				scheduled.GlycemicRangesChangedTime = &changed
+
+				Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+				Expect(redoxClient.Sent).To(HaveLen(2))
+			})
+
+			It("doesn't send documents if it changed before the last scheduled document", func() {
+				changed := precedingTime.Add(-time.Hour)
+				scheduled.GlycemicRangesChangedTime = &changed
+
+				Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+				Expect(redoxClient.Sent).To(HaveLen(0))
+			})
+
+			It("sends documents if it changed after the original order and nothing was scheduled since", func() {
+				scheduled.PrecedingDocument = nil
+				orderTime := time.Now().Add(-15 * 24 * time.Hour)
+				formatted := orderTime.UTC().Format(time.RFC3339)
+				scheduled.DecodedOrder.Meta.EventDateTime = &formatted
+				uploadTime = orderTime.Add(-time.Hour)
+				changed := orderTime.Add(24 * time.Hour)
+				scheduled.GlycemicRangesChangedTime = &changed
+
+				Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+				Expect(redoxClient.Sent).To(HaveLen(2))
+			})
+
+			It("doesn't send documents if it changed before the original order", func() {
+				scheduled.PrecedingDocument = nil
+				orderTime := time.Now().Add(-15 * 24 * time.Hour)
+				formatted := orderTime.UTC().Format(time.RFC3339)
+				scheduled.DecodedOrder.Meta.EventDateTime = &formatted
+				uploadTime = orderTime.Add(-time.Hour)
+				changed := orderTime.Add(-30 * time.Minute)
+				scheduled.GlycemicRangesChangedTime = &changed
+
+				Expect(scheduledProcessor.ProcessOrder(context.Background(), scheduled)).To(Succeed())
+				Expect(redoxClient.Sent).To(HaveLen(0))
+			})
+		})
+
 		It("sends documents if bgm upload date is before the cutoff but cgm after", func() {
 			now := time.Now()
 			scheduled.PrecedingDocument = &redox.PrecedingDocument{
