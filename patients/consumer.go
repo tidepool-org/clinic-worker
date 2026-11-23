@@ -203,27 +203,12 @@ func (p *PatientCDCConsumer) handleCDCEvent(event PatientCDCEvent) error {
 
 		errs := make([]error, 0, len(providers))
 		for providerName := range providers {
-			templatePrefix := fmt.Sprintf("request_%s_", providerName)
-			action := "connect"
-			if event.FullDocument.IsCustodial() {
-				action = "connect_custodial"
-			}
-			if event.FullDocument.DataSources != nil {
-				for _, source := range *event.FullDocument.DataSources {
-					if *source.ProviderName == providerName && *source.State == string(clinics.PendingReconnect) {
-						action = "reconnect"
-						break
-					}
-				}
-			}
-
-			templateName := templatePrefix + action
 			errs = append(errs, p.sendProviderConnectEmail(ctx, SendProviderConnectEmailParams{
 				ClinicId:     event.FullDocument.ClinicId.Value,
 				ProviderName: providerName,
 				UserId:       *event.FullDocument.UserId,
 				PatientName:  *event.FullDocument.FullName,
-				TemplateName: templateName,
+				TemplateName: event.FullDocument.ProviderConnectEmailTemplate(providerName),
 			}))
 		}
 		if err := errors.Join(errs...); err != nil {
