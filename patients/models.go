@@ -1,6 +1,7 @@
 package patients
 
 import (
+	"fmt"
 	"time"
 
 	summaries "github.com/tidepool-org/go-common/clients/summary"
@@ -148,6 +149,22 @@ func (p Patient) IsCustodial() bool {
 	return p.Permissions != nil && p.Permissions.Custodian != nil
 }
 
+func (p Patient) ProviderConnectEmailTemplate(providerName string) string {
+	action := "connect"
+	if p.IsCustodial() {
+		action = "connect_custodial"
+	}
+	if p.DataSources != nil {
+		for _, source := range *p.DataSources {
+			if *source.ProviderName == providerName && *source.State == string(clinics.PendingReconnect) {
+				action = "reconnect"
+				break
+			}
+		}
+	}
+	return fmt.Sprintf("request_%s_%s", providerName, action)
+}
+
 type Permissions struct {
 	Custodian *Permission `json:"custodian"`
 }
@@ -171,6 +188,7 @@ type UpdatedFields struct {
 	ProviderConnectionRequestsDexcom ConnectionRequests `json:"providerConnectionRequests.dexcom"`
 	ProviderConnectionRequestsTwiist ConnectionRequests `json:"providerConnectionRequests.twiist"`
 	ProviderConnectionRequestsAbbott ConnectionRequests `json:"providerConnectionRequests.abbott"`
+	ProviderConnectionRequestsTandem ConnectionRequests `json:"providerConnectionRequests.tandem"`
 }
 
 func (u UpdatedFields) GetUpdatedConnectionRequests() ConnectionRequests {
@@ -181,6 +199,7 @@ func (u UpdatedFields) GetUpdatedConnectionRequests() ConnectionRequests {
 	requests = AppendMostRecentConnectionRequest(requests, u.ProviderConnectionRequestsDexcom)
 	requests = AppendMostRecentConnectionRequest(requests, u.ProviderConnectionRequestsTwiist)
 	requests = AppendMostRecentConnectionRequest(requests, u.ProviderConnectionRequestsAbbott)
+	requests = AppendMostRecentConnectionRequest(requests, u.ProviderConnectionRequestsTandem)
 
 	return requests
 }
